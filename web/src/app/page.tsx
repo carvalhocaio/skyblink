@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState, type ReactNode } from "react";
+import { Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import { ArrowRight, Box, Cat } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -9,12 +9,14 @@ import { TargetForm } from "@/components/target-form";
 import { Player } from "@/components/player";
 import { JobAlerts, JobProgress } from "@/components/job-status";
 import { MotionCard } from "@/components/motion-card";
-import { AboutSpherex, Faq, HowItWorks } from "@/components/learn";
+import { AboutSpherex, Faq } from "@/components/learn";
+import { Explainer } from "@/components/explainer";
 import { LANGS, useT, type Lang } from "@/lib/i18n";
 import { findTarget, TARGETS } from "@/lib/targets";
 import { useJob, type Target } from "@/lib/use-job";
 import { EggsProvider, useEggs, useNewton } from "@/lib/eggs";
 import { Sky } from "@/components/sky";
+import { StarLife } from "@/components/star-life";
 
 const DETECTOR = "D6";
 const WRAP = "mx-auto w-full max-w-7xl px-4 md:px-10";
@@ -40,6 +42,7 @@ function Home() {
   const router = useRouter();
   const { lang, t } = useT();
   const [run, setRun] = useState(0);
+  const heroRef = useRef<HTMLElement>(null);
 
   const ra = num(params.get("ra"));
   const dec = num(params.get("dec"));
@@ -54,6 +57,14 @@ function Home() {
     document.documentElement.lang = lang;
   }, [lang]);
 
+  // Opened with ?ra=&dec= on a phone: the player sits far below the hero, so bring it into view.
+  const openedWithTarget = useRef(target !== null);
+  useEffect(() => {
+    if (!openedWithTarget.current || !matchMedia("(max-width: 1023px)").matches) return;
+    const smooth = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+    document.getElementById("watch")?.scrollIntoView({ behavior: smooth ? "smooth" : "auto" });
+  }, []);
+
   const go = (changes: Record<string, string | number>, hash = "") => {
     const q = new URLSearchParams(params);
     for (const [k, v] of Object.entries(changes)) q.set(k, String(v));
@@ -62,13 +73,13 @@ function Home() {
   };
   const submit = (x: Target) => {
     setRun((r) => r + 1);
-    go({ ra: x.ra, dec: x.dec, fov: x.fov }, "#explore");
+    go({ ra: x.ra, dec: x.dec, fov: x.fov }, "#watch");
   };
   const barnard = TARGETS[0];
   const showBarnard = () => submit({ ra: barnard.ra, dec: barnard.dec, fov: 6 });
   const navLinks = [
-    ["#explore", t.nav.explore],
     ["#how", t.nav.how],
+    ["#explore", t.nav.explore],
     ["#spherex", t.nav.spherex],
     ["#faq", t.nav.faq],
   ];
@@ -89,8 +100,9 @@ function Home() {
     <>
       <Sky />
       {apple}
-      <header id="top" className={`${WRAP} relative`}>
-        <div className="flex h-18 items-center justify-between gap-4">
+      <header id="top" ref={heroRef} className="relative overflow-hidden bg-black">
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-24 bg-gradient-to-b from-transparent to-background" />
+        <div className={`${WRAP} relative z-10 flex h-18 items-center justify-between gap-4`}>
           <button type="button" onClick={tapLogo} className="flex min-h-11 items-center gap-2.5 text-lg font-semibold tracking-tight select-none" aria-label="SkyBlink">
             <span aria-hidden className="logo-dot" />
             SkyBlink
@@ -118,16 +130,9 @@ function Home() {
           </nav>
         </div>
 
-        <div className="grid items-center gap-14 pt-10 pb-24 md:pt-16 lg:grid-cols-[1.1fr_1fr] lg:pb-32">
-          <div>
-            <p className="fade-up flex flex-wrap gap-2" style={{ animationDelay: "0.05s" }}>
-              {t.hero.tags.map((x) => (
-                <span key={x} className="rounded-full border bg-card/50 px-3 py-1 font-mono text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
-                  {x}
-                </span>
-              ))}
-            </p>
-            <h1 className="fade-up mt-7 text-5xl leading-[0.98] font-semibold tracking-[-0.04em] text-balance sm:text-6xl xl:text-[5.4rem]" style={{ animationDelay: "0.15s" }}>
+        <div className={`${WRAP} grid items-center gap-10 pt-6 pb-16 md:pt-10 lg:grid-cols-[1.1fr_1fr] lg:pb-20`}>
+          <div className="relative z-10">
+            <h1 className="fade-up text-5xl leading-[0.98] font-semibold tracking-[-0.04em] text-balance sm:text-6xl xl:text-[5.4rem]" style={{ animationDelay: "0.15s" }}>
               {t.hero.title}
             </h1>
             <p className="fade-up mt-7 max-w-xl text-lg leading-relaxed text-muted-foreground" style={{ animationDelay: "0.3s" }}>
@@ -143,42 +148,28 @@ function Home() {
             </div>
           </div>
 
-          <figure className="fade-up relative mx-auto w-full max-w-[460px]" style={{ animationDelay: "0.35s" }}>
-            <div className="relative">
-            <div aria-hidden className="eyepiece-ring absolute -inset-5 rounded-full" />
-            <div className="relative aspect-square overflow-hidden rounded-full border-2 border-white/10 bg-black shadow-[0_0_120px_-20px_oklch(0.85_0.13_205/0.45)]">
-              {/* eslint-disable-next-line @next/next/no-img-element -- animated GIF of real SPHEREx frames, served as-is */}
-              <img src="/demo/barnard.gif" alt={t.hero.gifAlt} width={472} height={472} className="size-full scale-[1.32] object-cover" style={{ imageRendering: "pixelated" }} />
-              <div aria-hidden className="pointer-events-none absolute inset-0 rounded-full shadow-[inset_0_0_60px_20px_black]" />
-            </div>
-            </div>
-            <dl className="mt-10 grid grid-cols-3 gap-3 text-center">
-              {[
-                [t.hero.specMotion, `${(10.5).toLocaleString(t.locale)}″`],
-                [t.hero.specSeasons, "3"],
-                [t.hero.specDetector, "D6"],
-              ].map(([k, v]) => (
-                <div key={k} className="rounded-xl border bg-card/50 px-2 py-3 backdrop-blur-sm">
-                  <dt className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase">{k}</dt>
-                  <dd className="mt-1 text-xl font-semibold tabular-nums">{v}</dd>
-                </div>
-              ))}
-            </dl>
-            <figcaption className="sr-only">{barnard.name}: {t.hero.specKind}</figcaption>
-          </figure>
+          <div>
+            <StarLife section={heroRef} onPick={(i) => submit({ ra: TARGETS[i].ra, dec: TARGETS[i].dec, fov: 6 })} />
+          </div>
         </div>
       </header>
 
       <main>
+        <section id="how" className={`${WRAP} space-y-10 py-20 md:py-28`}>
+          <SectionLabel n={2}>{t.nav.how}</SectionLabel>
+          <h2 className="max-w-3xl text-3xl leading-[1.1] font-medium tracking-tight md:text-5xl">{t.how.title}</h2>
+          <Explainer />
+        </section>
+
         <section id="explore" className="scroll-mt-0 border-y bg-black/40 backdrop-blur-[2px]">
           <div className={`${WRAP} py-20 md:py-28`}>
-            <SectionLabel n={2}>{t.explore.label}</SectionLabel>
+            <SectionLabel n={3}>{t.explore.label}</SectionLabel>
             <h2 className="mt-8 max-w-4xl text-3xl leading-[1.1] font-medium tracking-tight text-balance md:text-5xl">{t.explore.heading}</h2>
 
             <div className="mt-14 grid gap-10 border-t pt-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
               <TargetForm key={targetKey} initial={target} error={!!inputError} onSubmit={submit} />
 
-              <div className="min-w-0 space-y-4" aria-labelledby="watch-title">
+              <div id="watch" className="min-w-0 scroll-mt-4 space-y-4" aria-labelledby="watch-title">
                 <h3 id="watch-title" className={`text-muted-foreground ${MONO}`}>
                   {t.watch.title}
                   {name && <span className="text-foreground">: {name}</span>}
@@ -217,11 +208,6 @@ function Home() {
           </div>
         </section>
 
-        <section id="how" className={`${WRAP} space-y-10 py-20 md:py-28`}>
-          <SectionLabel n={3}>{t.nav.how}</SectionLabel>
-          <h2 className="max-w-3xl text-3xl leading-[1.1] font-medium tracking-tight md:text-5xl">{t.how.title}</h2>
-          <HowItWorks />
-        </section>
 
         <section id="spherex" className={`${WRAP} space-y-10 border-t py-20 md:py-28`}>
           <SectionLabel n={4}>{t.nav.spherex}</SectionLabel>

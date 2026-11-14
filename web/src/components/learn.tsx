@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Layers, MousePointerClick, PlayCircle } from "lucide-react";
 import { useT } from "@/lib/i18n";
 
 const DETECTORS = [
@@ -12,29 +11,6 @@ const DETECTORS = [
   { id: "D5", range: "3.8–4.4 µm", color: "#ca8a04" },
   { id: "D6", range: "4.4–5.0 µm", color: "#dc2626" },
 ];
-
-const STEP_ICONS = [MousePointerClick, Layers, PlayCircle];
-
-export function HowItWorks() {
-  const { t } = useT();
-  return (
-    <ol className="grid gap-4 md:grid-cols-3">
-      {t.how.steps.map((s, i) => {
-        const Icon = STEP_ICONS[i];
-        return (
-          <li key={i} className="rounded-xl border bg-card/70 p-6 backdrop-blur-sm transition-transform hover:-translate-y-0.5">
-            <span className="flex items-center gap-3 text-primary">
-              <Icon className="size-6" aria-hidden />
-              <span className="text-sm font-medium">{i + 1}</span>
-            </span>
-            <h3 className="mt-3 font-medium">{s.title}</h3>
-            <p className="mt-1 text-sm text-muted-foreground">{s.text}</p>
-          </li>
-        );
-      })}
-    </ol>
-  );
-}
 
 export function AboutSpherex() {
   const { t } = useT();

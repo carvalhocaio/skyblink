@@ -116,7 +116,7 @@ function EggTray({ toast }: { toast: Egg | null }) {
             <p className="mt-1 font-medium">
               {g.list[toast].name} <span className="text-muted-foreground">{g.list[toast].years}</span>
             </p>
-            <p className="mt-1 text-sm text-muted-foreground italic">{g.list[toast].line}</p>
+            <EggLine egg={toast} />
           </div>
         )}
       </div>
@@ -150,7 +150,8 @@ function EggTray({ toast }: { toast: Egg | null }) {
                   {ok ? x.name : g.unknown}
                   {ok && <span className="ml-2 text-xs text-muted-foreground">{x.years}</span>}
                 </p>
-                <p className={`mt-0.5 text-xs ${ok ? "text-muted-foreground" : "text-primary/80"}`}>{ok ? x.how : x.hint}</p>
+                {ok && <EggLine egg={e} />}
+                <p className={`mt-1 text-xs ${ok ? "text-muted-foreground" : "text-primary/80"}`}>{ok ? x.how : x.hint}</p>
               </li>
             );
           })}
@@ -162,6 +163,19 @@ function EggTray({ toast }: { toast: Egg | null }) {
         )}
       </div>
     </>
+  );
+}
+
+/** Real, attributed quotes render as quotes; lines we wrote render as a labelled fun fact. */
+function EggLine({ egg }: { egg: Egg }) {
+  const { t } = useT();
+  const x = t.eggs.list[egg];
+  if ("quote" in x && x.quote) return <q className="mt-1 block text-sm text-muted-foreground italic">{x.line}</q>;
+  return (
+    <p className="mt-1 text-sm text-muted-foreground">
+      <span className="mr-1.5 rounded-sm bg-primary/15 px-1.5 py-0.5 font-mono text-[10px] tracking-wider text-primary uppercase">{t.eggs.funFact}</span>
+      {x.line}
+    </p>
   );
 }
 
