@@ -34,7 +34,7 @@ Endpoints:
 
 - `GET /health` → `200 {"status": "ok"}` (does not touch IRSA).
 - `POST /jobs` → `202 {job_id, status}`. Body: `ra` 0–360, `dec` −90–90, `fov_arcmin` 1–30 (default 6),
-  `detectors` subset of `D1`…`D6` or `null` (all), `max_exposures_per_frame` ≥ 1 (default 30), and the optional
+  `detectors` subset of `D1`…`D6` or `null` (all), `max_exposures_per_frame` 1–60 (default 30), and the optional
   (additive) `target_name` (1–100 chars, e.g. `"Barnard's star"`) that enables the catalog prediction. Anything
   else → `422`.
   If a job with the same parameters is running or done, its `job_id` and current `status` are returned instead

@@ -94,6 +94,8 @@ async def wait_finished(client, job_id, timeout_s=5.0):
         {"detectors": ["d6"]},
         {"detectors": []},
         {"ra": "abc"},
+        {"max_exposures_per_frame": 0},
+        {"max_exposures_per_frame": 61},
     ],
 )
 async def test_invalid_input_is_422(tmp_path, change):
@@ -101,6 +103,13 @@ async def test_invalid_input_is_422(tmp_path, change):
         response = await client.post("/jobs", json={**BARNARD, **change})
 
     assert response.status_code == 422
+
+
+async def test_max_exposures_per_frame_accepts_the_cap(tmp_path):
+    async with api(tmp_path, FakeSearch([]), FakeBuilder()) as client:
+        response = await client.post("/jobs", json={**BARNARD, "max_exposures_per_frame": 60})
+
+    assert response.status_code == 202
 
 
 async def test_missing_coordinates_is_422(tmp_path):

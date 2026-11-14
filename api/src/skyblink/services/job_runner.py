@@ -142,7 +142,8 @@ class JobRunner:
                 peak_rss_mb(),
             )
         except asyncio.CancelledError:
-            job.status = JobStatus.FAILED
+            if job.status != JobStatus.DONE:
+                job.status = JobStatus.FAILED
             raise
         except Exception:
             logger.exception("job %s failed", job.id)
@@ -173,8 +174,8 @@ class JobRunner:
                 *job.eta_seconds,
                 self._throttle_summary(),
             )
-        job.status = JobStatus.DONE
         await self._persist(job)
+        job.status = JobStatus.DONE
 
     async def _build_frame(self, job: Job, frame: Frame, grid: FrameGrid) -> FrameImage | None:
         try:

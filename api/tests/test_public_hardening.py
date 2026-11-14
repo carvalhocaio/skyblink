@@ -1,4 +1,5 @@
 import asyncio
+import time
 
 import httpx
 import numpy as np
@@ -7,6 +8,7 @@ from skyblink.adapters.cutout_cache import CutoutCache
 from skyblink.adapters.http_retry import RetryPolicy
 from skyblink.adapters.irsa_cutouts import CutoutClient
 from skyblink.adapters.job_store import JobStore
+from skyblink.adapters.result_store import ResultStore
 from skyblink.adapters.throttle import ConcurrencyGovernor
 from skyblink.domain.grid import FrameGrid
 from skyblink.domain.models import Job, JobStatus, Target
@@ -181,3 +183,84 @@ async def test_health_does_not_touch_irsa(tmp_path):
         response = await client.get("/health")
 
     assert (response.status_code, response.json()) == (200, {"status": "ok"})
+
+
+async def test_finished_job_with_a_failed_frame_is_not_reused(tmp_path):
+    builder = FakeBuilder(failing_detectors={"D1"})
+    request = {**BARNARD, "detectors": None}
+    async with api(tmp_path, FakeSearch(seasonal_exposures()), builder) as client:
+        first = (await client.post("/jobs", json=request)).json()["job_id"]
+        partial = await wait_finished(client, first)
+        builder.failing.clear()
+        second = (await client.post("/jobs", json=request)).json()["job_id"]
+        rebuilt = await wait_finished(client, second)
+        third = (await client.post("/jobs", json=request)).json()
+
+    assert partial["status"] == "done" and "failed" in {f["status"] for f in partial["frames"]}
+    assert second != first
+    assert {f["status"] for f in rebuilt["frames"]} == {"ready"}
+    assert third == {"job_id": second, "status": "done"}
+
+
+class SlowResults(ResultStore):
+    def __init__(self, root):
+        super().__init__(root)
+        self.status_while_saving: list[JobStatus] = []
+
+    def save(self, job):
+        self.status_while_saving.append(job.status)
+        time.sleep(0.2)
+        return super().save(job)
+
+
+async def test_result_is_persisted_before_the_job_is_published_as_done(tmp_path):
+    results = SlowResults(tmp_path / "results")
+    runner = JobRunner(
+        FakeSearch(seasonal_exposures(detectors=("D6",))),
+        FakeBuilder(),
+        JobStore(),
+        tmp_path,
+        results=results,
+    )
+    job = runner.submit(TARGET, ["D6"], 30)
+    await wait_until(lambda: job.finished)
+
+    assert job.status == JobStatus.DONE
+    assert results.status_while_saving == [JobStatus.BUILDING]
+    restored = results.load(job.key, created_at=0.0)
+    assert restored is not None and restored.status == JobStatus.DONE
+    await runner.shutdown()
+
+
+async def test_cancellation_after_done_keeps_the_job_done(tmp_path, monkeypatch):
+    runner = JobRunner(FakeSearch([]), FakeBuilder(), JobStore(), tmp_path)
+    done_and_lingering = asyncio.Event()
+
+    async def finish_then_linger(job):
+        job.status = JobStatus.DONE
+        done_and_lingering.set()
+        await asyncio.sleep(60)
+
+    monkeypatch.setattr(runner, "_run", finish_then_linger)
+    job = runner.submit(TARGET, ["D6"], 30)
+    await done_and_lingering.wait()
+    await runner.shutdown()
+
+    assert job.status == JobStatus.DONE
+
+
+async def test_cancellation_before_done_fails_the_job(tmp_path, monkeypatch):
+    runner = JobRunner(FakeSearch([]), FakeBuilder(), JobStore(), tmp_path)
+    started = asyncio.Event()
+
+    async def linger(job):
+        job.status = JobStatus.BUILDING
+        started.set()
+        await asyncio.sleep(60)
+
+    monkeypatch.setattr(runner, "_run", linger)
+    job = runner.submit(TARGET, ["D6"], 30)
+    await started.wait()
+    await runner.shutdown()
+
+    assert job.status == JobStatus.FAILED

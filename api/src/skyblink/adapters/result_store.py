@@ -16,8 +16,9 @@ JOB_FILE = "job.json"
 
 
 def is_persistable(job: Job) -> bool:
+    """A job whose frames are all ready; it is saved just before its status becomes done."""
     return (
-        job.status == JobStatus.DONE
+        job.status != JobStatus.FAILED
         and bool(job.frames)
         and all(f.status == FrameStatus.READY for f in job.frames)
     )
@@ -39,7 +40,8 @@ class ResultStore:
         for frame in job.frames:
             if frame.image_path is not None and frame.image_path.parent != directory:
                 shutil.copyfile(frame.image_path, directory / f"{frame.id}.png")
-        _write_atomically(directory / JOB_FILE, json.dumps(job_to_dict(job)))
+        data = job_to_dict(job) | {"status": JobStatus.DONE.value}
+        _write_atomically(directory / JOB_FILE, json.dumps(data))
         _write_atomically(self._index(job.key), job.id)
         return directory
 

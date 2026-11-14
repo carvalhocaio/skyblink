@@ -81,6 +81,17 @@ Per-season offsets, error components and residuals are in [`api/README.md`](api/
 - **It keeps working when the archive doesn't.** Discoveries, cutouts and finished results are cached on disk, so the
   demo targets load in under a second even when IRSA is down.
 
+## Known limits
+
+- **Brightness is not a variability measurement.** SPHEREx observes through linear variable filters, so within one
+  detector band each exposure sees a slightly different wavelength, and each season's stack mixes them in different
+  proportions. A change in brightness between frames can come from that mix rather than from the source.
+- **Error bars cover noise and alignment only.** They do not include centroid shifts caused by colour: a source and
+  its neighbours can sit at slightly different positions at different wavelengths, and that is not modelled.
+- **Fast solar-system movers disappear.** Each frame stacks exposures taken over days to weeks, so asteroids and
+  comets move during the stack and are averaged out or rejected as outliers; SkyBlink is built for slow movers such
+  as nearby stars and brown dwarfs.
+
 ## Repository layout
 
 | Path | What it is |

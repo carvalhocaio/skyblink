@@ -1,4 +1,4 @@
-from skyblink.domain.models import Frame, Job, JobStatus
+from skyblink.domain.models import Frame, FrameStatus, Job, JobStatus
 
 
 class JobStore:
@@ -17,7 +17,7 @@ class JobStore:
 
     def find_reusable(self, key: tuple) -> Job | None:
         for job in reversed(self._jobs.values()):
-            if job.key == key and job.status != JobStatus.FAILED:
+            if job.key == key and not _finished_with_failures(job):
                 return job
         return None
 
@@ -41,3 +41,9 @@ class JobStore:
         del self._jobs[job.id]
         for frame in job.frames:
             self._frames.pop(frame.id, None)
+
+
+def _finished_with_failures(job: Job) -> bool:
+    return job.finished and (
+        job.status == JobStatus.FAILED or any(f.status == FrameStatus.FAILED for f in job.frames)
+    )

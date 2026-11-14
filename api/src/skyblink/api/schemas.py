@@ -10,6 +10,7 @@ from skyblink.domain.models import DETECTORS, Alert, Frame, FrameStatus, Job, Se
 from skyblink.domain.motion import CatalogComparison, Motion, SeasonMotion
 
 Detector = Literal["D1", "D2", "D3", "D4", "D5", "D6"]
+MAX_EXPOSURES_PER_FRAME = 60
 
 
 class JobRequest(BaseModel):
@@ -17,7 +18,7 @@ class JobRequest(BaseModel):
     dec: float = Field(ge=-90, le=90)
     fov_arcmin: float = Field(default=6, ge=1, le=30)
     detectors: list[Detector] | None = Field(default=None, min_length=1)
-    max_exposures_per_frame: int = Field(default=30, ge=1)
+    max_exposures_per_frame: int = Field(default=30, ge=1, le=MAX_EXPOSURES_PER_FRAME)
     target_name: str | None = Field(default=None, min_length=1, max_length=100)
 
 
