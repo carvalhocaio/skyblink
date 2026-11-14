@@ -13,6 +13,8 @@ def _env(name: str, default: str) -> str:
 class Settings:
     cache_dir: Path
     cache_max_bytes: int
+    discovery_dir: Path
+    discovery_ttl_s: float
     output_dir: Path
     max_concurrency: int
     fallback_concurrency: int
@@ -30,6 +32,8 @@ class Settings:
         return cls(
             cache_dir=Path(_env("CACHE_DIR", ".cache/cutouts")),
             cache_max_bytes=int(float(_env("CACHE_MAX_GB", "8")) * 1e9),
+            discovery_dir=Path(_env("DISCOVERY_DIR", ".cache/discovery")),
+            discovery_ttl_s=float(_env("DISCOVERY_TTL", "24")) * 3600,
             output_dir=Path(_env("OUTPUT_DIR", "out")),
             max_concurrency=int(_env("MAX_CONCURRENCY", "6")),
             fallback_concurrency=int(_env("FALLBACK_CONCURRENCY", "4")),

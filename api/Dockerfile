@@ -27,6 +27,7 @@ ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
     SKYBLINK_CACHE_DIR=/data/cache \
     SKYBLINK_OUTPUT_DIR=/data/out \
+    SKYBLINK_DISCOVERY_DIR=/data/discovery \
     APP_USER=nonroot
 
 WORKDIR /app

@@ -49,7 +49,16 @@ Endpoints:
 
 Behaviour and conventions:
 
-- Jobs run in the background in a single process; state lives in memory (lost on restart). Cutouts are cached on disk.
+- Jobs run in the background in a single process; job state lives in memory, but three disk layers let warmed
+  targets survive restarts and IRSA outages:
+  1. **Discovery cache** (`SKYBLINK_DISCOVERY_DIR`): the merged dr1 + qr3 SIA result per (ra, dec, fov, collections).
+     Younger than `SKYBLINK_DISCOVERY_TTL` hours (default 24) → used without calling SIA; if SIA fails, any cached
+     discovery is used regardless of age (logged as a warning).
+  2. **Cutout cache** (`SKYBLINK_CACHE_DIR`), see below.
+  3. **Persisted results** (`SKYBLINK_OUTPUT_DIR/results`): when a job finishes `done` with every frame `ready`, its
+     JSON and PNGs are saved under the deduplication key. A matching `POST /jobs` returns that job as `done`
+     immediately — after a restart and with IRSA down — with the same `job_id` and frame URLs. Persisted results do
+     not expire yet.
 - At most 2 jobs build at the same time; the others stay `queued`. Finished jobs are dropped from memory (with their
   PNGs) after 6 h, or earlier when more than 200 jobs are stored.
 - Build order: one frame per season of the first detector first (the first requested one; `D6` when `detectors` is
@@ -119,7 +128,9 @@ Configuration (environment variables):
 |---|---|---|
 | `SKYBLINK_CACHE_DIR` | `.cache/cutouts` | Disk cache of cutouts |
 | `SKYBLINK_CACHE_MAX_GB` | `8` | Cache size cap; least-recently-used cutouts are evicted beyond it |
-| `SKYBLINK_OUTPUT_DIR` | `out` | Rendered PNGs (API jobs under `out/jobs/`) |
+| `SKYBLINK_DISCOVERY_DIR` | `.cache/discovery` | Disk cache of SIA discovery results (`/data/discovery` on Fly) |
+| `SKYBLINK_DISCOVERY_TTL` | `24` | Hours a cached discovery is used without calling SIA |
+| `SKYBLINK_OUTPUT_DIR` | `out` | Rendered PNGs (`out/jobs/`) and persisted results (`out/results/`) |
 | `SKYBLINK_MAX_CONCURRENCY` | `6` | Simultaneous cutout requests to IRSA (all jobs together) |
 | `SKYBLINK_FALLBACK_CONCURRENCY` | `4` | Concurrency after too many HTTP 503 |
 | `SKYBLINK_MAX_503_RATIO` | `0.2` | 503 share that triggers the fallback |

@@ -11,6 +11,7 @@ from typing import Protocol
 
 from skyblink.adapters.job_store import JobStore
 from skyblink.adapters.png_renderer import render_png
+from skyblink.adapters.result_store import ResultStore, is_persistable
 from skyblink.domain.alerts import frame_alerts, job_alerts
 from skyblink.domain.eta import estimate_eta
 from skyblink.domain.grid import FrameGrid
@@ -55,6 +56,7 @@ class JobRunner:
         throttle_summary: Callable[[], str] = _no_summary,
         limits: RunnerLimits = DEFAULT_LIMITS,
         clock: Callable[[], float] = time.time,
+        results: ResultStore | None = None,
     ):
         self._search = search
         self._builder = builder
@@ -63,6 +65,7 @@ class JobRunner:
         self._throttle_summary = throttle_summary
         self._limits = limits
         self._clock = clock
+        self._results = results
         self._active = asyncio.Semaphore(limits.max_active_jobs)
         self._tasks: set[asyncio.Task[None]] = set()
 
@@ -74,7 +77,7 @@ class JobRunner:
             max_exposures_per_frame=max_exposures_per_frame,
             created_at=self._clock(),
         )
-        existing = self._store.find_reusable(job.key)
+        existing = self._store.find_reusable(job.key) or self._restore(job.key)
         if existing is not None:
             return existing
         self._evict_old_jobs()
@@ -88,6 +91,26 @@ class JobRunner:
         for task in self._tasks:
             task.cancel()
         await asyncio.gather(*self._tasks, return_exceptions=True)
+
+    def _restore(self, key: tuple) -> Job | None:
+        if self._results is None:
+            return None
+        job = self._results.load(key, created_at=self._clock())
+        if job is None:
+            return None
+        self._evict_old_jobs()
+        self._store.add(job)
+        self._store.register_frames(job)
+        logger.info("job %s restored from persisted result, no IRSA call", job.id)
+        return job
+
+    async def _persist(self, job: Job) -> None:
+        if self._results is None or not is_persistable(job):
+            return
+        try:
+            await asyncio.to_thread(self._results.save, job)
+        except OSError:
+            logger.exception("could not persist job %s", job.id)
 
     def _evict_old_jobs(self) -> None:
         evicted = self._store.evict(self._clock(), self._limits.max_stored_jobs, self._limits.job_ttl_s)
@@ -137,6 +160,7 @@ class JobRunner:
                 self._throttle_summary(),
             )
         job.status = JobStatus.DONE
+        await self._persist(job)
 
     async def _build_frame(self, job: Job, frame: Frame, grid: FrameGrid) -> None:
         try:

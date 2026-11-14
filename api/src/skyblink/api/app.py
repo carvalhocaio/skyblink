@@ -3,10 +3,15 @@ import logging
 from collections.abc import AsyncIterator, Callable
 from contextlib import AsyncExitStack, asynccontextmanager
 
+import httpx
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from skyblink.adapters.cutout_cache import CutoutCache
+from skyblink.adapters.discovery_cache import CachedExposureSearch
+from skyblink.adapters.irsa_sia import COLLECTIONS
 from skyblink.adapters.job_store import JobStore
+from skyblink.adapters.result_store import ResultStore
 from skyblink.api.routes import Services, router
 from skyblink.config import Settings
 from skyblink.services.frame_builder import FrameBuilder
@@ -21,6 +26,28 @@ def _configure_logging() -> None:
 
 async def _finish(task: asyncio.Task) -> None:
     await asyncio.gather(task, return_exceptions=True)
+
+
+def irsa_services(settings: Settings, client: httpx.AsyncClient, cache: CutoutCache) -> Services:
+    cutouts = cutout_client(client, settings, cache)
+    search = CachedExposureSearch(
+        sia_client(client, settings), settings.discovery_dir, settings.discovery_ttl_s, COLLECTIONS
+    )
+    store = JobStore()
+    runner = JobRunner(
+        search,
+        FrameBuilder(cutouts),
+        store,
+        settings.output_dir / "jobs",
+        cutouts.governor.summary,
+        RunnerLimits(
+            max_active_jobs=settings.max_active_jobs,
+            max_stored_jobs=settings.max_stored_jobs,
+            job_ttl_s=settings.job_ttl_s,
+        ),
+        results=ResultStore(settings.output_dir / "results"),
+    )
+    return Services(store=store, runner=runner)
 
 
 def create_app(
@@ -40,21 +67,7 @@ def create_app(
                 cache = cutout_cache(settings)
                 migration = asyncio.create_task(asyncio.to_thread(cache.compact_all))
                 stack.push_async_callback(_finish, migration)
-                cutouts = cutout_client(client, settings, cache)
-                store = JobStore()
-                runner = JobRunner(
-                    sia_client(client, settings),
-                    FrameBuilder(cutouts),
-                    store,
-                    settings.output_dir / "jobs",
-                    cutouts.governor.summary,
-                    RunnerLimits(
-                        max_active_jobs=settings.max_active_jobs,
-                        max_stored_jobs=settings.max_stored_jobs,
-                        job_ttl_s=settings.job_ttl_s,
-                    ),
-                )
-                app.state.services = Services(store=store, runner=runner)
+                app.state.services = irsa_services(settings, client, cache)
             try:
                 yield
             finally:
