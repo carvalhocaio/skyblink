@@ -53,6 +53,15 @@ export function buildJob(id: string, origin: string): Job {
     frames,
     stretch: { fixed_from_frame: searching ? null : `${hash}-s0-D6` },
     alerts: [],
+    motion: done
+      ? {
+          detector: "D6",
+          rate_arcsec_yr: { value: 10.47, error: 0.34 },
+          catalog: { name: "SIMBAD", object: "NAME Barnard's star", predicted_rate_arcsec_yr: 10.65, rate_residual_sigma: -0.53 },
+          catalog_reason: null,
+        }
+      : null,
+    motion_reason: null,
   };
 }
 

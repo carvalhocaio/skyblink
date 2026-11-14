@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,37 +13,59 @@ type Props = { initial: Target | null; error: boolean; onSubmit: (t: Target) => 
 export function TargetForm({ initial, error, onSubmit }: Props) {
   const { t } = useT();
   const p = t.pick;
+  const activeIndex = TARGETS.findIndex((x) => initial?.ra === x.ra && initial?.dec === x.dec);
+  const mono = "font-mono text-[11px] tracking-[0.2em] uppercase";
   return (
-    <div className="space-y-4">
-      <h2 className="text-lg font-medium">{p.title}</h2>
-      <ul className="grid gap-2">
+    <div className="space-y-6">
+      <div className="flex items-baseline justify-between gap-4">
+        <h3 className={`text-muted-foreground ${mono}`}>{p.title}</h3>
+        <p className={`text-muted-foreground tabular-nums ${mono}`} aria-hidden>
+          <span className="text-foreground">{activeIndex >= 0 ? String(activeIndex + 1).padStart(2, "0") : "—"}</span> / {String(TARGETS.length).padStart(2, "0")}
+        </p>
+      </div>
+      <ul className="border-t">
         {TARGETS.map((x, i) => {
-          const active = initial?.ra === x.ra && initial?.dec === x.dec;
+          const active = i === activeIndex;
           return (
-            <li key={x.name}>
+            <li key={x.name} className="border-b">
               <button
                 type="button"
                 onClick={() => onSubmit({ ra: x.ra, dec: x.dec, fov: 6 })}
                 aria-pressed={active}
-                className={`w-full rounded-lg border p-3 text-left transition-colors outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 ${
-                  active ? "border-primary bg-muted" : ""
+                className={`group flex w-full gap-4 py-5 text-left transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50 ${
+                  active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <span className="flex items-baseline justify-between gap-2">
-                  <span className="font-medium">
-                    {i === 0 && <span aria-hidden>★ </span>}
-                    {x.name}
+                {/* eslint-disable-next-line @next/next/no-img-element -- 59 px real frame, upscaled pixel-exact */}
+                <img
+                  src={`/targets/${x.thumb}.png`}
+                  alt=""
+                  width={56}
+                  height={56}
+                  className={`size-14 shrink-0 rounded-md border bg-black transition-opacity ${active ? "" : "opacity-60 group-hover:opacity-100"}`}
+                  style={{ imageRendering: "pixelated" }}
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-start justify-between gap-3">
+                    <span className="text-2xl font-medium tracking-tight md:text-[1.75rem]">{x.name}</span>
+                    <ArrowUpRight
+                      className={`mt-1 size-6 shrink-0 transition-all ${active ? "opacity-100" : "-translate-x-1 opacity-0 group-hover:translate-x-0 group-hover:opacity-60"}`}
+                      strokeWidth={1}
+                      aria-hidden
+                    />
                   </span>
-                  <span className="text-xs text-cyan-300">{x.moves ? p.move : p.brightness}</span>
+                  <span className={`mt-1 block font-mono text-[10px] tracking-widest uppercase ${active ? "text-primary" : ""}`}>
+                    {x.moves ? p.move : p.brightness}
+                  </span>
+                  <span className="mt-2 block text-sm text-muted-foreground">{p.stories[i]}</span>
                 </span>
-                <span className="mt-1 block text-sm text-muted-foreground">{p.stories[i]}</span>
               </button>
             </li>
           );
         })}
       </ul>
 
-      <details className="rounded-lg border p-3" open={error}>
+      <details className="rounded-md border p-4" open={error}>
         <summary className="cursor-pointer text-sm font-medium">{p.custom}</summary>
         <form
           className="mt-4 space-y-4"

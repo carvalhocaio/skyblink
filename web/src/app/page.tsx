@@ -1,22 +1,38 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, type ReactNode } from "react";
+import { ArrowRight, Box, Cat } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { TargetForm } from "@/components/target-form";
 import { Player } from "@/components/player";
 import { JobAlerts, JobProgress } from "@/components/job-status";
+import { MotionCard } from "@/components/motion-card";
 import { AboutSpherex, Faq, HowItWorks } from "@/components/learn";
 import { LANGS, useT, type Lang } from "@/lib/i18n";
 import { findTarget, TARGETS } from "@/lib/targets";
 import { useJob, type Target } from "@/lib/use-job";
+import { EggsProvider, useEggs, useNewton } from "@/lib/eggs";
+import { Sky } from "@/components/sky";
 
 const DETECTOR = "D6";
+const WRAP = "mx-auto w-full max-w-7xl px-4 md:px-10";
+const MONO = "font-mono text-[11px] tracking-[0.2em] uppercase";
 
 function num(v: string | null) {
   const n = v === null || v === "" ? NaN : Number(v);
   return Number.isFinite(n) ? n : null;
+}
+
+function SectionLabel({ n, children }: { n: number; children: ReactNode }) {
+  return (
+    <p className="flex items-center gap-3 font-mono text-xs tracking-[0.2em] text-primary uppercase">
+      <span aria-hidden className="orbit" />
+      <span className="text-muted-foreground tabular-nums">{String(n).padStart(2, "0")}</span>
+      {children}
+    </p>
+  );
 }
 
 function Home() {
@@ -49,103 +65,192 @@ function Home() {
     go({ ra: x.ra, dec: x.dec, fov: x.fov }, "#explore");
   };
   const barnard = TARGETS[0];
+  const showBarnard = () => submit({ ra: barnard.ra, dec: barnard.dec, fov: 6 });
+  const navLinks = [
+    ["#explore", t.nav.explore],
+    ["#how", t.nav.how],
+    ["#spherex", t.nav.spherex],
+    ["#faq", t.nav.faq],
+  ];
+
+  const { unlock } = useEggs();
+  const { tap: tapLogo, node: apple } = useNewton();
+  const [cat, setCat] = useState<boolean | null>(null);
+  const openBox = () => {
+    setCat(Math.random() < 0.5);
+    unlock("schrodinger");
+  };
+  const rDra = featured === TARGETS[4] && job?.status === "done" && frames.length > 0;
+  useEffect(() => {
+    if (rDra) unlock("hawking");
+  }, [rDra, unlock]);
 
   return (
     <>
-      <nav className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center gap-5 px-4 py-3 text-sm">
-          <a href="#top" className="font-semibold">SkyBlink</a>
-          <div className="flex gap-5 overflow-x-auto">
-            <a href="#explore" className="shrink-0 text-muted-foreground hover:text-foreground">{t.nav.explore}</a>
-            <a href="#how" className="shrink-0 text-muted-foreground hover:text-foreground">{t.nav.how}</a>
-            <a href="#spherex" className="shrink-0 text-muted-foreground hover:text-foreground">{t.nav.spherex}</a>
-            <a href="#faq" className="shrink-0 text-muted-foreground hover:text-foreground">{t.nav.faq}</a>
-          </div>
-          <label className="ml-auto flex shrink-0 items-center gap-2">
-            <span className="sr-only">{t.nav.language}</span>
-            <span aria-hidden>🌐</span>
-            <select
-              value={lang}
-              onChange={(e) => go({ lang: e.target.value as Lang })}
-              className="rounded-md border bg-background px-2 py-1 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-            >
-              {Object.entries(LANGS).map(([code, label]) => (
-                <option key={code} value={code}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
+      <Sky />
+      {apple}
+      <header id="top" className={`${WRAP} relative`}>
+        <div className="flex h-18 items-center justify-between gap-4">
+          <button type="button" onClick={tapLogo} className="flex min-h-11 items-center gap-2.5 text-lg font-semibold tracking-tight select-none" aria-label="SkyBlink">
+            <span aria-hidden className="logo-dot" />
+            SkyBlink
+          </button>
+          <nav aria-label="Sections" className="flex items-center gap-1 text-sm text-muted-foreground">
+            {navLinks.map(([href, label]) => (
+              <a key={href} href={href} className="hidden rounded-full px-3 py-2 transition-colors hover:bg-white/5 hover:text-foreground md:block">
+                {label}
+              </a>
+            ))}
+            <label className="ml-2">
+              <span className="sr-only">{t.nav.language}</span>
+              <select
+                value={lang}
+                onChange={(e) => go({ lang: e.target.value as Lang })}
+                className="min-h-10 rounded-full border bg-card/60 px-3 text-sm text-foreground outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+              >
+                {Object.entries(LANGS).map(([code, label]) => (
+                  <option key={code} value={code}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </nav>
         </div>
-      </nav>
 
-      <main id="top" className="mx-auto w-full max-w-6xl space-y-20 px-4 py-12">
-        <header className="max-w-3xl space-y-5">
-          <p className="text-sm tracking-widest text-cyan-300 uppercase">{t.hero.kicker}</p>
-          <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">{t.hero.title}</h1>
-          <p className="text-lg text-muted-foreground">{t.hero.text}</p>
-          <Button size="lg" onClick={() => submit({ ra: barnard.ra, dec: barnard.dec, fov: 6 })}>
-            {t.hero.cta}
-          </Button>
-        </header>
+        <div className="grid items-center gap-14 pt-10 pb-24 md:pt-16 lg:grid-cols-[1.1fr_1fr] lg:pb-32">
+          <div>
+            <p className="fade-up flex flex-wrap gap-2" style={{ animationDelay: "0.05s" }}>
+              {t.hero.tags.map((x) => (
+                <span key={x} className="rounded-full border bg-card/50 px-3 py-1 font-mono text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
+                  {x}
+                </span>
+              ))}
+            </p>
+            <h1 className="fade-up mt-7 text-5xl leading-[0.98] font-semibold tracking-[-0.04em] text-balance sm:text-6xl xl:text-[5.4rem]" style={{ animationDelay: "0.15s" }}>
+              {t.hero.title}
+            </h1>
+            <p className="fade-up mt-7 max-w-xl text-lg leading-relaxed text-muted-foreground" style={{ animationDelay: "0.3s" }}>
+              {t.hero.text}
+            </p>
+            <div className="fade-up mt-9 flex flex-wrap items-center gap-3" style={{ animationDelay: "0.45s" }}>
+              <Button size="lg" className="h-12 rounded-full px-6 text-[15px] transition-transform hover:-translate-y-0.5 active:translate-y-0" onClick={showBarnard}>
+                {t.hero.cta}
+              </Button>
+              <a href="#how" className="inline-flex min-h-12 items-center gap-2 rounded-full border px-5 text-[15px] transition-colors hover:border-white/30 hover:bg-white/5">
+                {t.hero.secondary} <ArrowRight className="size-4" aria-hidden />
+              </a>
+            </div>
+          </div>
 
-        <section id="explore" className="grid scroll-mt-20 gap-8 lg:grid-cols-[380px_1fr]">
-          <TargetForm key={targetKey} initial={target} error={!!inputError} onSubmit={submit} />
+          <figure className="fade-up relative mx-auto w-full max-w-[460px]" style={{ animationDelay: "0.35s" }}>
+            <div className="relative">
+            <div aria-hidden className="eyepiece-ring absolute -inset-5 rounded-full" />
+            <div className="relative aspect-square overflow-hidden rounded-full border-2 border-white/10 bg-black shadow-[0_0_120px_-20px_oklch(0.85_0.13_205/0.45)]">
+              {/* eslint-disable-next-line @next/next/no-img-element -- animated GIF of real SPHEREx frames, served as-is */}
+              <img src="/demo/barnard.gif" alt={t.hero.gifAlt} width={472} height={472} className="size-full scale-[1.32] object-cover" style={{ imageRendering: "pixelated" }} />
+              <div aria-hidden className="pointer-events-none absolute inset-0 rounded-full shadow-[inset_0_0_60px_20px_black]" />
+            </div>
+            </div>
+            <dl className="mt-10 grid grid-cols-3 gap-3 text-center">
+              {[
+                [t.hero.specMotion, `${(10.5).toLocaleString(t.locale)}″`],
+                [t.hero.specSeasons, "3"],
+                [t.hero.specDetector, "D6"],
+              ].map(([k, v]) => (
+                <div key={k} className="rounded-xl border bg-card/50 px-2 py-3 backdrop-blur-sm">
+                  <dt className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase">{k}</dt>
+                  <dd className="mt-1 text-xl font-semibold tabular-nums">{v}</dd>
+                </div>
+              ))}
+            </dl>
+            <figcaption className="sr-only">{barnard.name}: {t.hero.specKind}</figcaption>
+          </figure>
+        </div>
+      </header>
 
-          <div className="min-w-0 space-y-4" aria-label={t.watch.title}>
-            <h2 className="text-lg font-medium">
-              {t.watch.title}
-              {name && `: ${name}`}
-            </h2>
-            {!target && (
-              <p className="rounded-lg border border-dashed p-10 text-center text-muted-foreground">
-                {t.watch.empty}
-                <br />
-                {t.watch.emptyHint}
-              </p>
-            )}
-            {(error || job?.status === "failed") && (
-              <Alert variant="destructive">
-                <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
-                  {error ? t.watch.networkError : t.watch.failed}
-                  <Button size="sm" variant="outline" onClick={() => setRun((r) => r + 1)}>
-                    {t.watch.retry}
-                  </Button>
-                </AlertDescription>
-              </Alert>
-            )}
-            {target && !job && !error && !inputError && <p className="text-muted-foreground">{t.watch.starting}</p>}
-            {job && job.status !== "done" && job.status !== "failed" && <JobProgress job={job} />}
-            {job && (
-              <Player
-                key={`${targetKey}#${run}`}
-                frames={frames}
-                waiting={job.status !== "done"}
-                object={featured && { name: featured.name, index: TARGETS.indexOf(featured) }}
-              />
-            )}
-            {job && <JobAlerts job={job} frames={frames} />}
+      <main>
+        <section id="explore" className="scroll-mt-0 border-y bg-black/40 backdrop-blur-[2px]">
+          <div className={`${WRAP} py-20 md:py-28`}>
+            <SectionLabel n={2}>{t.explore.label}</SectionLabel>
+            <h2 className="mt-8 max-w-4xl text-3xl leading-[1.1] font-medium tracking-tight text-balance md:text-5xl">{t.explore.heading}</h2>
+
+            <div className="mt-14 grid gap-10 border-t pt-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+              <TargetForm key={targetKey} initial={target} error={!!inputError} onSubmit={submit} />
+
+              <div className="min-w-0 space-y-4" aria-labelledby="watch-title">
+                <h3 id="watch-title" className={`text-muted-foreground ${MONO}`}>
+                  {t.watch.title}
+                  {name && <span className="text-foreground">: {name}</span>}
+                </h3>
+                {!target && (
+                  <p className="rounded-md border border-dashed p-10 text-center text-muted-foreground">
+                    {t.watch.empty}
+                    <br />
+                    {t.watch.emptyHint}
+                  </p>
+                )}
+                {(error || job?.status === "failed") && (
+                  <Alert variant="destructive">
+                    <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
+                      {error ? t.watch.networkError : t.watch.failed}
+                      <Button size="sm" variant="outline" onClick={() => setRun((r) => r + 1)}>
+                        {t.watch.retry}
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
+                )}
+                {target && !job && !error && !inputError && <p className="text-muted-foreground">{t.watch.starting}</p>}
+                {job && job.status !== "done" && job.status !== "failed" && <JobProgress job={job} />}
+                {job && (
+                  <Player
+                    key={`${targetKey}#${run}`}
+                    frames={frames}
+                    waiting={job.status !== "done"}
+                    object={featured && { name: featured.name, index: TARGETS.indexOf(featured) }}
+                  />
+                )}
+                {job && <MotionCard job={job} />}
+                {job && <JobAlerts job={job} frames={frames} />}
+              </div>
+            </div>
           </div>
         </section>
 
-        <section id="how" className="scroll-mt-20 space-y-6">
-          <h2 className="text-2xl font-semibold">{t.how.title}</h2>
+        <section id="how" className={`${WRAP} space-y-10 py-20 md:py-28`}>
+          <SectionLabel n={3}>{t.nav.how}</SectionLabel>
+          <h2 className="max-w-3xl text-3xl leading-[1.1] font-medium tracking-tight md:text-5xl">{t.how.title}</h2>
           <HowItWorks />
         </section>
 
-        <section id="spherex" className="scroll-mt-20 space-y-6">
-          <h2 className="text-2xl font-semibold">{t.about.title}</h2>
+        <section id="spherex" className={`${WRAP} space-y-10 border-t py-20 md:py-28`}>
+          <SectionLabel n={4}>{t.nav.spherex}</SectionLabel>
+          <h2 className="max-w-3xl text-3xl leading-[1.1] font-medium tracking-tight md:text-5xl">{t.about.title}</h2>
           <AboutSpherex />
         </section>
 
-        <section id="faq" className="scroll-mt-20 space-y-6">
-          <h2 className="text-2xl font-semibold">{t.faq.title}</h2>
+        <section id="faq" className={`${WRAP} space-y-10 border-t py-20 md:py-28`}>
+          <SectionLabel n={5}>{t.nav.faq}</SectionLabel>
+          <h2 className="max-w-3xl text-3xl leading-[1.1] font-medium tracking-tight md:text-5xl">{t.faq.title}</h2>
           <Faq />
         </section>
       </main>
 
-      <footer className="border-t">
-        <p className="mx-auto max-w-6xl px-4 py-6 text-xs text-muted-foreground">{t.footer}</p>
+      <footer className="border-t bg-black/50">
+        <div className={`${WRAP} flex flex-col gap-6 py-10 md:flex-row md:items-end md:justify-between`}>
+          <div>
+            <p className="text-3xl font-semibold tracking-tight">SkyBlink</p>
+            <p className="mt-3 max-w-xl text-xs leading-relaxed text-muted-foreground">{t.footer}</p>
+          </div>
+          <button
+            type="button"
+            onClick={openBox}
+            className="group flex min-h-11 items-center gap-2 self-start rounded-full border border-dashed px-4 text-xs text-muted-foreground transition-colors hover:border-white/30 hover:text-foreground md:self-auto"
+          >
+            {cat === null ? <Box className="size-4 transition-transform group-hover:-rotate-12" aria-hidden /> : <Cat className="size-4 text-primary" aria-hidden />}
+            <span aria-live="polite">{cat === null ? t.eggs.box : cat ? t.eggs.alive : t.eggs.dead}</span>
+          </button>
+        </div>
       </footer>
     </>
   );
@@ -154,7 +259,9 @@ function Home() {
 export default function Page() {
   return (
     <Suspense>
-      <Home />
+      <EggsProvider>
+        <Home />
+      </EggsProvider>
     </Suspense>
   );
 }
