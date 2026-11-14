@@ -4,7 +4,7 @@ import { useSearchParams } from "next/navigation";
 
 const en = {
   locale: "en-US",
-  nav: { explore: "Explore", how: "How it works", spherex: "About SPHEREx", faq: "Questions", language: "Language" },
+  nav: { explore: "Explore", how: "How it works", spherex: "About SPHEREx", faq: "Questions", language: "Language", skip: "Skip to content" },
   hero: {
     kicker: "See the sky change",
     title: "Stars move. Here’s the proof.",
@@ -37,9 +37,9 @@ const en = {
     ra: "RA",
     dec: "Dec",
     fov: "Zoom (arcmin)",
-    fovHelp: "Zoom is the width of the picture. The full Moon is about 30 arcmin wide; 6 is a good start.",
+    fovHelp: "Zoom is the width of the picture, from 1 to 15 arcmin. The full Moon is about 30 arcmin wide; 6 is a good start.",
     submit: "Show me this spot",
-    inputError: "Check the values: RA 0–360° or 0–24h, Dec −90–90°, zoom 1–30 arcmin.",
+    inputError: "Check the values: RA 0–360° or 0–24h, Dec −90–90°, zoom 1–15 arcmin.",
     speedNote: "Featured stars open instantly; a new spot takes about a minute.",
   },
   explore: {
@@ -62,6 +62,7 @@ const en = {
     done: "Done",
     failed: "Failed",
     searching: "Searching the archive…",
+    measuring: "Measuring the motion…",
     ready: (done: number, total: number) => `${done} of ${total} pictures ready`,
     about: "about",
     progress: "Progress",
@@ -80,7 +81,7 @@ const en = {
     whatTitle: "What am I looking at?",
     whatText:
       "Each picture is one SPHEREx season, months apart, in infrared light our eyes can’t see. Brighter means more infrared light. Keep your eye on the crosshair: it marks the same spot in every picture. Faraway stars stay put; a nearby star slowly drifts away from it.",
-    keys: "Keyboard: Space to play or pause, ← and → to step through the pictures.",
+    keys: "Keyboard: with the picture focused, Space plays or pauses and ← → step through the pictures.",
     copy: "Copy link",
     copied: "Link copied",
     compass: "North is up, east is left",
@@ -299,7 +300,7 @@ const en = {
 
 const pt: typeof en = {
   locale: "pt-BR",
-  nav: { explore: "Explorar", how: "Como funciona", spherex: "Sobre o SPHEREx", faq: "Dúvidas", language: "Idioma" },
+  nav: { explore: "Explorar", how: "Como funciona", spherex: "Sobre o SPHEREx", faq: "Dúvidas", language: "Idioma", skip: "Pular para o conteúdo" },
   hero: {
     kicker: "Veja o céu mudar",
     title: "Estrelas se movem. Aqui está a prova.",
@@ -332,9 +333,9 @@ const pt: typeof en = {
     ra: "RA",
     dec: "Dec",
     fov: "Zoom (arcmin)",
-    fovHelp: "Zoom é a largura da imagem. A Lua cheia mede cerca de 30 arcmin; 6 é um bom começo.",
+    fovHelp: "Zoom é a largura da imagem, de 1 a 15 arcmin. A Lua cheia mede cerca de 30 arcmin; 6 é um bom começo.",
     submit: "Mostrar este ponto",
-    inputError: "Confira os valores: RA 0–360° ou 0–24h, Dec −90–90°, zoom 1–30 arcmin.",
+    inputError: "Confira os valores: RA 0–360° ou 0–24h, Dec −90–90°, zoom 1–15 arcmin.",
     speedNote: "As estrelas em destaque abrem na hora; um ponto novo leva cerca de um minuto.",
   },
   explore: {
@@ -357,6 +358,7 @@ const pt: typeof en = {
     done: "Pronto",
     failed: "Falhou",
     searching: "Buscando no arquivo…",
+    measuring: "Medindo o movimento…",
     ready: (done, total) => `${done} de ${total} imagens prontas`,
     about: "cerca de",
     progress: "Progresso",
@@ -375,7 +377,7 @@ const pt: typeof en = {
     whatTitle: "O que estou vendo?",
     whatText:
       "Cada imagem é uma temporada do SPHEREx, com meses de diferença, em luz infravermelha que nossos olhos não enxergam. Mais claro significa mais luz infravermelha. Fique de olho na mira: ela marca o mesmo ponto em todas as imagens. Estrelas distantes ficam paradas; uma estrela próxima vai se afastando dela devagar.",
-    keys: "Teclado: Espaço para tocar ou pausar, ← e → para passar as imagens.",
+    keys: "Teclado: com a imagem em foco, Espaço toca ou pausa e ← → passam as imagens.",
     copy: "Copiar link",
     copied: "Link copiado",
     compass: "Norte para cima, leste para a esquerda",

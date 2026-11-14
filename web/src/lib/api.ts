@@ -46,7 +46,7 @@ export async function createJob(ra: number, dec: number, fov: number, targetName
     body: JSON.stringify({ ra, dec, fov_arcmin: fov, detectors: ["D6"], target_name: targetName }),
   });
   if (res.status === 422) {
-    throw new InputError("Check the values: RA 0–360°, Dec −90–90°, field of view 1–30 arcmin.");
+    throw new InputError("Check the values: RA 0–360°, Dec −90–90°, field of view 1–15 arcmin.");
   }
   if (!res.ok) throw new Error(`API error ${res.status}`);
   return (await res.json()).job_id;

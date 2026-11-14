@@ -10,12 +10,17 @@ export function JobProgress({ job }: { job: Job }) {
   const { t } = useT();
   const eta = formatEta(job.eta_seconds, t.status.about);
   const searching = job.status === "queued" || job.status === "discovering";
+  const measuring = job.status === "building" && job.progress.percent >= 100;
   return (
-    <div className="space-y-2" aria-live="polite">
+    <div className="space-y-2">
       <div className="flex justify-between text-sm">
-        <span>{t.status[job.status]}</span>
+        <span aria-live="polite">{t.status[job.status]}</span>
         <span className="text-muted-foreground tabular-nums">
-          {searching ? t.status.searching : `${t.status.ready(job.progress.frames_done, job.progress.frames_total)}${eta ? ` · ${eta}` : ""}`}
+          {searching
+            ? t.status.searching
+            : measuring
+              ? t.status.measuring
+              : `${t.status.ready(job.progress.frames_done, job.progress.frames_total)}${eta ? ` · ${eta}` : ""}`}
         </span>
       </div>
       <Progress value={job.progress.percent} aria-label={t.status.progress} />

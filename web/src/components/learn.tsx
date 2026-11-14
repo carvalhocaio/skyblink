@@ -85,9 +85,9 @@ export function AboutSpherex() {
               type="button"
               aria-pressed={i === picked}
               onClick={() => setPicked(i)}
-              style={{ background: x.color }}
+              style={{ "--c": x.color } as React.CSSProperties}
               className={`py-3 font-mono text-sm font-semibold text-white outline-none focus-visible:ring-3 focus-visible:ring-white ${
-                i === picked ? "ring-2 ring-white ring-inset" : "opacity-55 hover:opacity-90"
+                i === picked ? "bg-(--c) ring-2 ring-white ring-inset" : "bg-(--c)/45 hover:bg-(--c)/80"
               }`}
             >
               {x.id}

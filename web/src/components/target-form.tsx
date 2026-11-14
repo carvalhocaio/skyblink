@@ -87,20 +87,20 @@ export function TargetForm({ initial, error, onSubmit }: Props) {
             e.preventDefault();
             const f = new FormData(e.currentTarget);
             const x = { ra: parseAngle(String(f.get("ra")), true), dec: parseAngle(String(f.get("dec")), false), fov: Number(f.get("fov")) };
-            const ok = x.ra >= 0 && x.ra < 360 && Math.abs(x.dec) <= 90 && x.fov >= 1 && x.fov <= 30;
+            const ok = x.ra >= 0 && x.ra < 360 && Math.abs(x.dec) <= 90 && x.fov >= 1 && x.fov <= 15;
             setBad(!ok);
             if (ok) onSubmit(x);
           }}
         >
-          <p className="text-sm text-muted-foreground">{p.customHelp}</p>
+          <p id="spot-help" className="text-sm text-muted-foreground">{p.customHelp}</p>
           <div className="grid grid-cols-3 gap-3">
-            <Field name="ra" label={p.ra} value={initial?.ra} placeholder="17h 57m 48s" />
-            <Field name="dec" label={p.dec} value={initial?.dec} placeholder="+4° 41′ 36″" />
-            <Field name="fov" label={p.fov} value={initial?.fov ?? 6} />
+            <Field name="ra" label={p.ra} value={initial?.ra} placeholder="17h 57m 48s" invalid={error || bad} />
+            <Field name="dec" label={p.dec} value={initial?.dec} placeholder="+4° 41′ 36″" invalid={error || bad} />
+            <Field name="fov" label={p.fov} value={initial?.fov ?? 6} invalid={error || bad} />
           </div>
           <p className="text-xs text-muted-foreground">{p.fovHelp}</p>
           {(error || bad) && (
-            <p role="alert" className="text-sm text-destructive">
+            <p id="spot-error" role="alert" className="text-sm text-destructive">
               {p.inputError}
             </p>
           )}
@@ -113,11 +113,11 @@ export function TargetForm({ initial, error, onSubmit }: Props) {
   );
 }
 
-function Field({ name, label, value, placeholder }: { name: string; label: string; value?: number; placeholder?: string }) {
+function Field({ name, label, value, placeholder, invalid }: { name: string; label: string; value?: number; placeholder?: string; invalid: boolean }) {
   return (
     <div className="space-y-1.5">
       <Label htmlFor={name}>{label}</Label>
-      <Input id={name} name={name} type="text" required autoComplete="off" spellCheck={false} placeholder={placeholder} defaultValue={value} />
+      <Input id={name} name={name} type="text" required autoComplete="off" spellCheck={false} placeholder={placeholder} defaultValue={value} aria-invalid={invalid} aria-describedby={invalid ? "spot-error spot-help" : "spot-help"} />
     </div>
   );
 }
