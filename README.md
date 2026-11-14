@@ -59,6 +59,9 @@ seasons; the prediction uses the catalog position, proper motion and parallax at
 | RW Aurigae | saturated core | 0.49 ± 0.62″/yr | 0.03″/yr (+0.75σ) |
 | R Draconis | saturated core | not reported: no usable centroid in the saturated core | – |
 
+The measured motion of Barnard's Star does not depend on the field of view: 10.47 ± 0.34 (6′), 10.53 ± 0.34 (15′) and
+10.45 ± 0.33 (30′) ″/yr, all within 1σ of each other.
+
 Per-season offsets, error components and residuals are in [`api/README.md`](api/README.md#measured-motion-motion-additive).
 
 ## Why you can trust it
