@@ -56,6 +56,14 @@ function Home() {
     document.documentElement.lang = lang;
   }, [lang]);
 
+  // Opened with ?ra=&dec= on a phone: the player sits far below the hero, so bring it into view.
+  const openedWithTarget = useRef(target !== null);
+  useEffect(() => {
+    if (!openedWithTarget.current || !matchMedia("(max-width: 1023px)").matches) return;
+    const smooth = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+    document.getElementById("watch")?.scrollIntoView({ behavior: smooth ? "smooth" : "auto" });
+  }, []);
+
   const go = (changes: Record<string, string | number>, hash = "") => {
     const q = new URLSearchParams(params);
     for (const [k, v] of Object.entries(changes)) q.set(k, String(v));
@@ -64,7 +72,7 @@ function Home() {
   };
   const submit = (x: Target) => {
     setRun((r) => r + 1);
-    go({ ra: x.ra, dec: x.dec, fov: x.fov }, "#explore");
+    go({ ra: x.ra, dec: x.dec, fov: x.fov }, "#watch");
   };
   const barnard = TARGETS[0];
   const showBarnard = () => submit({ ra: barnard.ra, dec: barnard.dec, fov: 6 });
@@ -161,7 +169,7 @@ function Home() {
             <div className="mt-14 grid gap-10 border-t pt-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
               <TargetForm key={targetKey} initial={target} error={!!inputError} onSubmit={submit} />
 
-              <div className="min-w-0 space-y-4" aria-labelledby="watch-title">
+              <div id="watch" className="min-w-0 scroll-mt-4 space-y-4" aria-labelledby="watch-title">
                 <h3 id="watch-title" className={`text-muted-foreground ${MONO}`}>
                   {t.watch.title}
                   {name && <span className="text-foreground">: {name}</span>}
