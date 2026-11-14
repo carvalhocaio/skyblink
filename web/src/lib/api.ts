@@ -37,6 +37,7 @@ export type Job = {
 };
 
 export class InputError extends Error {}
+export class NotFoundError extends Error {}
 
 export async function createJob(ra: number, dec: number, fov: number, targetName?: string): Promise<string> {
   const res = await fetch(`${API_URL}/jobs`, {
@@ -53,6 +54,7 @@ export async function createJob(ra: number, dec: number, fov: number, targetName
 
 export async function getJob(id: string): Promise<Job> {
   const res = await fetch(`${API_URL}/jobs/${id}`, { cache: "no-store" });
+  if (res.status === 404) throw new NotFoundError(id);
   if (!res.ok) throw new Error(`API error ${res.status}`);
   return res.json();
 }

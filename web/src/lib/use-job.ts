@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createJob, getJob, InputError, type Job } from "./api";
+import { createJob, getJob, InputError, NotFoundError, type Job } from "./api";
 import { findTarget } from "./targets";
 
 export type Target = { ra: number; dec: number; fov: number };
@@ -24,9 +24,20 @@ export function useJob(target: Target | null, run: number) {
 
     (async () => {
       try {
-        const id = await createJob(target.ra, target.dec, target.fov, findTarget(target.ra, target.dec)?.simbad);
+        const create = () => createJob(target.ra, target.dec, target.fov, findTarget(target.ra, target.dec)?.simbad);
+        let id = await create();
+        let retried = false;
         while (!cancelled) {
-          const job = await getJob(id);
+          let job: Job;
+          try {
+            job = await getJob(id);
+          } catch (e) {
+            // The server may have restarted and forgotten the job: ask for it again, once.
+            if (!(e instanceof NotFoundError) || retried) throw e;
+            retried = true;
+            id = await create();
+            continue;
+          }
           update({ job });
           if (job.status === "done" || job.status === "failed") return;
           await new Promise((r) => (timer = setTimeout(r, 1500)));

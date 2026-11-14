@@ -107,16 +107,18 @@ function EggTray({ toast }: { toast: Egg | null }) {
   const { found, reset } = useEggs();
   return (
     <>
-      <div aria-live="polite" className="pointer-events-none fixed inset-x-4 bottom-20 z-50 flex justify-end">
+      <div aria-live="polite" className="pointer-events-none fixed right-24 bottom-4 left-4 z-50 flex justify-end sm:right-4 sm:bottom-20">
         {toast && (
-          <div key={toast} className="egg-toast pointer-events-auto max-w-sm rounded-xl border border-primary/30 bg-card/95 p-4 shadow-2xl backdrop-blur">
+          <div key={toast} className="egg-toast pointer-events-auto max-w-sm rounded-xl border border-primary/30 bg-card/95 px-3 py-2 shadow-2xl backdrop-blur sm:p-4">
             <p className="font-mono text-[10px] tracking-[0.2em] text-primary uppercase">
               {g.found} · {found.size}/{EGGS.length}
             </p>
             <p className="mt-1 font-medium">
               {g.list[toast].name} <span className="text-muted-foreground">{g.list[toast].years}</span>
             </p>
-            <EggLine egg={toast} />
+            <div className="max-sm:hidden">
+              <EggLine egg={toast} />
+            </div>
           </div>
         )}
       </div>

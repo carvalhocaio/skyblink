@@ -307,9 +307,11 @@ export function StarLife({ section, onPick }: Props) {
 
   return (
     <>
-      <canvas ref={canvasRef} aria-hidden className="absolute inset-0 size-full touch-pan-y" />
+      <canvas ref={canvasRef} aria-hidden className="absolute inset-0 size-full cursor-grab touch-pan-y active:cursor-grabbing" />
       <div className="relative flex flex-col items-center">
-        <div ref={ballRef} aria-hidden className="pointer-events-none aspect-square w-[min(100%,26rem)]" />
+        <div ref={ballRef} className="pointer-events-none relative aspect-square w-[min(100%,26rem)]">
+          <span className="absolute right-0 bottom-2 font-mono text-[10px] tracking-[0.2em] text-white/35 uppercase">{L.illustration}</span>
+        </div>
         <div className="relative mt-1 h-[92px] w-full max-w-md">
           {cap.prev !== null && line(cap.prev, true)}
           {line(cap.cur, false)}
@@ -342,6 +344,7 @@ export function StarLife({ section, onPick }: Props) {
             <span className={cap.cur === LAST ? "font-medium text-white" : ""}>{L.end}</span>
           </div>
         </div>
+        <p className="mt-2 max-w-[26rem] text-center text-xs leading-relaxed text-white/45">{L.branches}</p>
       </div>
     </>
   );
