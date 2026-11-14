@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,9 +11,20 @@ import type { Target } from "@/lib/use-job";
 
 type Props = { initial: Target | null; error: boolean; onSubmit: (t: Target) => void };
 
+/** Degrees from "269.45", "17h 57m 48.5s", "17:57:48" (RA in hours) or "+4° 41′ 36″" / "4 41 36" (Dec). */
+export function parseAngle(text: string, ra: boolean): number {
+  const s = text.trim().replace(/[−–]/g, "-").replace(",", ".");
+  const n = s.match(/\d+(?:\.\d+)?|\.\d+/g)?.map(Number) ?? [];
+  if (!n.length || n.length > 3 || /[^\d\s.+\-hms:°º′″'"d]/i.test(s)) return NaN;
+  const v = n[0] + (n[1] ?? 0) / 60 + (n[2] ?? 0) / 3600;
+  const hours = ra && (n.length > 1 || /[h:]/i.test(s));
+  return (s.startsWith("-") ? -v : v) * (hours ? 15 : 1);
+}
+
 export function TargetForm({ initial, error, onSubmit }: Props) {
   const { t } = useT();
   const p = t.pick;
+  const [bad, setBad] = useState(false);
   const activeIndex = TARGETS.findIndex((x) => initial?.ra === x.ra && initial?.dec === x.dec);
   const mono = "font-mono text-[11px] tracking-[0.2em] uppercase";
   return (
@@ -65,24 +77,29 @@ export function TargetForm({ initial, error, onSubmit }: Props) {
         })}
       </ul>
 
-      <details className="rounded-md border p-4" open={error}>
+      <p className="text-xs text-muted-foreground">{p.speedNote}</p>
+
+      <details className="rounded-md border p-4" open={error || bad}>
         <summary className="cursor-pointer text-sm font-medium">{p.custom}</summary>
         <form
           className="mt-4 space-y-4"
           onSubmit={(e) => {
             e.preventDefault();
             const f = new FormData(e.currentTarget);
-            onSubmit({ ra: Number(f.get("ra")), dec: Number(f.get("dec")), fov: Number(f.get("fov")) });
+            const x = { ra: parseAngle(String(f.get("ra")), true), dec: parseAngle(String(f.get("dec")), false), fov: Number(f.get("fov")) };
+            const ok = x.ra >= 0 && x.ra < 360 && Math.abs(x.dec) <= 90 && x.fov >= 1 && x.fov <= 30;
+            setBad(!ok);
+            if (ok) onSubmit(x);
           }}
         >
           <p className="text-sm text-muted-foreground">{p.customHelp}</p>
           <div className="grid grid-cols-3 gap-3">
-            <Field name="ra" label={p.ra} min={0} max={360} value={initial?.ra} />
-            <Field name="dec" label={p.dec} min={-90} max={90} value={initial?.dec} />
-            <Field name="fov" label={p.fov} min={1} max={30} value={initial?.fov ?? 6} />
+            <Field name="ra" label={p.ra} value={initial?.ra} placeholder="17h 57m 48s" />
+            <Field name="dec" label={p.dec} value={initial?.dec} placeholder="+4° 41′ 36″" />
+            <Field name="fov" label={p.fov} value={initial?.fov ?? 6} />
           </div>
           <p className="text-xs text-muted-foreground">{p.fovHelp}</p>
-          {error && (
+          {(error || bad) && (
             <p role="alert" className="text-sm text-destructive">
               {p.inputError}
             </p>
@@ -96,11 +113,11 @@ export function TargetForm({ initial, error, onSubmit }: Props) {
   );
 }
 
-function Field({ name, label, min, max, value }: { name: string; label: string; min: number; max: number; value?: number }) {
+function Field({ name, label, value, placeholder }: { name: string; label: string; value?: number; placeholder?: string }) {
   return (
     <div className="space-y-1.5">
       <Label htmlFor={name}>{label}</Label>
-      <Input id={name} name={name} type="number" step="any" required min={min} max={max} defaultValue={value} />
+      <Input id={name} name={name} type="text" required autoComplete="off" spellCheck={false} placeholder={placeholder} defaultValue={value} />
     </div>
   );
 }

@@ -23,7 +23,7 @@ const en = {
   pick: {
     title: "1. Pick something to look at",
     move: "Watch it move",
-    brightness: "Watch its brightness",
+    brightness: "Varies in brightness · not measured yet",
     stories: [
       "A small red star only 6 light-years away. It crosses our sky faster than any other star.",
       "A pair of brown dwarfs, “failed stars” too small to shine like the Sun, 12 light-years away.",
@@ -33,13 +33,14 @@ const en = {
     ],
     custom: "I want to choose my own spot in the sky",
     customHelp:
-      "Astronomers locate things with two numbers, like longitude and latitude on Earth: RA (0 to 360) and Dec (−90 to 90). You can find them for any star on Wikipedia.",
-    ra: "RA (degrees)",
-    dec: "Dec (degrees)",
+      "Astronomers locate things with two numbers, like longitude and latitude on Earth: RA and Dec. You can paste them straight from Wikipedia. RA works in hours (17h 57m 48s) or degrees (269.45); Dec works like +4° 41′ 36″ or 4.69.",
+    ra: "RA",
+    dec: "Dec",
     fov: "Zoom (arcmin)",
     fovHelp: "Zoom is the width of the picture. The full Moon is about 30 arcmin wide; 6 is a good start.",
     submit: "Show me this spot",
-    inputError: "Check the values: RA 0–360°, Dec −90–90°, zoom 1–30 arcmin.",
+    inputError: "Check the values: RA 0–360° or 0–24h, Dec −90–90°, zoom 1–30 arcmin.",
+    speedNote: "Featured stars open instantly; a new spot takes about a minute.",
   },
   explore: {
     label: "Explore",
@@ -80,6 +81,10 @@ const en = {
     whatText:
       "Each picture is one SPHEREx season, months apart, in infrared light our eyes can’t see. Brighter means more infrared light. Keep your eye on the crosshair: it marks the same spot in every picture. Faraway stars stay put; a nearby star slowly drifts away from it.",
     keys: "Keyboard: Space to play or pause, ← and → to step through the pictures.",
+    copy: "Copy link",
+    copied: "Link copied",
+    compass: "North is up, east is left",
+    scale: "Scale bar: one arcminute",
     whatIs: "What it is",
     whatChanges: "What the change means",
     objects: [
@@ -97,11 +102,11 @@ const en = {
       },
       {
         what: "A very young star, only a few million years old, still wrapped in the disk of gas and dust it was born from. It lies about 500 light-years away.",
-        change: "It is too far away to visibly move, so it should stay on the crosshair. What astronomers watch is its brightness: since 2010 it has faded several times, probably as dust from its disk passes in front of it. It is so bright that its center saturates the detector, so changes show up mostly in the glow around it.",
+        change: "It is too far away to visibly move, so it should stay on the crosshair. What astronomers watch is its brightness: since 2010 it has faded several times, probably as dust from its disk passes in front of it. Its brightness really changes, but SkyBlink can’t measure it yet: its center saturates the detector and each season samples slightly different infrared colors, so a difference between pictures may come from the sampling, not the star.",
       },
       {
         what: "An old red giant near the end of its life. It slowly swells and shrinks, a kind of pulsating star called a Mira variable.",
-        change: "Each pulse takes about eight months, and the SPHEREx pictures are a few months apart, so each one catches the star at a different point of its cycle. It is too far away to move, and its center saturates the detector, so changes show up mostly in the glow around it. The dark spot in the middle is not a black hole: the star is so bright there that the detector has no valid reading.",
+        change: "Each pulse takes about eight months, and the SPHEREx pictures are a few months apart, so each one catches the star at a different point of its cycle. It is too far away to move. Its brightness really changes, but SkyBlink can’t measure it yet: its center saturates the detector and each season samples slightly different infrared colors. The dark spot in the middle is not a black hole: the star is so bright there that the detector has no valid reading.",
       },
     ],
   },
@@ -145,7 +150,7 @@ const en = {
         { title: "Too far away to see them move", text: "Every star travels through space, but these are hundreds of light-years away. In a year they shift far less than one SPHEREx pixel, so they look frozen. Barnard’s Star, only 6 light-years away, is close enough for its drift to show. It’s like a plane high in the sky that seems slow, while a car right next to you whooshes by." },
         { title: "Young stars: dust passing in front", text: "A young star like RW Aurigae is still surrounded by the disk of gas and dust it was born from. When thicker clumps of dust pass between the star and us, they block part of its light, like clouds drifting in front of the Sun. When they clear, the star looks brighter again. Gas falling onto the star can also make it flare up." },
         { title: "Old giants: a star that breathes", text: "An old giant like R Draconis has used up the fuel in its core. Its outer layers now swell and shrink in a slow rhythm, about every eight months. As it changes size, its surface also changes temperature, and together that changes how much light it gives off. Astronomers call these stars Mira variables." },
-        { title: "Where to look in SkyBlink", text: "These stars are so bright that their centers saturate SPHEREx’s detector. Watch the glow around them, not the center: that is where the change shows." },
+        { title: "What SkyBlink can’t show yet", text: "These stars really change brightness, but SkyBlink can’t measure it yet: their centers saturate and each season samples slightly different infrared colors. So a difference between pictures may come from the sampling, not the star." },
       ],
     },
     cta: "Now try it yourself",
@@ -160,8 +165,33 @@ const en = {
   },
   about: {
     title: "Meet SPHEREx",
-    p1: "SPHEREx is a NASA space telescope launched in March 2025. Every six months it maps the entire sky, not in one color but in 102 colors of infrared light, a kind of light our eyes can’t see but warm things give off.",
-    p2: "It flies about 650 km above Earth, circling from pole to pole. Its telescope is small, only 20 cm across, but it sees a patch of sky much bigger than the full Moon in every shot, which makes it a great sky mapper.",
+    p1: "SPHEREx is a NASA space telescope that launched on March 11, 2025. Its job is to map the entire sky, again and again, in 102 colors of infrared light: a kind of light our eyes can’t see, but that warm things, dust and ice give off.",
+    p2: "It circles Earth about 650 km up, passing over both poles roughly 15 times a day. Each orbit it photographs thin strips of sky. As Earth travels around the Sun, the strips add up, and every six months SPHEREx completes a full map of the sky. The plan is at least four full maps in two years.",
+    p3: "Hubble and Webb zoom deep into small patches. SPHEREx does the opposite: its 20 cm telescope sees an area about 200 times the full Moon in every shot. Special filters spread the light into a rainbow across its detectors, so one sweep of the sky records the spectrum of every point in it.",
+    numbers: [
+      { v: "Mar 2025", k: "launch" },
+      { v: "650 km", k: "above Earth" },
+      { v: "102", k: "infrared colors" },
+      { v: "20 cm", k: "telescope" },
+      { v: "6 months", k: "per full-sky map" },
+      { v: "−210 °C", k: "cooled with no fridge" },
+    ],
+    modelTitle: "Take a look at it",
+    drag: "Drag to turn it. Tap a part to learn what it does.",
+    modelNote: "Simplified 3D illustration, not to scale.",
+    parts: [
+      { name: "Photon shields", text: "Three cone-shaped shields, nested like cups, block heat and light from the Sun and Earth. They let SPHEREx cool itself to about −210 °C with no refrigerant at all." },
+      { name: "Telescope", text: "Only 20 cm across, but with a very wide view: about 3.5° by 11°, roughly 200 full Moons in a single picture." },
+      { name: "Detectors", text: "Six detectors sit behind rainbow filters: each part of the detector sees a slightly different color. As the telescope sweeps the sky, every point gets seen in all 102 colors." },
+      { name: "Solar panel", text: "A single solar panel powers the spacecraft. It faces the Sun while the telescope looks away from it." },
+      { name: "Spacecraft body", text: "Holds the computer, the radio that sends the pictures down to Earth, and the wheels that turn the telescope to point it." },
+    ],
+    moreTitle: "Learn more",
+    links: [
+      { label: "SPHEREx mission page", by: "NASA Science", href: "https://science.nasa.gov/mission/spherex/" },
+      { label: "SPHEREx science team", by: "Caltech", href: "https://spherex.caltech.edu/" },
+      { label: "SPHEREx public data", by: "IRSA, NASA/IPAC", href: "https://irsa.ipac.caltech.edu/Missions/spherex.html" },
+    ],
     facts: [
       {
         title: "How did the universe begin?",
@@ -226,6 +256,8 @@ const en = {
     end: "White dwarf",
     watch: "Watch it in SPHEREx",
     hint: "Drag the ball or the timeline",
+    branches: "Not one star’s path: brown dwarfs never ignite, and red dwarfs like Barnard’s Star burn for trillions of years without becoming giants.",
+    illustration: "Illustration",
     stages: [
       { t: "Where stars are born", b: "Dust cloud", c: "SPHEREx maps the ice hidden inside" },
       { t: "A star in the making", b: "Protostar", c: "Gravity heats a young core" },
@@ -286,7 +318,7 @@ const pt: typeof en = {
   pick: {
     title: "1. Escolha o que observar",
     move: "Veja ela se mover",
-    brightness: "Veja o brilho mudar",
+    brightness: "Brilho variável · ainda não medido",
     stories: [
       "Uma pequena estrela vermelha a apenas 6 anos-luz. Ela cruza o nosso céu mais rápido que qualquer outra estrela.",
       "Um par de anãs marrons, “estrelas que não deram certo”, pequenas demais para brilhar como o Sol, a 12 anos-luz.",
@@ -296,13 +328,14 @@ const pt: typeof en = {
     ],
     custom: "Quero escolher meu próprio ponto no céu",
     customHelp:
-      "Astrônomos localizam objetos com dois números, como longitude e latitude na Terra: RA (0 a 360) e Dec (−90 a 90). Você encontra esses números para qualquer estrela na Wikipédia.",
-    ra: "RA (graus)",
-    dec: "Dec (graus)",
+      "Astrônomos localizam objetos com dois números, como longitude e latitude na Terra: RA e Dec. Dá para colar direto da Wikipédia. RA aceita horas (17h 57m 48s) ou graus (269.45); Dec aceita +4° 41′ 36″ ou 4.69.",
+    ra: "RA",
+    dec: "Dec",
     fov: "Zoom (arcmin)",
     fovHelp: "Zoom é a largura da imagem. A Lua cheia mede cerca de 30 arcmin; 6 é um bom começo.",
     submit: "Mostrar este ponto",
-    inputError: "Confira os valores: RA 0–360°, Dec −90–90°, zoom 1–30 arcmin.",
+    inputError: "Confira os valores: RA 0–360° ou 0–24h, Dec −90–90°, zoom 1–30 arcmin.",
+    speedNote: "As estrelas em destaque abrem na hora; um ponto novo leva cerca de um minuto.",
   },
   explore: {
     label: "Explorar",
@@ -343,6 +376,10 @@ const pt: typeof en = {
     whatText:
       "Cada imagem é uma temporada do SPHEREx, com meses de diferença, em luz infravermelha que nossos olhos não enxergam. Mais claro significa mais luz infravermelha. Fique de olho na mira: ela marca o mesmo ponto em todas as imagens. Estrelas distantes ficam paradas; uma estrela próxima vai se afastando dela devagar.",
     keys: "Teclado: Espaço para tocar ou pausar, ← e → para passar as imagens.",
+    copy: "Copiar link",
+    copied: "Link copiado",
+    compass: "Norte para cima, leste para a esquerda",
+    scale: "Barra de escala: um minuto de arco",
     whatIs: "O que é",
     whatChanges: "O que a mudança significa",
     objects: [
@@ -360,11 +397,11 @@ const pt: typeof en = {
       },
       {
         what: "Uma estrela muito jovem, com só alguns milhões de anos, ainda envolta no disco de gás e poeira do qual nasceu. Fica a cerca de 500 anos-luz.",
-        change: "Ela está longe demais para se mover visivelmente, então deve ficar na mira. O que os astrônomos acompanham é o brilho: desde 2010 ela escureceu várias vezes, provavelmente porque poeira do disco passa na frente dela. Ela é tão brilhante que o centro satura o detector, então as mudanças aparecem mais no brilho ao redor.",
+        change: "Ela está longe demais para se mover visivelmente, então deve ficar na mira. O que os astrônomos acompanham é o brilho: desde 2010 ela escureceu várias vezes, provavelmente porque poeira do disco passa na frente dela. O brilho dela muda de verdade, mas o SkyBlink ainda não consegue medir: o centro satura o detector e cada temporada registra cores infravermelhas um pouco diferentes, então uma diferença entre as imagens pode vir da amostragem, não da estrela.",
       },
       {
         what: "Uma gigante vermelha velha, perto do fim da vida. Ela incha e encolhe devagar, um tipo de estrela pulsante chamada variável Mira.",
-        change: "Cada pulsação leva cerca de oito meses, e as imagens do SPHEREx têm alguns meses de diferença, então cada uma pega a estrela num ponto diferente do ciclo. Ela está longe demais para se mover, e o centro satura o detector, então as mudanças aparecem mais no brilho ao redor. A mancha escura no meio não é um buraco negro: ali a estrela é tão brilhante que o detector não consegue fazer uma leitura válida.",
+        change: "Cada pulsação leva cerca de oito meses, e as imagens do SPHEREx têm alguns meses de diferença, então cada uma pega a estrela num ponto diferente do ciclo. Ela está longe demais para se mover. O brilho dela muda de verdade, mas o SkyBlink ainda não consegue medir: o centro satura o detector e cada temporada registra cores infravermelhas um pouco diferentes. A mancha escura no meio não é um buraco negro: ali a estrela é tão brilhante que o detector não consegue fazer uma leitura válida.",
       },
     ],
   },
@@ -409,7 +446,7 @@ const pt: typeof en = {
         { title: "Longe demais para vermos se mover", text: "Toda estrela viaja pelo espaço, mas estas estão a centenas de anos-luz. Em um ano elas se deslocam bem menos que um pixel do SPHEREx, então parecem paradas. A Estrela de Barnard, a só 6 anos-luz, está perto o bastante para o deslocamento aparecer. É como um avião lá no alto, que parece devagar, enquanto um carro passando do seu lado é rapidíssimo." },
         { title: "Estrelas jovens: poeira passando na frente", text: "Uma estrela jovem como RW Aurigae ainda está cercada pelo disco de gás e poeira onde nasceu. Quando nuvens mais densas de poeira passam entre a estrela e nós, bloqueiam parte da luz dela, como nuvens passando na frente do Sol. Quando elas saem, a estrela volta a parecer mais forte. Gás caindo sobre a estrela também pode fazê-la ter surtos de brilho." },
         { title: "Gigantes velhas: uma estrela que respira", text: "Uma gigante velha como R Draconis já gastou o combustível do núcleo. Agora suas camadas externas incham e encolhem num ritmo lento, mais ou menos a cada oito meses. Ao mudar de tamanho, a superfície também muda de temperatura, e juntas essas mudanças alteram quanta luz ela emite. Astrônomos chamam essas estrelas de variáveis Mira." },
-        { title: "Onde reparar no SkyBlink", text: "Essas estrelas são tão brilhantes que o centro delas satura o detector do SPHEREx. Observe o brilho ao redor, não o centro: é ali que a mudança aparece." },
+        { title: "O que o SkyBlink ainda não mostra", text: "Essas estrelas mudam de brilho de verdade, mas o SkyBlink ainda não consegue medir: o centro delas satura e cada temporada registra cores infravermelhas um pouco diferentes. Então uma diferença entre as imagens pode vir da amostragem, não da estrela." },
       ],
     },
     cta: "Agora experimente você",
@@ -424,8 +461,33 @@ const pt: typeof en = {
   },
   about: {
     title: "Conheça o SPHEREx",
-    p1: "O SPHEREx é um telescópio espacial da NASA lançado em março de 2025. A cada seis meses ele mapeia o céu inteiro, não em uma cor, mas em 102 cores de luz infravermelha, um tipo de luz que nossos olhos não veem, mas que objetos quentes emitem.",
-    p2: "Ele voa a cerca de 650 km da Terra, dando voltas de polo a polo. O telescópio é pequeno, só 20 cm de diâmetro, mas cada foto cobre um pedaço do céu muito maior que a Lua cheia, o que faz dele um ótimo mapeador do céu.",
+    p1: "O SPHEREx é um telescópio espacial da NASA lançado em 11 de março de 2025. A missão dele é mapear o céu inteiro, de novo e de novo, em 102 cores de luz infravermelha: um tipo de luz que nossos olhos não veem, mas que objetos quentes, poeira e gelo emitem.",
+    p2: "Ele dá voltas na Terra a cerca de 650 km de altura, passando sobre os dois polos umas 15 vezes por dia. A cada órbita ele fotografa faixas finas do céu. Conforme a Terra anda em volta do Sol, as faixas vão se somando, e a cada seis meses o SPHEREx completa um mapa inteiro do céu. O plano é fazer pelo menos quatro mapas completos em dois anos.",
+    p3: "Hubble e Webb dão zoom em pedacinhos do céu. O SPHEREx faz o contrário: seu telescópio de 20 cm enxerga em cada foto uma área de umas 200 Luas cheias. Filtros especiais espalham a luz num arco-íris sobre os detectores, então uma varredura do céu registra o espectro de cada ponto dele.",
+    numbers: [
+      { v: "mar 2025", k: "lançamento" },
+      { v: "650 km", k: "acima da Terra" },
+      { v: "102", k: "cores infravermelhas" },
+      { v: "20 cm", k: "telescópio" },
+      { v: "6 meses", k: "por mapa do céu" },
+      { v: "−210 °C", k: "resfriado sem geladeira" },
+    ],
+    modelTitle: "Dê uma olhada nele",
+    drag: "Arraste para girar. Toque numa parte para saber o que ela faz.",
+    modelNote: "Ilustração 3D simplificada, fora de escala.",
+    parts: [
+      { name: "Escudos de fótons", text: "Três escudos em forma de cone, encaixados como copos, bloqueiam o calor e a luz do Sol e da Terra. Eles deixam o SPHEREx se resfriar até cerca de −210 °C sem nenhum refrigerante." },
+      { name: "Telescópio", text: "Só 20 cm de diâmetro, mas com uma visão bem larga: cerca de 3,5° por 11°, umas 200 Luas cheias numa única foto." },
+      { name: "Detectores", text: "Seis detectores ficam atrás de filtros arco-íris: cada parte do detector enxerga uma cor um pouco diferente. Conforme o telescópio varre o céu, cada ponto é visto nas 102 cores." },
+      { name: "Painel solar", text: "Um único painel solar alimenta a nave. Ele fica virado para o Sol enquanto o telescópio olha para o lado oposto." },
+      { name: "Corpo da nave", text: "Guarda o computador, o rádio que manda as imagens para a Terra e as rodas que giram o telescópio para apontá-lo." },
+    ],
+    moreTitle: "Saiba mais",
+    links: [
+      { label: "Página da missão SPHEREx", by: "NASA Science", href: "https://science.nasa.gov/mission/spherex/" },
+      { label: "Equipe científica do SPHEREx", by: "Caltech", href: "https://spherex.caltech.edu/" },
+      { label: "Dados públicos do SPHEREx", by: "IRSA, NASA/IPAC", href: "https://irsa.ipac.caltech.edu/Missions/spherex.html" },
+    ],
     facts: [
       {
         title: "Como o universo começou?",
@@ -490,6 +552,8 @@ const pt: typeof en = {
     end: "Anã branca",
     watch: "Ver no SPHEREx",
     hint: "Arraste a bola ou a linha do tempo",
+    branches: "Não é o caminho de uma só estrela: anãs marrons nunca acendem, e anãs vermelhas como a Estrela de Barnard queimam por trilhões de anos sem virar gigantes.",
+    illustration: "Ilustração",
     stages: [
       { t: "Onde as estrelas nascem", b: "Nuvem de poeira", c: "O SPHEREx mapeia o gelo escondido nela" },
       { t: "Uma estrela em formação", b: "Protoestrela", c: "A gravidade aquece um núcleo jovem" },

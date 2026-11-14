@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Link2, Pause, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatMonth as month, type Frame } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { useEggs } from "@/lib/eggs";
 
 const SPEEDS = [1200, 600, 250];
+// SPHEREx pixels are 6.15″ wide, so one arcminute is about 9.8 pixels of the original image.
+const PX_PER_ARCMIN = 60 / 6.15;
 
 const label = (f: Frame, locale: string) =>
   `${month(f.mid_date, locale)} · ${f.detector} · ${f.wavelength_um[0].toFixed(2)}–${f.wavelength_um[1].toFixed(2)} µm`;
@@ -26,6 +28,15 @@ export function Player({ frames, waiting, object }: Props) {
   const animating = playing && n > 1;
   const { unlock } = useEggs();
   const [uncertain, setUncertain] = useState(false);
+  const [width, setWidth] = useState(0);
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
+  };
   const poke = () => {
     setUncertain(true);
     setTimeout(() => setUncertain(false), 2600);
@@ -68,6 +79,7 @@ export function Player({ frames, waiting, object }: Props) {
             key={f.id}
             src={f.image_url!}
             alt={i === current ? `${p.imageAlt}, ${label(f, t.locale)}` : ""}
+            onLoad={(e) => setWidth(e.currentTarget.naturalWidth)}
             className={`absolute inset-0 size-full ${i === current ? "" : "invisible"}`}
             style={{ imageRendering: "pixelated" }}
           />
@@ -76,8 +88,17 @@ export function Player({ frames, waiting, object }: Props) {
         <div className="absolute top-2 left-2 rounded bg-black/70 px-2 py-1 font-mono text-sm text-white">
           {label(ready[current], t.locale)}
         </div>
+        <div aria-label={p.compass} role="img" className="absolute right-2 bottom-2 rounded bg-black/70 px-2 py-1 font-mono text-xs text-white">
+          N ↑ E ←
+        </div>
+        {width > 0 && (
+          <div aria-label={p.scale} role="img" className="absolute bottom-3 left-3 font-mono text-xs text-white [text-shadow:0_0_4px_black]" style={{ width: `${(PX_PER_ARCMIN / width) * 100}%` }}>
+            1′
+            <span className="mt-0.5 block h-0.5 bg-white shadow-[0_0_3px_black]" />
+          </div>
+        )}
         {waiting && n === 1 && (
-          <div className="absolute inset-x-0 bottom-2 text-center text-sm text-white">
+          <div className="absolute inset-x-0 bottom-10 text-center text-sm text-white">
             <span className="rounded bg-black/70 px-2 py-1">{p.waiting}</span>
           </div>
         )}
@@ -106,6 +127,10 @@ export function Player({ frames, waiting, object }: Props) {
             </Button>
           ))}
         </div>
+        <Button variant="outline" size="sm" onClick={copy} className="ml-2" aria-live="polite">
+          {copied ? <Check aria-hidden /> : <Link2 aria-hidden />}
+          {copied ? p.copied : p.copy}
+        </Button>
       </div>
 
       <ol aria-label={p.timeline} className="flex gap-1">

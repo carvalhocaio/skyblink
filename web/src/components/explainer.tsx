@@ -5,13 +5,20 @@
 import { useEffect, useState } from "react";
 import { ArrowRight, ChevronRight, Pause, Play } from "lucide-react";
 import { useT } from "@/lib/i18n";
+import { formatMonth } from "@/lib/api";
+
+function useDates() {
+  const { t } = useT();
+  return SEASONS.map((d) => formatMonth(d, t.locale));
+}
 
 const SCENE_MS = 6500;
-const DATES = ["Aug 2025", "Apr 2026", "Sep 2026"];
+// Mid-dates of the three SPHEREx seasons used in the demo frames.
+const SEASONS = ["2025-08-15", "2026-04-15", "2026-09-15"];
 // Faraway stars: identical in every frame. [x, y, brightness]
 const FAR: [number, number, number][] = [
   [30, 30, 0.5], [70, 150, 0.35], [95, 60, 0.7], [130, 25, 0.4], [210, 40, 0.55], [250, 90, 0.3],
-  [280, 160, 0.6], [45, 105, 0.3], [190, 170, 0.45], [300, 30, 0.4], [110, 162, 0.3], [235, 140, 0.5],
+  [280, 160, 0.6], [45, 105, 0.3], [222, 178, 0.45], [300, 30, 0.4], [105, 135, 0.3], [235, 140, 0.5],
 ];
 // The nearby star walks five pixels per season (exaggerated so the drift reads at a glance).
 const NEAR_X = [135, 160, 185];
@@ -56,6 +63,7 @@ function Crosshair({ x = NEAR_X[0] + 2.5, y = NEAR_Y + 2.5 }: { x?: number; y?: 
 
 /** Three season frames that take turns, like the Explore player. */
 function Flipbook({ season }: { season: string }) {
+  const DATES = useDates();
   return (
     <>
       <FarStars />
@@ -74,6 +82,7 @@ function Flipbook({ season }: { season: string }) {
 function Scene({ i }: { i: number }) {
   const { t } = useT();
   const L = t.how.labels;
+  const DATES = useDates();
   if (i === 0)
     return (
       <>
@@ -121,12 +130,12 @@ function Scene({ i }: { i: number }) {
     return (
       <>
         <Flipbook season={L.season} />
-        <rect x={12} y={180} width={6} height={6} fill="white" opacity={0.7} />
-        <text x={24} y={186} className="ex-label" fill="white" opacity={0.75}>
+        <rect x={12} y={167} width={6} height={6} fill="white" opacity={0.7} />
+        <text x={24} y={173} className="ex-label" fill="white" opacity={0.75}>
           {L.far}
         </text>
-        <rect x={172} y={180} width={6} height={6} fill="white" />
-        <text x={184} y={186} className="ex-label" fill="white">
+        <rect x={12} y={181} width={6} height={6} fill="white" />
+        <text x={24} y={187} className="ex-label" fill="white">
           {L.near}
         </text>
       </>
