@@ -29,7 +29,9 @@ BARNARD_GAIA_DR3 = StellarAstrometry(
 )
 
 
-def apparent_position(star: StellarAstrometry, mjd: float) -> tuple[float, float]:
+def apparent_position(
+    star: StellarAstrometry, mjd: float, include_parallax: bool = True
+) -> tuple[float, float]:
     when = Time(mjd, format="mjd", scale="utc")
     reference = SkyCoord(
         ra=star.ra * u.deg,
@@ -41,6 +43,8 @@ def apparent_position(star: StellarAstrometry, mjd: float) -> tuple[float, float
         obstime=Time(star.ref_epoch_jyear, format="jyear", scale="tcb"),
     )
     moved = reference.apply_space_motion(new_obstime=when)
+    if not include_parallax:
+        return float(moved.ra.deg), float(moved.dec.deg)
     near = SkyCoord(moved.ra, moved.dec, distance=moved.distance).transform_to(GCRS(obstime=when))
     far = SkyCoord(moved.ra, moved.dec, distance=FAR_AWAY).transform_to(GCRS(obstime=when))
     lon, lat = far.spherical_offsets_to(near)

@@ -18,6 +18,7 @@ from skyblink.domain.grid import FrameGrid
 from skyblink.domain.models import Exposure, Frame, FrameStatus, Job, JobStatus, Target
 from skyblink.domain.planning import detector_priority, plan_frames
 from skyblink.domain.stretch import StretchParams
+from skyblink.services.analysis import CatalogResolver, JobAnalysis
 from skyblink.services.discovery import ExposureSearch, discover_seasons
 from skyblink.services.frame_builder import FrameImage, NoUsableExposures
 
@@ -57,6 +58,7 @@ class JobRunner:
         limits: RunnerLimits = DEFAULT_LIMITS,
         clock: Callable[[], float] = time.time,
         results: ResultStore | None = None,
+        catalog: CatalogResolver | None = None,
     ):
         self._search = search
         self._builder = builder
@@ -66,15 +68,23 @@ class JobRunner:
         self._limits = limits
         self._clock = clock
         self._results = results
+        self._catalog = catalog
         self._active = asyncio.Semaphore(limits.max_active_jobs)
         self._tasks: set[asyncio.Task[None]] = set()
 
-    def submit(self, target: Target, detectors: Sequence[str] | None, max_exposures_per_frame: int) -> Job:
+    def submit(
+        self,
+        target: Target,
+        detectors: Sequence[str] | None,
+        max_exposures_per_frame: int,
+        target_name: str | None = None,
+    ) -> Job:
         job = Job(
             id=uuid.uuid4().hex[:12],
             target=target,
             detectors=tuple(dict.fromkeys(detectors)) if detectors else None,
             max_exposures_per_frame=max_exposures_per_frame,
+            target_name=target_name,
             created_at=self._clock(),
         )
         existing = self._store.find_reusable(job.key) or self._restore(job.key)
@@ -148,8 +158,12 @@ class JobRunner:
         job.eta_seconds = estimate_eta([], job.remaining_exposures)
         job.status = JobStatus.BUILDING
         grid = FrameGrid.centered_on(job.target)
+        analysis = JobAnalysis(job, self._catalog)
         for frame in job.frames:
-            await self._build_frame(job, frame, grid)
+            image = await self._build_frame(job, frame, grid)
+            if image is not None:
+                analysis.frame_ready(frame, image)
+            await analysis.maybe_compute_motion(grid)
             job.eta_seconds = estimate_eta(_timing_samples(job), job.remaining_exposures)
             logger.info(
                 "job %s: %d/%d frames, eta %.0f-%.0fs. %s",
@@ -162,7 +176,7 @@ class JobRunner:
         job.status = JobStatus.DONE
         await self._persist(job)
 
-    async def _build_frame(self, job: Job, frame: Frame, grid: FrameGrid) -> None:
+    async def _build_frame(self, job: Job, frame: Frame, grid: FrameGrid) -> FrameImage | None:
         try:
             image = await self._builder.build(frame.exposures, job.target, grid)
             stretch = job.stretches.get(frame.detector) or StretchParams.from_image(image.image)
@@ -171,11 +185,11 @@ class JobRunner:
         except NoUsableExposures as error:
             logger.warning("frame %s has no usable exposure: %s", frame.id, error)
             frame.status = FrameStatus.FAILED
-            return
+            return None
         except Exception:
             logger.exception("frame %s failed", frame.id)
             frame.status = FrameStatus.FAILED
-            return
+            return None
         if frame.detector not in job.stretches:
             job.stretches[frame.detector] = stretch
             job.stretch_frames[frame.detector] = frame.id
@@ -184,6 +198,7 @@ class JobRunner:
         frame.download_s, frame.assembly_s = image.download_s, image.assembly_s
         frame.alerts = frame_alerts(image.n_exposures_used, image.saturated_core_exposures)
         frame.status = FrameStatus.READY
+        return image
 
 
 def _timing_samples(job: Job) -> list[tuple[float, int]]:

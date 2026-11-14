@@ -130,9 +130,11 @@ async def test_job_lifecycle_matches_contract(tmp_path):
         "frames",
         "stretch",
         "alerts",
+        "motion",
+        "motion_reason",
     }
     assert body["status"] == "done"
-    assert body["target"] == {"ra": 269.4462, "dec": 4.7682, "fov_arcmin": 6.0}
+    assert body["target"] == {"ra": 269.4462, "dec": 4.7682, "fov_arcmin": 6.0, "name": None}
     assert body["progress"] == {"frames_done": 6, "frames_total": 6, "percent": 100}
     assert body["eta_seconds"] == {"min": 0, "max": 0}
     assert [s["n_exposures"] for s in body["seasons"]] == [12, 12, 12]

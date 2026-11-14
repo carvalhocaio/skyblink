@@ -12,6 +12,7 @@ from skyblink.adapters.discovery_cache import CachedExposureSearch
 from skyblink.adapters.irsa_sia import COLLECTIONS
 from skyblink.adapters.job_store import JobStore
 from skyblink.adapters.result_store import ResultStore
+from skyblink.adapters.simbad import CatalogEntry, resolve
 from skyblink.api.routes import Services, router
 from skyblink.config import Settings
 from skyblink.services.frame_builder import FrameBuilder
@@ -26,6 +27,10 @@ def _configure_logging() -> None:
 
 async def _finish(task: asyncio.Task) -> None:
     await asyncio.gather(task, return_exceptions=True)
+
+
+async def simbad_resolver(name: str) -> CatalogEntry:
+    return await asyncio.to_thread(resolve, name)
 
 
 def irsa_services(settings: Settings, client: httpx.AsyncClient, cache: CutoutCache) -> Services:
@@ -46,6 +51,7 @@ def irsa_services(settings: Settings, client: httpx.AsyncClient, cache: CutoutCa
             job_ttl_s=settings.job_ttl_s,
         ),
         results=ResultStore(settings.output_dir / "results"),
+        catalog=simbad_resolver,
     )
     return Services(store=store, runner=runner)
 

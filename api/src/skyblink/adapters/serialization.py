@@ -13,6 +13,7 @@ from skyblink.domain.models import (
     Season,
     Target,
 )
+from skyblink.domain.motion import CatalogComparison, CatalogSource, Motion, SeasonMotion
 from skyblink.domain.stretch import StretchParams
 
 
@@ -65,12 +66,43 @@ def _frame_from_dict(data: dict[str, Any], png_dir: Path) -> Frame:
     return frame
 
 
+def _pair(value: list | None) -> tuple[float, float] | None:
+    return None if value is None else (float(value[0]), float(value[1]))
+
+
+def motion_to_dict(motion: Motion | None) -> dict[str, Any] | None:
+    return None if motion is None else dataclasses.asdict(motion)
+
+
+def motion_from_dict(data: dict[str, Any] | None) -> Motion | None:
+    if data is None:
+        return None
+    seasons = tuple(
+        SeasonMotion(
+            **{
+                **season,
+                "position_px": _pair(season["position_px"]),
+                "position_err_px": _pair(season["position_err_px"]),
+                "offset_px": _pair(season["offset_px"]),
+                "offset_err_px": _pair(season["offset_err_px"]),
+                "predicted_offset_px": _pair(season["predicted_offset_px"]),
+            }
+        )
+        for season in data["seasons"]
+    )
+    prediction = data["prediction"]
+    if prediction is not None:
+        prediction = CatalogComparison(**{**prediction, "source": CatalogSource(**prediction["source"])})
+    return Motion(**{**data, "seasons": seasons, "prediction": prediction})
+
+
 def job_to_dict(job: Job) -> dict[str, Any]:
     return {
         "id": job.id,
         "target": dataclasses.asdict(job.target),
         "detectors": list(job.detectors) if job.detectors else None,
         "max_exposures_per_frame": job.max_exposures_per_frame,
+        "target_name": job.target_name,
         "status": job.status.value,
         "seasons": [
             {"id": s.id, "exposures": [exposure_to_dict(e) for e in s.exposures]} for s in job.seasons
@@ -80,6 +112,8 @@ def job_to_dict(job: Job) -> dict[str, Any]:
         "primary_detector": job.primary_detector,
         "stretches": {d: dataclasses.asdict(s) for d, s in job.stretches.items()},
         "stretch_frames": dict(job.stretch_frames),
+        "motion": motion_to_dict(job.motion),
+        "motion_reason": job.motion_reason,
     }
 
 
@@ -89,6 +123,7 @@ def job_from_dict(data: dict[str, Any], png_dir: Path, created_at: float) -> Job
         target=Target(**data["target"]),
         detectors=tuple(data["detectors"]) if data["detectors"] else None,
         max_exposures_per_frame=data["max_exposures_per_frame"],
+        target_name=data.get("target_name"),
         status=JobStatus(data["status"]),
         seasons=[
             Season(id=s["id"], exposures=tuple(exposure_from_dict(e) for e in s["exposures"]))
@@ -101,4 +136,6 @@ def job_from_dict(data: dict[str, Any], png_dir: Path, created_at: float) -> Job
         stretch_frames=dict(data["stretch_frames"]),
         eta_seconds=(0.0, 0.0),
         created_at=created_at,
+        motion=motion_from_dict(data.get("motion")),
+        motion_reason=data.get("motion_reason"),
     )

@@ -8,7 +8,13 @@ from astropy.time import Time
 
 from skyblink.adapters.irsa_cutouts import CutoutClient
 from skyblink.config import Settings
-from skyblink.domain.astrometry import bootstrap_means, bootstrap_shift, centroid, find_reference_stars
+from skyblink.domain.astrometry import (
+    bootstrap_means,
+    bootstrap_shift,
+    centroid,
+    measure_drift,
+    select_reference_stars,
+)
 from skyblink.domain.grid import SPHEREX_PIXEL_ARCSEC, FrameGrid
 from skyblink.domain.models import Exposure, Season, Target
 from skyblink.domain.proper_motion import BARNARD_GAIA_DR3, apparent_position
@@ -16,9 +22,6 @@ from skyblink.domain.seasons import spread_evenly
 from skyblink.services.discovery import discover_seasons
 from skyblink.services.frame_builder import FrameImage, reproject_exposure, stack_cutouts
 from skyblink.wiring import cutout_client, http_client, sia_client
-
-REFERENCE_THRESHOLD = 1.0
-TARGET_EXCLUSION_PX = 10
 
 
 @dataclass(frozen=True)
@@ -100,23 +103,12 @@ def report(measurements: list[SeasonMeasurement]) -> None:
         f"  measured - predicted:         {describe(*residual)}  |r| = {np.hypot(*residual):.3f} px "
         f"({np.hypot(*residual) / sigma:.1f} sigma)"
     )
-    stars = find_reference_stars(
-        first.frame.image,
-        tuple(first.positions.mean(axis=0)),
-        TARGET_EXCLUSION_PX,
-        REFERENCE_THRESHOLD,
-        first.frame.saturated_count,
-    )
-    drifts = []
-    for star in stars:
-        start, end = centroid(first.frame.image, star), centroid(last.frame.image, star)
-        if start is not None and end is not None:
-            drifts.append(np.hypot(*np.subtract(end, start)))
-    if drifts:
-        print(
-            f"  background stars: n={len(drifts)} median |d| = {np.median(drifts):.3f} px, "
-            f"max {np.max(drifts):.3f} px"
-        )
+    stars = select_reference_stars(first.frame.image, first.frame.saturated_count)
+    drift, usable = measure_drift(first.frame.image, last.frame.image, stars)
+    if drift is None:
+        print(f"  background stars: only {usable} usable (need 3), alignment not checked")
+    else:
+        print(f"  background stars: n={drift.n_stars} median offset = {drift.magnitude:.3f} px")
 
 
 async def main() -> None:

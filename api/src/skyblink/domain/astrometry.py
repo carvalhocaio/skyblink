@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 import numpy as np
+from astropy.stats import mad_std
 from scipy import ndimage
 
 CENTROID_HALF_WIDTH = 3
@@ -90,3 +91,53 @@ def find_reference_stars(
         and edge <= x < cols - edge
         and np.hypot(x - exclude_xy[0], y - exclude_xy[1]) > exclude_radius
     ]
+
+
+REFERENCE_MIN_SNR = 10.0
+CENTRE_EXCLUSION_RADIUS = 1.5
+MIN_REFERENCE_STARS = 3
+
+
+@dataclass(frozen=True)
+class Drift:
+    dx: float
+    dy: float
+    n_stars: int
+
+    @property
+    def magnitude(self) -> float:
+        return float(np.hypot(self.dx, self.dy))
+
+
+def frame_noise(image: np.ndarray) -> float:
+    return float(mad_std(image, ignore_nan=True))
+
+
+def frame_centre(image: np.ndarray) -> tuple[float, float]:
+    return (image.shape[1] - 1) / 2, (image.shape[0] - 1) / 2
+
+
+def select_reference_stars(
+    image: np.ndarray, saturated: np.ndarray | None, min_snr: float = REFERENCE_MIN_SNR
+) -> list[tuple[float, float]]:
+    return find_reference_stars(
+        image,
+        frame_centre(image),
+        CENTRE_EXCLUSION_RADIUS,
+        threshold=min_snr * frame_noise(image),
+        saturated=saturated,
+    )
+
+
+def measure_drift(
+    reference: np.ndarray, image: np.ndarray, stars: list[tuple[float, float]]
+) -> tuple[Drift | None, int]:
+    offsets = []
+    for star in stars:
+        before, after = centroid(reference, star), centroid(image, star)
+        if before is not None and after is not None:
+            offsets.append((after[0] - before[0], after[1] - before[1]))
+    if len(offsets) < MIN_REFERENCE_STARS:
+        return None, len(offsets)
+    dx, dy = np.median(np.array(offsets), axis=0)
+    return Drift(float(dx), float(dy), len(offsets)), len(offsets)

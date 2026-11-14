@@ -8,6 +8,7 @@ from pathlib import Path
 
 from skyblink.adapters.serialization import job_from_dict, job_to_dict
 from skyblink.domain.models import FrameStatus, Job, JobStatus
+from skyblink.domain.version import PIPELINE_VERSION
 
 logger = logging.getLogger(__name__)
 
@@ -23,12 +24,13 @@ def is_persistable(job: Job) -> bool:
 
 
 class ResultStore:
-    def __init__(self, root: Path):
+    def __init__(self, root: Path, pipeline_version: str = PIPELINE_VERSION):
         self._root = root
+        self._version = pipeline_version
         (self._root / "by_key").mkdir(parents=True, exist_ok=True)
 
     def _index(self, key: tuple) -> Path:
-        digest = hashlib.sha256(json.dumps(key).encode()).hexdigest()
+        digest = hashlib.sha256(json.dumps([self._version, *key]).encode()).hexdigest()
         return self._root / "by_key" / digest
 
     def save(self, job: Job) -> Path:

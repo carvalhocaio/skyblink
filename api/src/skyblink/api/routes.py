@@ -32,6 +32,7 @@ async def create_job(body: JobRequest, request: Request) -> JobCreated:
         Target(ra=body.ra, dec=body.dec, fov_arcmin=body.fov_arcmin),
         body.detectors,
         body.max_exposures_per_frame,
+        body.target_name,
     )
     return JobCreated(job_id=job.id, status=job.status)
 

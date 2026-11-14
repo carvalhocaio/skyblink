@@ -38,12 +38,16 @@ Endpoints:
 
 - `GET /health` → `200 {"status": "ok"}` (does not touch IRSA).
 - `POST /jobs` → `202 {job_id, status}`. Body: `ra` 0–360, `dec` −90–90, `fov_arcmin` 1–30 (default 6),
-  `detectors` subset of `D1`…`D6` or `null` (all), `max_exposures_per_frame` ≥ 1 (default 30). Anything else → `422`.
+  `detectors` subset of `D1`…`D6` or `null` (all), `max_exposures_per_frame` ≥ 1 (default 30), and the optional
+  (additive) `target_name` (1–100 chars, e.g. `"Barnard's star"`) that enables the catalog prediction. Anything
+  else → `422`.
   If a job with the same parameters is running or done, its `job_id` and current `status` are returned instead
   of starting a new one (a `failed` job is never reused).
 - `GET /jobs/{job_id}` → `status`, `target`, `progress`, `eta_seconds`, `seasons`, `frames` (sorted by date), `stretch`,
   `alerts`. `404` for unknown jobs. `stretch` = `{fixed_from_frame, by_detector}`: `by_detector` (additive) maps each
   detector to the frame its brightness scale was fixed on; `fixed_from_frame` is the first detector's entry.
+  Additive Level 3 fields: `target.name` (the `target_name` sent, or `null`), `motion` and `motion_reason`
+  (see *Measured motion* below).
 - `GET /frames/{frame_id}.png` → PNG at native resolution (6.15″/px; scale it up with `image-rendering: pixelated`).
   `404` until the frame is `ready`.
 
@@ -78,6 +82,11 @@ Behaviour and conventions:
   12.5% of 30-exposure frames anywhere on the sky (it fired on WISE 0855 and Epsilon Indi B). With the new rule the
   worst case is 0.055% (8-exposure frame) and 2.6×10⁻⁸ for 20 exposures; truly saturated stars (Barnard, RW Aur,
   R Dra) have the flags in 100% of their exposures.
+- `ALIGNMENT_DRIFT` (warning, per frame): reference stars are picked on the first ready frame of each detector —
+  peak S/N ≥ 10 over the frame noise (MAD), not within 3 px of a saturated pixel, the brightest within 3 px
+  (isolated), outside the 3×3 box at the centre and ≥ 4 px from the edge. Each later frame of that detector is
+  compared with it: the median offset of the stars (iterative 7×7 centroids) above 0.2 px raises the alert. With
+  fewer than 3 usable stars there is no alert and the log says how many were usable.
 - Downloads share one global limit across all jobs: 6 simultaneous requests; after ≥ 20 cutout requests, if more
   than 20% were HTTP 503 it drops to 4. The 503 count and the errors by status (502, 504, timeouts…) are logged after
   every frame. Simultaneous requests for the same cutout share a single download.
@@ -86,6 +95,50 @@ Behaviour and conventions:
   extensions and identical reprojection. On startup an older cache is compacted in place (once; marker
   `.compact-v1`). The cache is capped (`SKYBLINK_CACHE_MAX_GB`, default 8 GB on the 10 GB volume): when it grows past
   the cap, least-recently-used cutouts are removed down to 90% of it (reads refresh a cutout's time).
+
+### Measured motion (`motion`, additive)
+
+Computed for the first detector (D6 by default) once all its season frames are finished. `motion` is `null` with a
+human-readable `motion_reason` when the number can't be defended: fewer than 2 ready seasons, a season whose
+**peak S/N at the centroid is below 10** (peak of the 7×7 box ÷ frame noise, MAD), or fewer than 3 exposures
+(no error bar).
+
+- Position per season: iterative 7×7 centroid on the stacked frame, corrected by that frame's reference-star median
+  offset (`drift_corrected: false` when fewer than 3 reference stars were usable).
+- Error bar: bootstrap of the stack — the season's exposures are resampled with replacement, restacked and
+  re-centroided 50 times; σ is the spread. The seed comes from the season (id + date), so identical requests give
+  identical numbers. With 50 resamples σ itself is uncertain by ~10%.
+- `offset`: from the first season (`reference_season_id`), in grid pixels (`dx_px` +x = west, `dy_px` +y = north)
+  and arcsec (`east_arcsec`, `north_arcsec`; 6.15″/px), with errors; `total_arcsec` ± `total_err_arcsec`.
+- `rate_arcsec_yr {value, error}`: weighted linear fit of the season positions vs time. It is the *apparent* rate
+  (it includes annual parallax).
+- With `target_name`: the name is resolved in SIMBAD (`scripts/simbad_position.py` logic, CDS with Harvard mirror
+  fallback): position (epoch J2000), proper motion, parallax and radial velocity. The position at each season's
+  `mid_date` is propagated with `apply_space_motion`, and annual parallax is added as the offset between the star
+  and a very distant object in the same direction after transforming both to GCRS at that time (aberration is
+  common to every star and already absorbed by the image WCS). Each season then gets `predicted_offset` and
+  `residual_sigma` = |(measured − predicted) / σ| combined over both axes; `catalog` names the source
+  (`name: "SIMBAD"`, `object`, `coordinates_source` bibcode, the astrometry used), the predicted rate at the same
+  epochs and `rate_residual_sigma`. If the lookup fails, `catalog` is `null` and `catalog_reason` says why; the
+  measured motion is kept.
+- Saturated stars (`SATURATED_CORE`) are centroided on their wings; for Barnard's Star this agrees with Gaia DR3
+  within ~1σ.
+
+Barnard's Star, D6, from the local cache with IRSA unreachable (`target_name: "Barnard's star"`):
+
+| season | mid_date | measured offset (E, N) ″ | predicted (E, N) ″ | residual |
+|---|---|---|---|---|
+| 0 | 2025-08-21 | reference | reference | – |
+| 1 | 2026-04-11 | (−0.04 ± 0.57, +6.42 ± 0.47) | (+0.47, +6.59) | 0.96σ |
+| 2 | 2026-08-18 | (−1.43 ± 0.55, +10.25 ± 0.45) | (−0.78, +10.32) | 1.18σ |
+
+Rate 10.83 ± 0.38″/yr measured vs 10.65″/yr predicted at the same epochs (+0.46σ); SIMBAD total proper motion
+10.39″/yr. Reference-star drift 0.095 and 0.021 px (7 stars), no `ALIGNMENT_DRIFT`. For season 1 the parallax term
+moves the prediction ~1″ east ((+0.47, +6.59)″ with it, (−0.51, +6.63)″ without), but the measured east error
+(±0.57″) is too large to tell the two apart (0.96σ vs 0.95σ).
+
+Saved results include `PIPELINE_VERSION` in their key: any change to frames, alerts or fields bumps it and old saved
+results are ignored.
 
 Useful scripts:
 

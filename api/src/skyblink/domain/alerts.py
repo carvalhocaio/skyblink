@@ -2,6 +2,7 @@ from collections.abc import Sequence
 
 import numpy as np
 
+from skyblink.domain.astrometry import Drift
 from skyblink.domain.models import Alert, AlertCode, Season
 
 SEVERITY = {
@@ -15,6 +16,7 @@ MIN_EXPOSURES_PER_FRAME = 5
 TARGET_RADIUS_PX = 1
 SATURATED_CORE_MIN_FRACTION = 0.25
 SATURATED_CORE_MIN_EXPOSURES = 2
+ALIGNMENT_DRIFT_MAX_PX = 0.2
 
 
 def alert(code: AlertCode) -> Alert:
@@ -40,6 +42,10 @@ def is_saturated_core(saturated_exposures: int, n_exposures: int) -> bool:
         saturated_exposures >= SATURATED_CORE_MIN_EXPOSURES
         and saturated_exposures >= SATURATED_CORE_MIN_FRACTION * n_exposures
     )
+
+
+def is_alignment_drift(drift: Drift | None) -> bool:
+    return drift is not None and drift.magnitude > ALIGNMENT_DRIFT_MAX_PX
 
 
 def frame_alerts(n_exposures_used: int, saturated_core_exposures: int) -> list[Alert]:

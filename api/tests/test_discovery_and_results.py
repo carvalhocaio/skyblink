@@ -131,3 +131,11 @@ def test_missing_png_or_unknown_key_is_not_restored(tmp_path):
 def test_only_fully_ready_done_jobs_are_persisted(tmp_path):
     assert is_persistable(done_job(tmp_path))
     assert not is_persistable(done_job(tmp_path, FrameStatus.FAILED))
+
+
+def test_saved_results_are_invalidated_by_a_new_pipeline_version(tmp_path):
+    job = done_job(tmp_path)
+    ResultStore(tmp_path / "results", pipeline_version="2").save(job)
+
+    assert ResultStore(tmp_path / "results", pipeline_version="2").load(job.key, created_at=0.0) is not None
+    assert ResultStore(tmp_path / "results", pipeline_version="3").load(job.key, created_at=0.0) is None

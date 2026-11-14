@@ -1,8 +1,12 @@
 from dataclasses import dataclass, field
 from enum import StrEnum
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from skyblink.domain.stretch import StretchParams
+
+if TYPE_CHECKING:
+    from skyblink.domain.motion import Motion
 
 DETECTORS = ("D1", "D2", "D3", "D4", "D5", "D6")
 
@@ -109,6 +113,7 @@ class Job:
     target: Target
     detectors: tuple[str, ...] | None
     max_exposures_per_frame: int
+    target_name: str | None = None
     status: JobStatus = JobStatus.QUEUED
     seasons: list[Season] = field(default_factory=list)
     frames: list[Frame] = field(default_factory=list)
@@ -118,6 +123,8 @@ class Job:
     stretch_frames: dict[str, str] = field(default_factory=dict)
     eta_seconds: tuple[float, float] | None = None
     created_at: float = 0.0
+    motion: "Motion | None" = None
+    motion_reason: str | None = None
 
     @property
     def key(self) -> tuple:
@@ -127,6 +134,7 @@ class Job:
             self.target.fov_arcmin,
             self.detectors,
             self.max_exposures_per_frame,
+            self.target_name,
         )
 
     @property

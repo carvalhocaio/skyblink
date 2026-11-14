@@ -50,6 +50,8 @@ class FrameImage:
     saturated_count: np.ndarray
     n_exposures_used: int
     saturated_core_exposures: int = 0
+    exposure_data: np.ndarray | None = None
+    exposure_variance: np.ndarray | None = None
     download_s: float = 0.0
     assembly_s: float = 0.0
 
@@ -101,15 +103,17 @@ def stack_cutouts(paths: Sequence[Path], grid: FrameGrid) -> FrameImage:
     exposures = [e for e in _load_all(paths, grid) if np.isfinite(e.data).any()]
     if not exposures:
         raise NoUsableExposures("no exposure overlaps the frame")
-    result = weighted_mean_stack(
-        np.stack([e.data for e in exposures]), np.stack([e.variance for e in exposures])
-    )
+    data = np.stack([e.data for e in exposures])
+    variance = np.stack([e.variance for e in exposures])
+    result = weighted_mean_stack(data, variance)
     return FrameImage(
         image=result.image,
         coverage=result.coverage,
         saturated_count=np.sum([e.saturated for e in exposures], axis=0),
         n_exposures_used=len(exposures),
         saturated_core_exposures=sum(touches_core(e.saturated) for e in exposures),
+        exposure_data=data,
+        exposure_variance=variance,
     )
 
 
