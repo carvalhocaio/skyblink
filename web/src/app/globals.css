@@ -84,18 +84,18 @@
 }
 
 .dark {
-  --background: oklch(0.15 0 0);
-  --foreground: oklch(0.97 0 0);
-  --card: oklch(0.19 0 0);
+  --background: oklch(0.12 0.02 265);
+  --foreground: oklch(0.97 0.005 265);
+  --card: oklch(0.17 0.025 265);
   --card-foreground: oklch(0.97 0 0);
-  --popover: oklch(0.19 0 0);
+  --popover: oklch(0.17 0.025 265);
   --popover-foreground: oklch(0.97 0 0);
   --primary: oklch(0.85 0.13 205);
   --primary-foreground: oklch(0.18 0.04 250);
   --secondary: oklch(0.25 0 0);
   --secondary-foreground: oklch(0.97 0 0);
-  --muted: oklch(0.22 0 0);
-  --muted-foreground: oklch(0.72 0 0);
+  --muted: oklch(0.22 0.02 265);
+  --muted-foreground: oklch(0.74 0.02 265);
   --accent: oklch(0.25 0 0);
   --accent-foreground: oklch(0.97 0 0);
   --destructive: oklch(0.704 0.191 22.216);
@@ -130,47 +130,101 @@
   }
 }
 
-/* Pure-CSS starfield: tiny dots tiled at different sizes so the pattern doesn't repeat visibly. */
-.starfield {
-  background-image:
-    radial-gradient(1px 1px at 20px 30px, oklch(1 0 0 / 0.7), transparent),
-    radial-gradient(1px 1px at 140px 80px, oklch(1 0 0 / 0.5), transparent),
-    radial-gradient(1.5px 1.5px at 90px 150px, oklch(0.9 0.08 210 / 0.8), transparent),
-    radial-gradient(1px 1px at 230px 210px, oklch(1 0 0 / 0.45), transparent),
-    radial-gradient(1px 1px at 310px 40px, oklch(1 0 0 / 0.6), transparent),
-    radial-gradient(1.5px 1.5px at 380px 260px, oklch(0.9 0.06 60 / 0.7), transparent),
-    radial-gradient(ellipse at 70% 0%, oklch(0.35 0.12 265 / 0.45), transparent 60%);
-  background-size: 400px 300px, 400px 300px, 400px 300px, 400px 300px, 400px 300px, 400px 300px, 100% 100%;
+/* Entrance */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(16px); filter: blur(4px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+.fade-up { animation: fade-up 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+
+/* Logo: two dots trading places, a blink comparator in 10 px */
+.logo-dot {
+  position: relative;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  border: 1.5px solid var(--primary);
+}
+.logo-dot::after {
+  content: "";
+  position: absolute;
+  top: 3.5px;
+  left: 2px;
+  width: 4px;
+  height: 4px;
+  border-radius: 9999px;
+  background: var(--primary);
+  animation: logo-blink 2.4s steps(1) infinite;
+}
+@keyframes logo-blink {
+  50% { transform: translateX(4px); background: oklch(0.88 0.12 80); }
 }
 
-/* Editorial display type and the hero's one entrance. */
-.text-mega {
-  font-size: min(19.5vw, 16.5rem);
-  line-height: 0.8;
-  letter-spacing: -0.055em;
+/* Telescope eyepiece around the hero GIF */
+.eyepiece-ring {
+  border: 1px dashed oklch(1 0 0 / 0.18);
+  animation: spin 80s linear infinite;
 }
-@keyframes rise {
-  from { transform: translateY(105%); }
-  to { transform: none; }
+.eyepiece-ring::before,
+.eyepiece-ring::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: conic-gradient(from 0deg, transparent 0 85%, oklch(0.85 0.13 205 / 0.55) 92%, transparent 100%);
+  mask: radial-gradient(farthest-side, transparent calc(100% - 2px), black calc(100% - 1px));
 }
-@keyframes fade-up {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: none; }
+.eyepiece-ring::after {
+  inset: -14px;
+  border: 1px solid oklch(1 0 0 / 0.06);
+  background: none;
 }
-.rise {
-  display: inline-block;
-  animation: rise 1.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Section label: a moon on a tiny orbit */
+.orbit {
+  position: relative;
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  border: 1px solid oklch(0.85 0.13 205 / 0.4);
 }
-.fade-up {
-  animation: fade-up 0.8s ease-out both;
+.orbit::after {
+  content: "";
+  position: absolute;
+  top: -2.5px;
+  left: 5.5px;
+  width: 4px;
+  height: 4px;
+  border-radius: 9999px;
+  background: var(--primary);
+  transform-origin: 2px 10.5px;
+  animation: spin 6s linear infinite;
+}
+
+/* Easter eggs */
+.uncertain { animation: uncertain 0.09s steps(2) infinite; filter: blur(0.6px); }
+@keyframes uncertain {
+  0% { transform: translate(1.8%, -1.2%); }
+  50% { transform: translate(-1.5%, 1.6%); }
+}
+.apple { animation: fall 1.4s cubic-bezier(0.55, 0, 1, 0.45) forwards; }
+@keyframes fall {
+  80% { opacity: 1; }
+  to { transform: translateY(110vh) rotate(160deg); opacity: 0; }
+}
+.egg-toast { animation: fade-up 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.atom-idle { animation: spin 12s linear infinite; }
+.egg-panel:popover-open { animation: fade-up 0.25s ease-out; }
+.radium h1,
+.radium h2,
+.radium h3 {
+  color: oklch(0.93 0.17 150);
+  text-shadow: 0 0 18px oklch(0.85 0.2 150 / 0.75), 0 0 2px oklch(0.95 0.15 150);
+  transition: color 0.8s, text-shadow 0.8s;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-  .rise,
-  .fade-up {
-    animation: none;
-  }
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
 }

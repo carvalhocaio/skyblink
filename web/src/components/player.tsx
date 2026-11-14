@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatMonth as month, type Frame } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { useEggs } from "@/lib/eggs";
 
 const SPEEDS = [1200, 600, 250];
 
@@ -23,6 +24,13 @@ export function Player({ frames, waiting, object }: Props) {
   const n = ready.length;
   const current = Math.min(index, n - 1);
   const animating = playing && n > 1;
+  const { unlock } = useEggs();
+  const [uncertain, setUncertain] = useState(false);
+  const poke = () => {
+    setUncertain(true);
+    setTimeout(() => setUncertain(false), 2600);
+    unlock("heisenberg");
+  };
 
   useEffect(() => {
     if (!animating) return;
@@ -53,7 +61,7 @@ export function Player({ frames, waiting, object }: Props) {
 
   return (
     <div className="space-y-3">
-      <div className="relative mx-auto aspect-square w-full max-w-[472px] overflow-hidden rounded-md border bg-black">
+      <div className="relative mx-auto aspect-square w-full max-w-[472px] overflow-hidden rounded-xl border bg-black shadow-[0_0_80px_-30px_oklch(0.85_0.13_205/0.5)]" onClick={poke}>
         {ready.map((f, i) => (
           // eslint-disable-next-line @next/next/no-img-element -- tiny PNGs from the API, upscaled pixel-exact
           <img
@@ -64,7 +72,7 @@ export function Player({ frames, waiting, object }: Props) {
             style={{ imageRendering: "pixelated" }}
           />
         ))}
-        <Reticle />
+        <Reticle uncertain={uncertain} />
         <div className="absolute top-2 left-2 rounded bg-black/70 px-2 py-1 font-mono text-sm text-white">
           {label(ready[current], t.locale)}
         </div>
@@ -123,7 +131,7 @@ export function Player({ frames, waiting, object }: Props) {
           );
         })}
       </ol>
-      <div className="rounded-md border bg-card p-5 text-sm text-muted-foreground">
+      <div className="rounded-xl border bg-card/70 backdrop-blur-sm p-5 text-sm text-muted-foreground">
         <p className="font-medium text-foreground">{object ? object.name : p.whatTitle}</p>
         {object ? (
           <dl className="mt-2 space-y-2">
@@ -141,9 +149,9 @@ export function Player({ frames, waiting, object }: Props) {
   );
 }
 
-function Reticle() {
+function Reticle({ uncertain }: { uncertain: boolean }) {
   return (
-    <svg viewBox="0 0 100 100" className="pointer-events-none absolute inset-0 size-full" aria-hidden>
+    <svg viewBox="0 0 100 100" className={`pointer-events-none absolute inset-0 size-full ${uncertain ? "uncertain" : ""}`} aria-hidden>
       <g stroke="#22d3ee" strokeWidth="0.6" opacity="0.85">
         <line x1="50" y1="36" x2="50" y2="45" />
         <line x1="50" y1="55" x2="50" y2="64" />

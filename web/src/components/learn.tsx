@@ -22,7 +22,7 @@ export function HowItWorks() {
       {t.how.steps.map((s, i) => {
         const Icon = STEP_ICONS[i];
         return (
-          <li key={i} className="rounded-md border bg-card p-6">
+          <li key={i} className="rounded-xl border bg-card/70 p-6 backdrop-blur-sm transition-transform hover:-translate-y-0.5">
             <span className="flex items-center gap-3 text-primary">
               <Icon className="size-6" aria-hidden />
               <span className="text-sm font-medium">{i + 1}</span>
@@ -50,7 +50,7 @@ export function AboutSpherex() {
         </div>
         <ul className="grid gap-3 text-sm">
           {a.facts.map((f, i) => (
-            <li key={i} className="rounded-md border bg-card p-4">
+            <li key={i} className="rounded-xl border bg-card/70 backdrop-blur-sm p-4">
               <b>{f.title}</b>
               <p className="mt-1 text-muted-foreground">{f.text}</p>
             </li>
@@ -81,7 +81,7 @@ export function AboutSpherex() {
           <span>{a.shorter}</span>
           <span>{a.longer}</span>
         </div>
-        <p className="rounded-md border bg-card p-4 text-sm" aria-live="polite">
+        <p className="rounded-xl border bg-card/70 backdrop-blur-sm p-4 text-sm" aria-live="polite">
           <b>
             {d.id} · {d.range}
           </b>
@@ -97,7 +97,7 @@ export function AboutSpherex() {
 export function Faq() {
   const { t } = useT();
   return (
-    <div className="divide-y rounded-md border bg-card">
+    <div className="divide-y rounded-xl border bg-card/70 backdrop-blur-sm">
       {t.faq.items.map((f, i) => (
         <details key={i} className="p-4">
           <summary className="cursor-pointer font-medium">{f.q}</summary>

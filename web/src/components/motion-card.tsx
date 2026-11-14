@@ -1,19 +1,26 @@
 "use client";
 
+import { useEffect } from "react";
 import type { Job } from "@/lib/api";
+import { useEggs } from "@/lib/eggs";
 import { useT } from "@/lib/i18n";
 import { reasonKey, verdict } from "@/lib/motion";
 
 export function MotionCard({ job }: { job: Job }) {
   const { t } = useT();
   const m = t.motion;
+  const { unlock } = useEggs();
+  const agreed = job.status === "done" && !!job.motion && verdict(job.motion) === "agree";
+  useEffect(() => {
+    if (agreed) unlock("galileo");
+  }, [agreed, unlock]);
   if (job.status !== "done" || job.motion === undefined) return null;
 
   const fmt = (n: number) => n.toLocaleString(t.locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
   if (!job.motion) {
     return (
-      <section className="rounded-md border bg-card p-5 text-sm" aria-labelledby="motion-title">
+      <section className="rounded-xl border bg-card/70 backdrop-blur-sm p-5 text-sm" aria-labelledby="motion-title">
         <h3 id="motion-title" className="font-medium">{m.title}</h3>
         <p className="mt-2 text-muted-foreground">
           {m.unavailable} {m.reasons[reasonKey(job.motion_reason)]}
@@ -30,7 +37,7 @@ export function MotionCard({ job }: { job: Job }) {
   const pos = (n: number) => `${Math.min(100, Math.max(0, (n / max) * 100))}%`;
 
   return (
-    <section className="space-y-4 rounded-md border bg-card p-5 text-sm" aria-labelledby="motion-title">
+    <section className="space-y-4 rounded-xl border bg-card/70 backdrop-blur-sm p-5 text-sm" aria-labelledby="motion-title">
       <h3 id="motion-title" className="font-medium">{m.title}</h3>
 
       <dl className="grid gap-3 sm:grid-cols-2">
@@ -76,6 +83,7 @@ export function MotionCard({ job }: { job: Job }) {
       </div>
 
       <p className={`pt-2 font-medium ${v === "agree" ? "text-emerald-300" : v === "disagree" ? "text-amber-300" : ""}`}>{m[v]}</p>
+      {v === "agree" && <p className="border-l-2 border-amber-300/60 pl-3 text-sm text-muted-foreground italic">{t.eggs.galileo}</p>}
       <p className="text-xs text-muted-foreground">
         {m.scale}
         {cat && ` ${m.source}: ${cat.name} (${cat.object}).`}

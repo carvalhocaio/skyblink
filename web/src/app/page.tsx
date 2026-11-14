@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState, type ReactNode } from "react";
-import { ArrowRight, Plus } from "lucide-react";
+import { ArrowRight, Box, Cat } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -13,6 +13,8 @@ import { AboutSpherex, Faq, HowItWorks } from "@/components/learn";
 import { LANGS, useT, type Lang } from "@/lib/i18n";
 import { findTarget, TARGETS } from "@/lib/targets";
 import { useJob, type Target } from "@/lib/use-job";
+import { EggsProvider, useEggs, useNewton } from "@/lib/eggs";
+import { Sky } from "@/components/sky";
 
 const DETECTOR = "D6";
 const WRAP = "mx-auto w-full max-w-7xl px-4 md:px-10";
@@ -25,9 +27,10 @@ function num(v: string | null) {
 
 function SectionLabel({ n, children }: { n: number; children: ReactNode }) {
   return (
-    <p className={MONO}>
-      <span className="text-muted-foreground">[ {String(n).padStart(2, "0")} ]</span>{" "}
-      <span className="font-semibold">{children}</span>
+    <p className="flex items-center gap-3 font-mono text-xs tracking-[0.2em] text-primary uppercase">
+      <span aria-hidden className="orbit" />
+      <span className="text-muted-foreground tabular-nums">{String(n).padStart(2, "0")}</span>
+      {children}
     </p>
   );
 }
@@ -70,40 +73,40 @@ function Home() {
     ["#faq", t.nav.faq],
   ];
 
+  const { unlock } = useEggs();
+  const { tap: tapLogo, node: apple } = useNewton();
+  const [cat, setCat] = useState<boolean | null>(null);
+  const openBox = () => {
+    setCat(Math.random() < 0.5);
+    unlock("schrodinger");
+  };
+  const rDra = featured === TARGETS[4] && job?.status === "done" && frames.length > 0;
+  useEffect(() => {
+    if (rDra) unlock("hawking");
+  }, [rDra, unlock]);
+
   return (
     <>
-      <header id="top" className={`${WRAP} pt-6`}>
-        <p aria-label="SkyBlink" className="text-mega overflow-hidden pb-[0.06em] font-semibold whitespace-nowrap">
-          {"SKYBLINK".split("").map((c, i) => (
-            <span key={i} aria-hidden className="rise" style={{ animationDelay: `${0.1 + i * 0.06}s` }}>
-              {c}
-            </span>
-          ))}
-        </p>
-
-        <div className={`fade-up mt-8 grid gap-6 text-gray-800 md:grid-cols-[1fr_auto_2fr_auto_1fr] md:items-start ${MONO}`} style={{ animationDelay: "0.5s" }}>
-          <p className="hidden leading-relaxed md:block">
-            {t.hero.tags.map((x) => (
-              <span key={x} className="block">
-                {x}
-              </span>
-            ))}
-          </p>
-          <ArrowRight className="mt-1 hidden size-3.5 text-muted-foreground md:block" strokeWidth={1} aria-hidden />
-          <p className="max-w-md leading-relaxed tracking-[0.12em] normal-case">{t.hero.tagline}</p>
-          <ArrowRight className="mt-1 hidden size-3.5 text-muted-foreground md:block" strokeWidth={1} aria-hidden />
-          <nav aria-label="Sections" className="flex flex-wrap items-center gap-x-5 gap-y-2 md:flex-col md:items-start md:gap-1.5">
+      <Sky />
+      {apple}
+      <header id="top" className={`${WRAP} relative`}>
+        <div className="flex h-18 items-center justify-between gap-4">
+          <button type="button" onClick={tapLogo} className="flex min-h-11 items-center gap-2.5 text-lg font-semibold tracking-tight select-none" aria-label="SkyBlink">
+            <span aria-hidden className="logo-dot" />
+            SkyBlink
+          </button>
+          <nav aria-label="Sections" className="flex items-center gap-1 text-sm text-muted-foreground">
             {navLinks.map(([href, label]) => (
-              <a key={href} href={href} className="py-2.5 hover:text-black hover:underline md:py-0">
+              <a key={href} href={href} className="hidden rounded-full px-3 py-2 transition-colors hover:bg-white/5 hover:text-foreground md:block">
                 {label}
               </a>
             ))}
-            <label className="flex items-center gap-2 md:mt-2">
+            <label className="ml-2">
               <span className="sr-only">{t.nav.language}</span>
               <select
                 value={lang}
                 onChange={(e) => go({ lang: e.target.value as Lang })}
-                className="min-h-9 rounded-md border bg-background px-2 py-1 tracking-[0.1em] outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                className="min-h-10 rounded-full border bg-card/60 px-3 text-sm text-foreground outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
               >
                 {Object.entries(LANGS).map(([code, label]) => (
                   <option key={code} value={code}>
@@ -115,64 +118,59 @@ function Home() {
           </nav>
         </div>
 
-        <div className="mt-14 grid items-end gap-10 pb-20 md:mt-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,400px)_200px]">
-          <div className="fade-up space-y-6" style={{ animationDelay: "0.6s" }}>
-            <p className={`flex items-center gap-3 ${MONO}`}>
-              01 <span className="h-px w-16 bg-black/20" aria-hidden />
+        <div className="grid items-center gap-14 pt-10 pb-24 md:pt-16 lg:grid-cols-[1.1fr_1fr] lg:pb-32">
+          <div>
+            <p className="fade-up flex flex-wrap gap-2" style={{ animationDelay: "0.05s" }}>
+              {t.hero.tags.map((x) => (
+                <span key={x} className="rounded-full border bg-card/50 px-3 py-1 font-mono text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
+                  {x}
+                </span>
+              ))}
             </p>
-            <h1 className="max-w-xl text-4xl leading-[1.05] font-normal tracking-tight text-balance md:text-6xl">{t.hero.title}</h1>
-            <p className="max-w-md text-[15px] leading-relaxed text-gray-700">{t.hero.text}</p>
-            <div className="flex flex-wrap items-center gap-4">
-              <Button
-                size="lg"
-                className="h-12 px-6 text-[15px] transition-all hover:-translate-y-0.5 hover:shadow-[3px_3px_0_rgba(17,17,17,0.5)] active:translate-y-0 active:shadow-none"
-                onClick={showBarnard}
-              >
+            <h1 className="fade-up mt-7 text-5xl leading-[0.98] font-semibold tracking-[-0.04em] text-balance sm:text-6xl xl:text-[5.4rem]" style={{ animationDelay: "0.15s" }}>
+              {t.hero.title}
+            </h1>
+            <p className="fade-up mt-7 max-w-xl text-lg leading-relaxed text-muted-foreground" style={{ animationDelay: "0.3s" }}>
+              {t.hero.text}
+            </p>
+            <div className="fade-up mt-9 flex flex-wrap items-center gap-3" style={{ animationDelay: "0.45s" }}>
+              <Button size="lg" className="h-12 rounded-full px-6 text-[15px] transition-transform hover:-translate-y-0.5 active:translate-y-0" onClick={showBarnard}>
                 {t.hero.cta}
               </Button>
-              <a href="#how" className={`inline-flex min-h-11 items-center gap-2 underline-offset-4 hover:underline ${MONO}`}>
-                {t.hero.secondary} <ArrowRight className="size-3.5" aria-hidden />
+              <a href="#how" className="inline-flex min-h-12 items-center gap-2 rounded-full border px-5 text-[15px] transition-colors hover:border-white/30 hover:bg-white/5">
+                {t.hero.secondary} <ArrowRight className="size-4" aria-hidden />
               </a>
             </div>
           </div>
 
-          {/* eslint-disable-next-line @next/next/no-img-element -- animated GIF of real SPHEREx frames, served as-is */}
-          <img
-            src="/demo/barnard.gif"
-            alt={t.hero.gifAlt}
-            width={472}
-            height={472}
-            className="fade-up mx-auto w-full max-w-[400px] rounded-md bg-black"
-            style={{ animationDelay: "0.8s" }}
-          />
-
-          <dl className="fade-up space-y-5 text-[13px]" style={{ animationDelay: "0.9s" }}>
-            <div>
-              <dt className="font-mono text-[10px] font-bold tracking-widest uppercase">{barnard.name}</dt>
-              <dd className="mt-1 leading-relaxed text-gray-600">{t.hero.specKind}</dd>
+          <figure className="fade-up relative mx-auto w-full max-w-[460px]" style={{ animationDelay: "0.35s" }}>
+            <div className="relative">
+            <div aria-hidden className="eyepiece-ring absolute -inset-5 rounded-full" />
+            <div className="relative aspect-square overflow-hidden rounded-full border-2 border-white/10 bg-black shadow-[0_0_120px_-20px_oklch(0.85_0.13_205/0.45)]">
+              {/* eslint-disable-next-line @next/next/no-img-element -- animated GIF of real SPHEREx frames, served as-is */}
+              <img src="/demo/barnard.gif" alt={t.hero.gifAlt} width={472} height={472} className="size-full scale-[1.32] object-cover" style={{ imageRendering: "pixelated" }} />
+              <div aria-hidden className="pointer-events-none absolute inset-0 rounded-full shadow-[inset_0_0_60px_20px_black]" />
             </div>
-            {[
-              [t.hero.specMotion, `${(10.5).toLocaleString(t.locale)}″ ${t.motion.perYear}`],
-              [t.hero.specSeasons, t.hero.specSeasonsValue],
-              [t.hero.specDetector, "D6 · 4.4–5.0 µm"],
-            ].map(([k, v]) => (
-              <div key={k}>
-                <dt className="font-mono text-[10px] tracking-widest text-gray-500 uppercase">{k}</dt>
-                <dd className="mt-0.5 font-medium">{v}</dd>
-              </div>
-            ))}
-            <button type="button" onClick={showBarnard} className="group flex min-h-11 items-center gap-3 outline-none">
-              <span className="flex size-10 items-center justify-center rounded-full border border-gray-400 transition-colors group-hover:border-black group-hover:bg-[#111] group-hover:text-white group-focus-visible:ring-3 group-focus-visible:ring-ring/50">
-                <Plus className="size-4" strokeWidth={1.5} aria-hidden />
-              </span>
-              <span className="font-mono text-[10px] font-bold tracking-widest uppercase">{t.hero.details}</span>
-            </button>
-          </dl>
+            </div>
+            <dl className="mt-10 grid grid-cols-3 gap-3 text-center">
+              {[
+                [t.hero.specMotion, `${(10.5).toLocaleString(t.locale)}″`],
+                [t.hero.specSeasons, "3"],
+                [t.hero.specDetector, "D6"],
+              ].map(([k, v]) => (
+                <div key={k} className="rounded-xl border bg-card/50 px-2 py-3 backdrop-blur-sm">
+                  <dt className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase">{k}</dt>
+                  <dd className="mt-1 text-xl font-semibold tabular-nums">{v}</dd>
+                </div>
+              ))}
+            </dl>
+            <figcaption className="sr-only">{barnard.name}: {t.hero.specKind}</figcaption>
+          </figure>
         </div>
       </header>
 
       <main>
-        <section id="explore" className="dark scroll-mt-0 bg-background text-foreground">
+        <section id="explore" className="scroll-mt-0 border-y bg-black/40 backdrop-blur-[2px]">
           <div className={`${WRAP} py-20 md:py-28`}>
             <SectionLabel n={2}>{t.explore.label}</SectionLabel>
             <h2 className="mt-8 max-w-4xl text-3xl leading-[1.1] font-medium tracking-tight text-balance md:text-5xl">{t.explore.heading}</h2>
@@ -238,10 +236,20 @@ function Home() {
         </section>
       </main>
 
-      <footer className="dark bg-background text-foreground">
-        <div className={`${WRAP} flex flex-col gap-4 py-10 md:flex-row md:items-end md:justify-between`}>
-          <p className="text-4xl font-semibold tracking-tight">SkyBlink</p>
-          <p className="max-w-xl font-mono text-[11px] leading-relaxed tracking-wider text-muted-foreground">{t.footer}</p>
+      <footer className="border-t bg-black/50">
+        <div className={`${WRAP} flex flex-col gap-6 py-10 md:flex-row md:items-end md:justify-between`}>
+          <div>
+            <p className="text-3xl font-semibold tracking-tight">SkyBlink</p>
+            <p className="mt-3 max-w-xl text-xs leading-relaxed text-muted-foreground">{t.footer}</p>
+          </div>
+          <button
+            type="button"
+            onClick={openBox}
+            className="group flex min-h-11 items-center gap-2 self-start rounded-full border border-dashed px-4 text-xs text-muted-foreground transition-colors hover:border-white/30 hover:text-foreground md:self-auto"
+          >
+            {cat === null ? <Box className="size-4 transition-transform group-hover:-rotate-12" aria-hidden /> : <Cat className="size-4 text-primary" aria-hidden />}
+            <span aria-live="polite">{cat === null ? t.eggs.box : cat ? t.eggs.alive : t.eggs.dead}</span>
+          </button>
         </div>
       </footer>
     </>
@@ -251,7 +259,9 @@ function Home() {
 export default function Page() {
   return (
     <Suspense>
-      <Home />
+      <EggsProvider>
+        <Home />
+      </EggsProvider>
     </Suspense>
   );
 }
