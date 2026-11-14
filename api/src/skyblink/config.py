@@ -22,6 +22,7 @@ class Settings:
     job_ttl_s: float
     retry: RetryPolicy
     cors_origins: tuple[str, ...]
+    cors_origin_regex: str | None = None
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -45,4 +46,5 @@ class Settings:
                 for origin in _env("CORS_ORIGINS", "http://localhost:3000").split(",")
                 if origin.strip()
             ),
+            cors_origin_regex=_env("CORS_ORIGIN_REGEX", "").strip() or None,
         )

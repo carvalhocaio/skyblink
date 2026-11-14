@@ -109,6 +109,7 @@ Configuration (environment variables):
 | `SKYBLINK_RETRY_BASE_DELAY_S` | `2` | Base of the exponential backoff |
 | `SKYBLINK_REQUEST_TIMEOUT_S` | `60` | Total time limit per request |
 | `SKYBLINK_CORS_ORIGINS` | `http://localhost:3000` | Comma-separated allowed origins |
+| `SKYBLINK_CORS_ORIGIN_REGEX` | empty | Extra origins matching this regex (full match), e.g. every Vercel deploy |
 
 Data notes (verified against real IRSA responses):
 
@@ -127,7 +128,7 @@ The image (`api/Dockerfile`) uses `python:3.12-slim` + uv, runs a single uvicorn
 port 8080 with `--proxy-headers`, so `image_url` comes out as `https://…` behind Fly's proxy. The entrypoint prepares
 `/data` (cache in `/data/cache`, PNGs in `/data/out`) and then drops to the non-root user `nonroot`.
 `api/fly.toml`: one machine, `auto_stop_machines = "off"`, `min_machines_running = 1`, volume `skyblink_data`
-on `/data`, health check on `/health`, `shared-cpu-1x` with 2 GB.
+on `/data`, health check on `/health`, `shared-cpu-1x` with 1 GB (measured peak RSS 231–275 MB).
 
 Local image test:
 
@@ -151,6 +152,12 @@ Allow the frontend in CORS (restarts the machine, which clears in-memory jobs):
 
 ```fish
 fly secrets set --app skyblink-api SKYBLINK_CORS_ORIGINS="http://localhost:3000,https://YOUR-FRONTEND"
+```
+
+To accept every deploy of a Vercel project without restarting the API again, set the regex once:
+
+```fish
+fly secrets set --app skyblink-api SKYBLINK_CORS_ORIGIN_REGEX='https://YOUR-PROJECT(-[a-z0-9-]+)?\.vercel\.app'
 ```
 
 Measured on Fly (Barnard's Star, D6, 3 frames): cold cache 71 s, warm cache 3 s, peak memory 231–275 MB.
