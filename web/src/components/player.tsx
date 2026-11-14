@@ -53,7 +53,7 @@ export function Player({ frames, waiting, object }: Props) {
 
   return (
     <div className="space-y-3">
-      <div className="relative mx-auto aspect-square w-full max-w-[472px] overflow-hidden rounded-2xl border border-primary/20 bg-black shadow-[0_0_80px_-16px] shadow-primary/30">
+      <div className="relative mx-auto aspect-square w-full max-w-[472px] overflow-hidden rounded-md border bg-black">
         {ready.map((f, i) => (
           // eslint-disable-next-line @next/next/no-img-element -- tiny PNGs from the API, upscaled pixel-exact
           <img
@@ -123,7 +123,7 @@ export function Player({ frames, waiting, object }: Props) {
           );
         })}
       </ol>
-      <div className="rounded-xl border bg-card/60 p-5 text-sm text-muted-foreground">
+      <div className="rounded-md border bg-card p-5 text-sm text-muted-foreground">
         <p className="font-medium text-foreground">{object ? object.name : p.whatTitle}</p>
         {object ? (
           <dl className="mt-2 space-y-2">

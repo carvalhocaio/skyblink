@@ -13,7 +13,7 @@ export function MotionCard({ job }: { job: Job }) {
 
   if (!job.motion) {
     return (
-      <section className="rounded-xl border bg-card/60 p-5 text-sm" aria-labelledby="motion-title">
+      <section className="rounded-md border bg-card p-5 text-sm" aria-labelledby="motion-title">
         <h3 id="motion-title" className="font-medium">{m.title}</h3>
         <p className="mt-2 text-muted-foreground">
           {m.unavailable} {m.reasons[reasonKey(job.motion_reason)]}
@@ -30,7 +30,7 @@ export function MotionCard({ job }: { job: Job }) {
   const pos = (n: number) => `${Math.min(100, Math.max(0, (n / max) * 100))}%`;
 
   return (
-    <section className="space-y-4 rounded-xl border bg-card/60 p-5 text-sm" aria-labelledby="motion-title">
+    <section className="space-y-4 rounded-md border bg-card p-5 text-sm" aria-labelledby="motion-title">
       <h3 id="motion-title" className="font-medium">{m.title}</h3>
 
       <dl className="grid gap-3 sm:grid-cols-2">

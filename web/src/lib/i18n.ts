@@ -11,7 +11,14 @@ const en = {
     text: "The SPHEREx space telescope photographs the whole sky every six months. SkyBlink plays those photos one after another, like a flipbook, so you can see with your own eyes which stars are on the move.",
     cta: "★ Watch Barnard’s Star move",
     secondary: "How it works",
-    caption: "Real SPHEREx data: Barnard’s Star drifting past the crosshair, Aug 2025 → Sep 2026.",
+    tags: ["SPHEREx", "Infrared", "Sky survey"],
+    tagline: "A public window on NASA’s SPHEREx: real infrared pictures of the sky, played season after season.",
+    specKind: "Red dwarf · 6 light-years away",
+    specMotion: "Measured motion",
+    specSeasons: "Seasons",
+    specDetector: "Detector",
+    specSeasonsValue: "3 · Aug 2025 → Sep 2026",
+    details: "View details",
     gifAlt: "Animated SPHEREx images of Barnard’s Star moving across three observing seasons",
   },
   pick: {
@@ -34,6 +41,10 @@ const en = {
     fovHelp: "Zoom is the width of the picture. The full Moon is about 30 arcmin wide; 6 is a good start.",
     submit: "Show me this spot",
     inputError: "Check the values: RA 0–360°, Dec −90–90°, zoom 1–30 arcmin.",
+  },
+  explore: {
+    label: "Explore",
+    heading: "Pick an object and watch a year of sky go by.",
   },
   watch: {
     title: "2. Watch the sky blink",
@@ -214,7 +225,14 @@ const pt: typeof en = {
     text: "O telescópio espacial SPHEREx fotografa o céu inteiro a cada seis meses. O SkyBlink mostra essas fotos uma depois da outra, como um flipbook, para você ver com seus próprios olhos quais estrelas estão em movimento.",
     cta: "★ Ver a Estrela de Barnard se mover",
     secondary: "Como funciona",
-    caption: "Dados reais do SPHEREx: a Estrela de Barnard passando pela mira, ago 2025 → set 2026.",
+    tags: ["SPHEREx", "Infravermelho", "Mapa do céu"],
+    tagline: "Uma janela pública para o SPHEREx da NASA: imagens infravermelhas reais do céu, temporada após temporada.",
+    specKind: "Anã vermelha · a 6 anos-luz",
+    specMotion: "Movimento medido",
+    specSeasons: "Temporadas",
+    specDetector: "Detector",
+    specSeasonsValue: "3 · ago 2025 → set 2026",
+    details: "Ver detalhes",
     gifAlt: "Imagens animadas do SPHEREx mostrando a Estrela de Barnard se movendo ao longo de três temporadas",
   },
   pick: {
@@ -237,6 +255,10 @@ const pt: typeof en = {
     fovHelp: "Zoom é a largura da imagem. A Lua cheia mede cerca de 30 arcmin; 6 é um bom começo.",
     submit: "Mostrar este ponto",
     inputError: "Confira os valores: RA 0–360°, Dec −90–90°, zoom 1–30 arcmin.",
+  },
+  explore: {
+    label: "Explorar",
+    heading: "Escolha um objeto e veja um ano de céu passar.",
   },
   watch: {
     title: "2. Veja o céu piscar",

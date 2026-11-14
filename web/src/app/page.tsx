@@ -1,7 +1,7 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
-import { Sparkles } from "lucide-react";
+import { Suspense, useEffect, useState, type ReactNode } from "react";
+import { ArrowRight, Plus } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -15,10 +15,21 @@ import { findTarget, TARGETS } from "@/lib/targets";
 import { useJob, type Target } from "@/lib/use-job";
 
 const DETECTOR = "D6";
+const WRAP = "mx-auto w-full max-w-7xl px-4 md:px-10";
+const MONO = "font-mono text-[11px] tracking-[0.2em] uppercase";
 
 function num(v: string | null) {
   const n = v === null || v === "" ? NaN : Number(v);
   return Number.isFinite(n) ? n : null;
+}
+
+function SectionLabel({ n, children }: { n: number; children: ReactNode }) {
+  return (
+    <p className={MONO}>
+      <span className="text-muted-foreground">[ {String(n).padStart(2, "0")} ]</span>{" "}
+      <span className="font-semibold">{children}</span>
+    </p>
+  );
 }
 
 function Home() {
@@ -51,128 +62,187 @@ function Home() {
     go({ ra: x.ra, dec: x.dec, fov: x.fov }, "#explore");
   };
   const barnard = TARGETS[0];
+  const showBarnard = () => submit({ ra: barnard.ra, dec: barnard.dec, fov: 6 });
+  const navLinks = [
+    ["#explore", t.nav.explore],
+    ["#how", t.nav.how],
+    ["#spherex", t.nav.spherex],
+    ["#faq", t.nav.faq],
+  ];
 
   return (
     <>
-      <nav className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center gap-5 px-4 py-3 text-sm">
-          <a href="#top" className="flex shrink-0 items-center gap-1.5 font-semibold">
-            <Sparkles className="size-4 text-primary" aria-hidden />
-            SkyBlink
-          </a>
-          <div className="hidden gap-5 sm:flex">
-            <a href="#explore" className="shrink-0 text-muted-foreground hover:text-foreground">{t.nav.explore}</a>
-            <a href="#how" className="shrink-0 text-muted-foreground hover:text-foreground">{t.nav.how}</a>
-            <a href="#spherex" className="shrink-0 text-muted-foreground hover:text-foreground">{t.nav.spherex}</a>
-            <a href="#faq" className="shrink-0 text-muted-foreground hover:text-foreground">{t.nav.faq}</a>
-          </div>
-          <label className="ml-auto flex shrink-0 items-center gap-2">
-            <span className="sr-only">{t.nav.language}</span>
-            <span aria-hidden>🌐</span>
-            <select
-              value={lang}
-              onChange={(e) => go({ lang: e.target.value as Lang })}
-              className="rounded-md border bg-background px-2 py-1 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-            >
-              {Object.entries(LANGS).map(([code, label]) => (
-                <option key={code} value={code}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-      </nav>
+      <header id="top" className={`${WRAP} pt-6`}>
+        <p aria-label="SkyBlink" className="text-mega overflow-hidden pb-[0.06em] font-semibold whitespace-nowrap">
+          {"SKYBLINK".split("").map((c, i) => (
+            <span key={i} aria-hidden className="rise" style={{ animationDelay: `${0.1 + i * 0.06}s` }}>
+              {c}
+            </span>
+          ))}
+        </p>
 
-      <header id="top" className="starfield border-b">
-        <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 md:grid-cols-[1fr_340px] md:py-24">
-          <div className="space-y-6">
-            <p className="text-sm font-medium tracking-widest text-primary uppercase">{t.hero.kicker}</p>
-            <h1 className="text-4xl font-semibold tracking-tight text-balance md:text-6xl">{t.hero.title}</h1>
-            <p className="max-w-xl text-lg text-muted-foreground">{t.hero.text}</p>
-            <div className="flex flex-wrap items-center gap-3">
-              <Button size="lg" className="h-11 px-5" onClick={() => submit({ ra: barnard.ra, dec: barnard.dec, fov: 6 })}>
+        <div className={`fade-up mt-8 grid gap-6 text-gray-800 md:grid-cols-[1fr_auto_2fr_auto_1fr] md:items-start ${MONO}`} style={{ animationDelay: "0.5s" }}>
+          <p className="hidden leading-relaxed md:block">
+            {t.hero.tags.map((x) => (
+              <span key={x} className="block">
+                {x}
+              </span>
+            ))}
+          </p>
+          <ArrowRight className="mt-1 hidden size-3.5 text-muted-foreground md:block" strokeWidth={1} aria-hidden />
+          <p className="max-w-md leading-relaxed tracking-[0.12em] normal-case">{t.hero.tagline}</p>
+          <ArrowRight className="mt-1 hidden size-3.5 text-muted-foreground md:block" strokeWidth={1} aria-hidden />
+          <nav aria-label="Sections" className="flex flex-wrap items-center gap-x-5 gap-y-2 md:flex-col md:items-start md:gap-1.5">
+            {navLinks.map(([href, label]) => (
+              <a key={href} href={href} className="py-2.5 hover:text-black hover:underline md:py-0">
+                {label}
+              </a>
+            ))}
+            <label className="flex items-center gap-2 md:mt-2">
+              <span className="sr-only">{t.nav.language}</span>
+              <select
+                value={lang}
+                onChange={(e) => go({ lang: e.target.value as Lang })}
+                className="min-h-9 rounded-md border bg-background px-2 py-1 tracking-[0.1em] outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+              >
+                {Object.entries(LANGS).map(([code, label]) => (
+                  <option key={code} value={code}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </nav>
+        </div>
+
+        <div className="mt-14 grid items-end gap-10 pb-20 md:mt-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,400px)_200px]">
+          <div className="fade-up space-y-6" style={{ animationDelay: "0.6s" }}>
+            <p className={`flex items-center gap-3 ${MONO}`}>
+              01 <span className="h-px w-16 bg-black/20" aria-hidden />
+            </p>
+            <h1 className="max-w-xl text-4xl leading-[1.05] font-normal tracking-tight text-balance md:text-6xl">{t.hero.title}</h1>
+            <p className="max-w-md text-[15px] leading-relaxed text-gray-700">{t.hero.text}</p>
+            <div className="flex flex-wrap items-center gap-4">
+              <Button
+                size="lg"
+                className="h-12 px-6 text-[15px] transition-all hover:-translate-y-0.5 hover:shadow-[3px_3px_0_rgba(17,17,17,0.5)] active:translate-y-0 active:shadow-none"
+                onClick={showBarnard}
+              >
                 {t.hero.cta}
               </Button>
-              <a href="#how" className="rounded-lg px-4 py-2.5 text-sm font-medium hover:bg-muted">
-                {t.hero.secondary} →
+              <a href="#how" className={`inline-flex min-h-11 items-center gap-2 underline-offset-4 hover:underline ${MONO}`}>
+                {t.hero.secondary} <ArrowRight className="size-3.5" aria-hidden />
               </a>
             </div>
           </div>
-          <figure className="mx-auto w-full max-w-[340px] space-y-3">
-            {/* eslint-disable-next-line @next/next/no-img-element -- animated GIF, served as-is */}
-            <img
-              src="/demo/barnard.gif"
-              alt={t.hero.gifAlt}
-              width={472}
-              height={472}
-              className="w-full rounded-2xl border border-primary/20 shadow-[0_0_80px_-10px] shadow-primary/30"
-            />
-            <figcaption className="text-center text-xs text-muted-foreground">{t.hero.caption}</figcaption>
-          </figure>
+
+          {/* eslint-disable-next-line @next/next/no-img-element -- animated GIF of real SPHEREx frames, served as-is */}
+          <img
+            src="/demo/barnard.gif"
+            alt={t.hero.gifAlt}
+            width={472}
+            height={472}
+            className="fade-up mx-auto w-full max-w-[400px] rounded-md bg-black"
+            style={{ animationDelay: "0.8s" }}
+          />
+
+          <dl className="fade-up space-y-5 text-[13px]" style={{ animationDelay: "0.9s" }}>
+            <div>
+              <dt className="font-mono text-[10px] font-bold tracking-widest uppercase">{barnard.name}</dt>
+              <dd className="mt-1 leading-relaxed text-gray-600">{t.hero.specKind}</dd>
+            </div>
+            {[
+              [t.hero.specMotion, `${(10.5).toLocaleString(t.locale)}″ ${t.motion.perYear}`],
+              [t.hero.specSeasons, t.hero.specSeasonsValue],
+              [t.hero.specDetector, "D6 · 4.4–5.0 µm"],
+            ].map(([k, v]) => (
+              <div key={k}>
+                <dt className="font-mono text-[10px] tracking-widest text-gray-500 uppercase">{k}</dt>
+                <dd className="mt-0.5 font-medium">{v}</dd>
+              </div>
+            ))}
+            <button type="button" onClick={showBarnard} className="group flex min-h-11 items-center gap-3 outline-none">
+              <span className="flex size-10 items-center justify-center rounded-full border border-gray-400 transition-colors group-hover:border-black group-hover:bg-[#111] group-hover:text-white group-focus-visible:ring-3 group-focus-visible:ring-ring/50">
+                <Plus className="size-4" strokeWidth={1.5} aria-hidden />
+              </span>
+              <span className="font-mono text-[10px] font-bold tracking-widest uppercase">{t.hero.details}</span>
+            </button>
+          </dl>
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl space-y-24 px-4 py-16">
+      <main>
+        <section id="explore" className="dark scroll-mt-0 bg-background text-foreground">
+          <div className={`${WRAP} py-20 md:py-28`}>
+            <SectionLabel n={2}>{t.explore.label}</SectionLabel>
+            <h2 className="mt-8 max-w-4xl text-3xl leading-[1.1] font-medium tracking-tight text-balance md:text-5xl">{t.explore.heading}</h2>
 
-        <section id="explore" className="grid scroll-mt-20 gap-8 lg:grid-cols-[380px_1fr]">
-          <TargetForm key={targetKey} initial={target} error={!!inputError} onSubmit={submit} />
+            <div className="mt-14 grid gap-10 border-t pt-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+              <TargetForm key={targetKey} initial={target} error={!!inputError} onSubmit={submit} />
 
-          <div className="min-w-0 space-y-4" aria-label={t.watch.title}>
-            <h2 className="text-lg font-medium">
-              {t.watch.title}
-              {name && `: ${name}`}
-            </h2>
-            {!target && (
-              <p className="rounded-lg border border-dashed p-10 text-center text-muted-foreground">
-                {t.watch.empty}
-                <br />
-                {t.watch.emptyHint}
-              </p>
-            )}
-            {(error || job?.status === "failed") && (
-              <Alert variant="destructive">
-                <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
-                  {error ? t.watch.networkError : t.watch.failed}
-                  <Button size="sm" variant="outline" onClick={() => setRun((r) => r + 1)}>
-                    {t.watch.retry}
-                  </Button>
-                </AlertDescription>
-              </Alert>
-            )}
-            {target && !job && !error && !inputError && <p className="text-muted-foreground">{t.watch.starting}</p>}
-            {job && job.status !== "done" && job.status !== "failed" && <JobProgress job={job} />}
-            {job && (
-              <Player
-                key={`${targetKey}#${run}`}
-                frames={frames}
-                waiting={job.status !== "done"}
-                object={featured && { name: featured.name, index: TARGETS.indexOf(featured) }}
-              />
-            )}
-            {job && <MotionCard job={job} />}
-            {job && <JobAlerts job={job} frames={frames} />}
+              <div className="min-w-0 space-y-4" aria-labelledby="watch-title">
+                <h3 id="watch-title" className={`text-muted-foreground ${MONO}`}>
+                  {t.watch.title}
+                  {name && <span className="text-foreground">: {name}</span>}
+                </h3>
+                {!target && (
+                  <p className="rounded-md border border-dashed p-10 text-center text-muted-foreground">
+                    {t.watch.empty}
+                    <br />
+                    {t.watch.emptyHint}
+                  </p>
+                )}
+                {(error || job?.status === "failed") && (
+                  <Alert variant="destructive">
+                    <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
+                      {error ? t.watch.networkError : t.watch.failed}
+                      <Button size="sm" variant="outline" onClick={() => setRun((r) => r + 1)}>
+                        {t.watch.retry}
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
+                )}
+                {target && !job && !error && !inputError && <p className="text-muted-foreground">{t.watch.starting}</p>}
+                {job && job.status !== "done" && job.status !== "failed" && <JobProgress job={job} />}
+                {job && (
+                  <Player
+                    key={`${targetKey}#${run}`}
+                    frames={frames}
+                    waiting={job.status !== "done"}
+                    object={featured && { name: featured.name, index: TARGETS.indexOf(featured) }}
+                  />
+                )}
+                {job && <MotionCard job={job} />}
+                {job && <JobAlerts job={job} frames={frames} />}
+              </div>
+            </div>
           </div>
         </section>
 
-        <section id="how" className="scroll-mt-20 space-y-6">
-          <h2 className="text-2xl font-semibold">{t.how.title}</h2>
+        <section id="how" className={`${WRAP} space-y-10 py-20 md:py-28`}>
+          <SectionLabel n={3}>{t.nav.how}</SectionLabel>
+          <h2 className="max-w-3xl text-3xl leading-[1.1] font-medium tracking-tight md:text-5xl">{t.how.title}</h2>
           <HowItWorks />
         </section>
 
-        <section id="spherex" className="scroll-mt-20 space-y-6">
-          <h2 className="text-2xl font-semibold">{t.about.title}</h2>
+        <section id="spherex" className={`${WRAP} space-y-10 border-t py-20 md:py-28`}>
+          <SectionLabel n={4}>{t.nav.spherex}</SectionLabel>
+          <h2 className="max-w-3xl text-3xl leading-[1.1] font-medium tracking-tight md:text-5xl">{t.about.title}</h2>
           <AboutSpherex />
         </section>
 
-        <section id="faq" className="scroll-mt-20 space-y-6">
-          <h2 className="text-2xl font-semibold">{t.faq.title}</h2>
+        <section id="faq" className={`${WRAP} space-y-10 border-t py-20 md:py-28`}>
+          <SectionLabel n={5}>{t.nav.faq}</SectionLabel>
+          <h2 className="max-w-3xl text-3xl leading-[1.1] font-medium tracking-tight md:text-5xl">{t.faq.title}</h2>
           <Faq />
         </section>
       </main>
 
-      <footer className="border-t">
-        <p className="mx-auto max-w-6xl px-4 py-6 text-xs text-muted-foreground">{t.footer}</p>
+      <footer className="dark bg-background text-foreground">
+        <div className={`${WRAP} flex flex-col gap-4 py-10 md:flex-row md:items-end md:justify-between`}>
+          <p className="text-4xl font-semibold tracking-tight">SkyBlink</p>
+          <p className="max-w-xl font-mono text-[11px] leading-relaxed tracking-wider text-muted-foreground">{t.footer}</p>
+        </div>
       </footer>
     </>
   );
