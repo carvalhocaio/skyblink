@@ -191,6 +191,7 @@ uv run python scripts/compact_cache.py
 # warm the cache of a running API: one D6 job per demo target, one at a time
 uv run python scripts/warm_cache.py https://skyblink-api.fly.dev
 uv run python scripts/warm_cache.py https://skyblink-api.fly.dev --targets "WISE 0855" "Epsilon Indi B"
+uv run python scripts/warm_cache.py https://skyblink-api.fly.dev --names   # also sends each SIMBAD name as target_name
 
 # position of a target on a date: SIMBAD (CDS, falling back to the Harvard mirror) ICRS position at epoch J2000,
 # proper motion, parallax and radial velocity, propagated with astropy (includes parallax)
@@ -279,9 +280,22 @@ fly ssh console --app skyblink-api -C "rm /data/seed.tgz"
 fly machine restart 2869342f39e098 --app skyblink-api
 ```
 
-Saved results only count for the `PIPELINE_VERSION` that produced them, so reseed after a version bump. Seeded on
-2026-11-14 (version 4): Barnard D6 with and without `target_name`, WISE 0855, RW Aur and R Dra in D6, plus the real
-discovery of the five demo targets.
+Saved results only count for the `PIPELINE_VERSION` that produced them. After a version bump they can be rebuilt on
+Fly from the seeded discovery and cutouts, without IRSA, by re-running the warm-up against the deployed API
+(`scripts/warm_cache.py https://skyblink-api.fly.dev --names`, plus once without `--names`). State on 2026-11-14,
+pipeline 5, rebuilt that way with 0 SIA queries and 0 cutout requests:
+
+| target (D6) | `target_name` | alerts | motion |
+|---|---|---|---|
+| Barnard's Star | `Barnard's star` → SIMBAD `NAME Barnard's star` | SATURATED_CORE | 10.47 ± 0.34″/yr vs 10.65 predicted (−0.53σ) |
+| Barnard's Star | none | SATURATED_CORE | 10.47 ± 0.34″/yr |
+| Epsilon Indi B | `eps Ind B` → `* eps Ind B` | ALIGNMENT_DRIFT (season 2) | 4.67 ± 0.38″/yr vs 4.10 predicted (+1.52σ) |
+| WISE 0855 | `WISE 0855-0714` (not found in SIMBAD; `WISE J085510.83-071442.5` resolves) | FEW_EXPOSURES | null: peak S/N 3.0 < 10 in season 0 |
+| RW Aur | `RW Aur` → `V* RW Aur` | SATURATED_CORE | 0.49 ± 0.62″/yr vs 0.03 predicted (+0.75σ) |
+| R Dra | `R Dra` → `V* R Dra` (resolves, not used) | SATURATED_CORE | null: no usable centroid at the centre in season 0 |
+
+The catalog is only queried when a motion was measured, so an unresolvable `target_name` goes unreported when
+`motion` is null. After a restart, `POST /jobs` for Barnard with `target_name` returns `done` in 0.3 s.
 
 Allow the frontend in CORS (restarts the machine, which clears in-memory jobs):
 
