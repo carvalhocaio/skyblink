@@ -40,7 +40,7 @@ def test_stack_subtracts_zodi_and_local_background_and_masks_bad_pixels(tmp_path
     assert np.nanargmax(frame.image) == np.ravel_multi_index((centre, centre), grid.shape)
     assert frame.image[centre, centre] == pytest.approx(100.0, rel=0.02)
     assert np.nanmedian(frame.image) == pytest.approx(0.0, abs=0.05)
-    assert np.isnan(frame.image[2, 2]) or frame.coverage[2, 2] == 1
+    assert frame.coverage[2, 2] == 1
     assert frame.saturated_count[centre, centre] == 2
 
 
@@ -62,6 +62,7 @@ async def test_builder_skips_failed_and_empty_cutouts(tmp_path):
     frame = await builder.build([make_exposure()] * 3, TARGET, FrameGrid.centered_on(TARGET))
 
     assert frame.n_exposures_used == 1
+    assert frame.download_s >= 0 and frame.assembly_s > 0
 
 
 async def test_builder_fails_when_nothing_is_usable():

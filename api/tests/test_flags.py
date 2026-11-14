@@ -38,7 +38,7 @@ def test_reads_bit_names_and_masks_from_header():
 def test_masks_combine_named_bits_and_report_missing_names():
     masks = FlagMasks.from_header(flags_header(SPHEREX_PLANES))
 
-    assert masks.saturated == (1 << 1) | (1 << 15)
+    assert masks.saturated == (1 << 1) | (1 << 15) | (1 << 26)
     assert masks.source == 1 << 21
     assert masks.bad & masks.saturated == 0
     assert masks.bad & masks.source == 0
@@ -47,8 +47,8 @@ def test_masks_combine_named_bits_and_report_missing_names():
 
 def test_pixel_selection_uses_masks():
     masks = FlagMasks.from_header(flags_header(SPHEREX_PLANES))
-    flags = np.array([0, 1 << 10, 1 << 1, (1 << 21) | (1 << 0)], dtype=np.int32)
+    flags = np.array([0, 1 << 10, 1 << 1, (1 << 21) | (1 << 0), 1 << 26, (1 << 26) | (1 << 2)], dtype=np.int32)
 
-    assert masks.bad_pixels(flags).tolist() == [False, True, False, False]
-    assert masks.saturated_pixels(flags).tolist() == [False, False, True, False]
-    assert masks.source_pixels(flags).tolist() == [False, False, False, True]
+    assert masks.bad_pixels(flags).tolist() == [False, True, False, False, False, True]
+    assert masks.saturated_pixels(flags).tolist() == [False, False, True, False, True, True]
+    assert masks.source_pixels(flags).tolist() == [False, False, False, True, False, False]

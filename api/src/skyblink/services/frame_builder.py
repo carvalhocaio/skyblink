@@ -1,5 +1,7 @@
 import asyncio
+import dataclasses
 import logging
+import time
 import warnings
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -48,6 +50,8 @@ class FrameImage:
     coverage: np.ndarray
     saturated_count: np.ndarray
     n_exposures_used: int
+    download_s: float = 0.0
+    assembly_s: float = 0.0
 
 
 def subtract_background(image: np.ndarray, zodi: np.ndarray, ignore: np.ndarray) -> np.ndarray:
@@ -122,8 +126,21 @@ class FrameBuilder:
     async def build(
         self, exposures: Sequence[Exposure], target: Target, grid: FrameGrid
     ) -> FrameImage:
+        started = time.perf_counter()
         fetched = await asyncio.gather(*(self._fetch(e, target, grid) for e in exposures))
+        downloaded = time.perf_counter()
         paths = [path for path in fetched if path is not None]
         if not paths:
             raise NoUsableExposures("no cutout could be fetched")
-        return await asyncio.to_thread(stack_cutouts, paths, grid)
+        frame = await asyncio.to_thread(stack_cutouts, paths, grid)
+        timed = dataclasses.replace(
+            frame, download_s=downloaded - started, assembly_s=time.perf_counter() - downloaded
+        )
+        logger.info(
+            "frame %d/%d exposures: download %.1fs, assembly %.1fs",
+            timed.n_exposures_used,
+            len(exposures),
+            timed.download_s,
+            timed.assembly_s,
+        )
+        return timed

@@ -1,7 +1,6 @@
 import argparse
 import asyncio
 import logging
-import time
 from pathlib import Path
 
 import httpx
@@ -49,7 +48,6 @@ async def main() -> None:
             if args.seasons is not None and season.id not in args.seasons:
                 continue
             exposures = spread_evenly(season.exposures, args.max_exposures)
-            started = time.perf_counter()
             frame = await builder.build(exposures, target, grid)
             stretch = stretch or StretchParams.from_image(frame.image)
             path = render_png(frame.image, stretch, output / f"season{season.id}.png", args.upscale)
@@ -59,7 +57,7 @@ async def main() -> None:
             print(
                 f"season {season.id} ({date}): {frame.n_exposures_used}/{len(exposures)} exposures, "
                 f"coverage median {np.median(frame.coverage):.0f}, saturated px {int((frame.saturated_count > 0).sum())}, "
-                f"{time.perf_counter() - started:.1f}s -> {path}"
+                f"download {frame.download_s:.1f}s + assembly {frame.assembly_s:.1f}s -> {path}"
             )
         print(f"stretch: {stretch}")
         if len(images) > 1:

@@ -1,7 +1,9 @@
+import warnings
 from dataclasses import dataclass
 
 import numpy as np
 from astropy.stats import sigma_clip
+from astropy.utils.exceptions import AstropyUserWarning
 
 MIN_EXPOSURES_FOR_REJECTION = 5
 REJECTION_SIGMA = 4.0
@@ -19,13 +21,15 @@ def weighted_mean_stack(data: np.ndarray, variance: np.ndarray) -> StackResult:
     coverage_before = valid.sum(axis=0)
     rejected = np.zeros_like(valid)
     if data.shape[0] >= MIN_EXPOSURES_FOR_REJECTION:
-        clipped = sigma_clip(
-            np.where(valid, data, np.nan),
-            sigma=REJECTION_SIGMA,
-            stdfunc="mad_std",
-            axis=0,
-            masked=True,
-        )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", AstropyUserWarning)
+            clipped = sigma_clip(
+                np.where(valid, data, np.nan),
+                sigma=REJECTION_SIGMA,
+                stdfunc="mad_std",
+                axis=0,
+                masked=True,
+            )
         eligible = coverage_before >= MIN_EXPOSURES_FOR_REJECTION
         rejected = np.ma.getmaskarray(clipped) & valid & eligible
         valid &= ~rejected
