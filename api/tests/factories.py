@@ -44,7 +44,9 @@ def write_cutout(
             fits.PrimaryHDU(),
             fits.ImageHDU(image.astype(np.float32), header, name="IMAGE"),
             fits.ImageHDU((zeros if flags is None else flags).astype(np.int32), flags_header, name="FLAGS"),
-            fits.ImageHDU((zeros + 1 if variance is None else variance).astype(np.float32), header, name="VARIANCE"),
+            fits.ImageHDU(
+                (zeros + 1 if variance is None else variance).astype(np.float32), header, name="VARIANCE"
+            ),
             fits.ImageHDU((zeros if zodi is None else zodi).astype(np.float32), header, name="ZODI"),
         ]
     ).writeto(path)

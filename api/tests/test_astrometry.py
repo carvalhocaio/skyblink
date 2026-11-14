@@ -66,7 +66,9 @@ def test_reference_stars_skip_target_edges_and_saturation():
 
 
 def test_star_without_motion_or_parallax_stays_put():
-    still = StellarAstrometry(ra=120.0, dec=-30.0, ref_epoch_jyear=2016.0, parallax_mas=1.0, pmra_mas_yr=0, pmdec_mas_yr=0)
+    still = StellarAstrometry(
+        ra=120.0, dec=-30.0, ref_epoch_jyear=2016.0, parallax_mas=1.0, pmra_mas_yr=0, pmdec_mas_yr=0
+    )
 
     assert apparent_position(still, 61000.0) == pytest.approx((120.0, -30.0), abs=1e-6)
 

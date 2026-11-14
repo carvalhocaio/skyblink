@@ -3,13 +3,10 @@ import asyncio
 import logging
 from dataclasses import dataclass
 
-import httpx
 import numpy as np
 from astropy.time import Time
 
-from skyblink.adapters.cutout_cache import CutoutCache
 from skyblink.adapters.irsa_cutouts import CutoutClient
-from skyblink.adapters.irsa_sia import SiaClient
 from skyblink.config import Settings
 from skyblink.domain.astrometry import bootstrap_means, bootstrap_shift, centroid, find_reference_stars
 from skyblink.domain.grid import SPHEREX_PIXEL_ARCSEC, FrameGrid
@@ -18,6 +15,7 @@ from skyblink.domain.proper_motion import BARNARD_GAIA_DR3, apparent_position
 from skyblink.domain.seasons import spread_evenly
 from skyblink.services.discovery import discover_seasons
 from skyblink.services.frame_builder import FrameImage, reproject_exposure, stack_cutouts
+from skyblink.wiring import cutout_client, http_client, sia_client
 
 REFERENCE_THRESHOLD = 1.0
 TARGET_EXCLUSION_PX = 10
@@ -36,7 +34,7 @@ async def fetch_paths(cutouts: CutoutClient, exposures: list[Exposure], target: 
     paths = await asyncio.gather(
         *(cutouts.fetch(e, target.ra, target.dec, grid.cutout_size_deg) for e in exposures)
     )
-    return [(e, p) for e, p in zip(exposures, paths) if p is not None]
+    return [(e, p) for e, p in zip(exposures, paths, strict=True) if p is not None]
 
 
 def measure_season(season: Season, fetched, grid: FrameGrid) -> SeasonMeasurement:
@@ -82,7 +80,7 @@ def report(measurements: list[SeasonMeasurement]) -> None:
     print(
         f"  measured (per-exposure mean): {describe(shift.dx, shift.dy)}  "
         f"|d| = {shift.magnitude:.3f} ± {shift.magnitude_err:.3f} px = "
-        f"{shift.magnitude * scale:.2f} ± {shift.magnitude_err * scale:.2f}\""
+        f'{shift.magnitude * scale:.2f} ± {shift.magnitude_err * scale:.2f}"'
     )
     print(f"    dx ± {shift.dx_err:.3f} px, dy ± {shift.dy_err:.3f} px")
     first_coadd = centroid(first.frame.image, tuple(first.positions.mean(axis=0)))
@@ -90,11 +88,11 @@ def report(measurements: list[SeasonMeasurement]) -> None:
     coadd_shift = np.subtract(last_coadd, first_coadd)
     print(
         f"  measured (coadd centroid):    {describe(*coadd_shift)}  |d| = {np.hypot(*coadd_shift):.3f} px = "
-        f"{np.hypot(*coadd_shift) * scale:.2f}\""
+        f'{np.hypot(*coadd_shift) * scale:.2f}"'
     )
     print(
         f"  Gaia DR3 predicted:           {describe(*predicted)}  |d| = {np.hypot(*predicted):.3f} px = "
-        f"{np.hypot(*predicted) * scale:.2f}\""
+        f'{np.hypot(*predicted) * scale:.2f}"'
     )
     residual = np.array([shift.dx, shift.dy]) - predicted
     sigma = np.hypot(shift.dx_err, shift.dy_err)
@@ -133,14 +131,14 @@ async def main() -> None:
     settings = Settings.from_env()
     target = Target(args.ra, args.dec, args.fov_arcmin)
     grid = FrameGrid.centered_on(target)
-    async with httpx.AsyncClient(timeout=settings.retry.request_timeout_s) as client:
-        seasons = await discover_seasons(SiaClient(client, settings.retry), target, [args.detector])
-        cutouts = CutoutClient(client, settings.retry, CutoutCache(settings.cache_dir), settings.max_concurrency)
+    async with http_client(settings) as client:
+        seasons = await discover_seasons(sia_client(client, settings), target, [args.detector])
+        cutouts = cutout_client(client, settings)
         fetched = [
             await fetch_paths(cutouts, spread_evenly(s.exposures, args.max_exposures), target, grid)
             for s in seasons
         ]
-    report([measure_season(s, f, grid) for s, f in zip(seasons, fetched)])
+    report([measure_season(s, f, grid) for s, f in zip(seasons, fetched, strict=True)])
 
 
 if __name__ == "__main__":

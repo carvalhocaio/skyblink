@@ -1,15 +1,10 @@
 import argparse
 import asyncio
 import logging
-from pathlib import Path
 
-import httpx
 import numpy as np
 from astropy.time import Time
 
-from skyblink.adapters.cutout_cache import CutoutCache
-from skyblink.adapters.irsa_cutouts import CutoutClient
-from skyblink.adapters.irsa_sia import SiaClient
 from skyblink.adapters.png_renderer import render_animation, render_png
 from skyblink.config import Settings
 from skyblink.domain.grid import FrameGrid
@@ -18,6 +13,7 @@ from skyblink.domain.seasons import spread_evenly
 from skyblink.domain.stretch import StretchParams
 from skyblink.services.discovery import discover_seasons
 from skyblink.services.frame_builder import FrameBuilder
+from skyblink.wiring import cutout_client, http_client, sia_client
 
 
 async def main() -> None:
@@ -38,9 +34,9 @@ async def main() -> None:
     grid = FrameGrid.centered_on(target)
     output = settings.output_dir / f"{args.ra:.4f}_{args.dec:+.4f}_{args.detector}"
 
-    async with httpx.AsyncClient(timeout=settings.retry.request_timeout_s) as client:
-        seasons = await discover_seasons(SiaClient(client, settings.retry), target, [args.detector])
-        cutouts = CutoutClient(client, settings.retry, CutoutCache(settings.cache_dir), settings.max_concurrency)
+    async with http_client(settings) as client:
+        seasons = await discover_seasons(sia_client(client, settings), target, [args.detector])
+        cutouts = cutout_client(client, settings)
         builder = FrameBuilder(cutouts)
         stretch: StretchParams | None = None
         images = []
@@ -54,9 +50,10 @@ async def main() -> None:
             np.save(output / f"season{season.id}.npy", frame.image)
             images.append(frame.image)
             date = Time((season.start_mjd + season.end_mjd) / 2, format="mjd").iso[:10]
+            saturated = int((frame.saturated_count > 0).sum())
             print(
                 f"season {season.id} ({date}): {frame.n_exposures_used}/{len(exposures)} exposures, "
-                f"coverage median {np.median(frame.coverage):.0f}, saturated px {int((frame.saturated_count > 0).sum())}, "
+                f"coverage median {np.median(frame.coverage):.0f}, saturated px {saturated}, "
                 f"download {frame.download_s:.1f}s + assembly {frame.assembly_s:.1f}s -> {path}"
             )
         print(f"stretch: {stretch}")

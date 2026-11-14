@@ -1,5 +1,10 @@
 from dataclasses import dataclass, field
 from enum import StrEnum
+from pathlib import Path
+
+from skyblink.domain.stretch import StretchParams
+
+DETECTORS = ("D1", "D2", "D3", "D4", "D5", "D6")
 
 
 class JobStatus(StrEnum):
@@ -82,6 +87,9 @@ class Frame:
     status: FrameStatus = FrameStatus.PENDING
     n_exposures_used: int = 0
     alerts: list[Alert] = field(default_factory=list)
+    image_path: Path | None = None
+    download_s: float = 0.0
+    assembly_s: float = 0.0
 
     @property
     def mid_mjd(self) -> float:
@@ -93,3 +101,32 @@ class Frame:
             min(e.wavelength_um[0] for e in self.exposures),
             max(e.wavelength_um[1] for e in self.exposures),
         )
+
+
+@dataclass
+class Job:
+    id: str
+    target: Target
+    detectors: tuple[str, ...] | None
+    max_exposures_per_frame: int
+    status: JobStatus = JobStatus.QUEUED
+    seasons: list[Season] = field(default_factory=list)
+    frames: list[Frame] = field(default_factory=list)
+    alerts: list[Alert] = field(default_factory=list)
+    stretch: StretchParams | None = None
+    stretch_frame_id: str | None = None
+    eta_seconds: tuple[float, float] | None = None
+
+    @property
+    def frames_done(self) -> int:
+        return sum(1 for frame in self.frames if frame.status != FrameStatus.PENDING)
+
+    @property
+    def percent(self) -> int:
+        if self.status == JobStatus.DONE:
+            return 100
+        return int(100 * self.frames_done / len(self.frames)) if self.frames else 0
+
+    @property
+    def remaining_exposures(self) -> int:
+        return sum(len(f.exposures) for f in self.frames if f.status == FrameStatus.PENDING)

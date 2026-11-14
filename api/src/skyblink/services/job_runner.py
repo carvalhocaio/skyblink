@@ -1,0 +1,124 @@
+import asyncio
+import logging
+import uuid
+from collections.abc import Callable, Sequence
+from pathlib import Path
+from typing import Protocol
+
+from skyblink.adapters.job_store import JobStore
+from skyblink.adapters.png_renderer import render_png
+from skyblink.domain.alerts import frame_alerts, job_alerts
+from skyblink.domain.eta import estimate_eta
+from skyblink.domain.grid import FrameGrid
+from skyblink.domain.models import Exposure, Frame, FrameStatus, Job, JobStatus, Target
+from skyblink.domain.planning import plan_frames
+from skyblink.domain.stretch import StretchParams
+from skyblink.services.discovery import ExposureSearch, discover_seasons
+from skyblink.services.frame_builder import FrameImage, NoUsableExposures
+
+logger = logging.getLogger(__name__)
+
+
+class FrameSource(Protocol):
+    async def build(self, exposures: Sequence[Exposure], target: Target, grid: FrameGrid) -> FrameImage: ...
+
+
+def _no_summary() -> str:
+    return ""
+
+
+class JobRunner:
+    def __init__(
+        self,
+        search: ExposureSearch,
+        builder: FrameSource,
+        store: JobStore,
+        output_dir: Path,
+        throttle_summary: Callable[[], str] = _no_summary,
+    ):
+        self._search = search
+        self._builder = builder
+        self._store = store
+        self._output_dir = output_dir
+        self._throttle_summary = throttle_summary
+        self._tasks: set[asyncio.Task[None]] = set()
+
+    def submit(self, target: Target, detectors: Sequence[str] | None, max_exposures_per_frame: int) -> Job:
+        job = Job(
+            id=uuid.uuid4().hex[:12],
+            target=target,
+            detectors=tuple(dict.fromkeys(detectors)) if detectors else None,
+            max_exposures_per_frame=max_exposures_per_frame,
+        )
+        self._store.add(job)
+        task = asyncio.create_task(self.run(job))
+        self._tasks.add(task)
+        task.add_done_callback(self._tasks.discard)
+        return job
+
+    async def shutdown(self) -> None:
+        for task in self._tasks:
+            task.cancel()
+        await asyncio.gather(*self._tasks, return_exceptions=True)
+
+    async def run(self, job: Job) -> None:
+        try:
+            await self._run(job)
+        except asyncio.CancelledError:
+            job.status = JobStatus.FAILED
+            raise
+        except Exception:
+            logger.exception("job %s failed", job.id)
+            job.status = JobStatus.FAILED
+
+    async def _run(self, job: Job) -> None:
+        job.status = JobStatus.DISCOVERING
+        job.seasons = await discover_seasons(self._search, job.target, job.detectors)
+        job.alerts = job_alerts(job.seasons)
+        job.frames = plan_frames(job.id, job.seasons, job.detectors, job.max_exposures_per_frame)
+        self._store.register_frames(job)
+        job.eta_seconds = estimate_eta([], job.remaining_exposures)
+        job.status = JobStatus.BUILDING
+        grid = FrameGrid.centered_on(job.target)
+        for frame in job.frames:
+            await self._build_frame(job, frame, grid)
+            job.eta_seconds = estimate_eta(_timing_samples(job), job.remaining_exposures)
+            logger.info(
+                "job %s: %d/%d frames, eta %.0f-%.0fs. %s",
+                job.id,
+                job.frames_done,
+                len(job.frames),
+                *job.eta_seconds,
+                self._throttle_summary(),
+            )
+        job.status = JobStatus.DONE
+
+    async def _build_frame(self, job: Job, frame: Frame, grid: FrameGrid) -> None:
+        try:
+            image = await self._builder.build(frame.exposures, job.target, grid)
+            stretch = job.stretch or StretchParams.from_image(image.image)
+            path = self._output_dir / job.id / f"{frame.id}.png"
+            await asyncio.to_thread(render_png, image.image, stretch, path)
+        except NoUsableExposures as error:
+            logger.warning("frame %s has no usable exposure: %s", frame.id, error)
+            frame.status = FrameStatus.FAILED
+            return
+        except Exception:
+            logger.exception("frame %s failed", frame.id)
+            frame.status = FrameStatus.FAILED
+            return
+        if job.stretch is None:
+            job.stretch, job.stretch_frame_id = stretch, frame.id
+        frame.image_path = path
+        frame.n_exposures_used = image.n_exposures_used
+        frame.download_s, frame.assembly_s = image.download_s, image.assembly_s
+        frame.alerts = frame_alerts(image.n_exposures_used, image.saturated_count)
+        frame.status = FrameStatus.READY
+
+
+def _timing_samples(job: Job) -> list[tuple[float, int]]:
+    return [
+        (frame.download_s + frame.assembly_s, len(frame.exposures))
+        for frame in job.frames
+        if frame.status == FrameStatus.READY
+    ]

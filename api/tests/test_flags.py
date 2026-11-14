@@ -47,7 +47,9 @@ def test_masks_combine_named_bits_and_report_missing_names():
 
 def test_pixel_selection_uses_masks():
     masks = FlagMasks.from_header(flags_header(SPHEREX_PLANES))
-    flags = np.array([0, 1 << 10, 1 << 1, (1 << 21) | (1 << 0), 1 << 26, (1 << 26) | (1 << 2)], dtype=np.int32)
+    flags = np.array(
+        [0, 1 << 10, 1 << 1, (1 << 21) | (1 << 0), 1 << 26, (1 << 26) | (1 << 2)], dtype=np.int32
+    )
 
     assert masks.bad_pixels(flags).tolist() == [False, True, False, False, False, True]
     assert masks.saturated_pixels(flags).tolist() == [False, False, True, False, True, True]

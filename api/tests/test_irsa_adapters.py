@@ -5,6 +5,7 @@ from skyblink.adapters.cutout_cache import CutoutCache, CutoutKey
 from skyblink.adapters.http_retry import RetryPolicy, UpstreamUnavailable, get_with_retry
 from skyblink.adapters.irsa_cutouts import CutoutClient, CutoutError
 from skyblink.adapters.irsa_sia import merge_collections, parse_sia_csv
+from skyblink.adapters.throttle import ConcurrencyGovernor
 from tests.factories import make_exposure
 
 FAST = RetryPolicy(attempts=3, base_delay_s=0, request_timeout_s=5)
@@ -15,6 +16,10 @@ SIA_CSV = (
     "2025W33_2C_0321_1,SPHEREx-D6,60902.864715,4.41150e-06,5.00960e-06,https://x/a.fits,science\n"
     "2025W33_2C_0321_1,SPHEREx-D1,60902.864715,7.5e-07,1.1e-06,https://x/b.fits,science\n"
 )
+
+
+def governor(limit: int = 2) -> ConcurrencyGovernor:
+    return ConcurrencyGovernor(limit=limit, fallback_limit=1, max_unavailable_ratio=0.2, min_requests=20)
 
 
 async def no_sleep(_: float) -> None:
@@ -71,7 +76,7 @@ async def test_gives_up_after_policy_attempts():
 
 async def test_cutout_is_cached_on_disk(tmp_path):
     client, calls = client_with([httpx.Response(200, content=FITS_BYTES)])
-    cutouts = CutoutClient(client, FAST, CutoutCache(tmp_path), max_concurrency=2)
+    cutouts = CutoutClient(client, FAST, CutoutCache(tmp_path), governor=governor(2))
     exposure = make_exposure()
 
     first = await cutouts.fetch(exposure, 269.4464, 4.7668, 0.1)
@@ -84,7 +89,7 @@ async def test_cutout_is_cached_on_disk(tmp_path):
 async def test_no_overlap_is_no_data_and_cached(tmp_path):
     client, calls = client_with([httpx.Response(422, text="Arrays do not overlap.")])
     cache = CutoutCache(tmp_path)
-    cutouts = CutoutClient(client, RetryPolicy(attempts=1), cache, max_concurrency=1)
+    cutouts = CutoutClient(client, RetryPolicy(attempts=1), cache, governor=governor(1))
     exposure = make_exposure()
 
     assert await cutouts.fetch(exposure, 1.0, 2.0, 0.1) is None
@@ -94,7 +99,7 @@ async def test_no_overlap_is_no_data_and_cached(tmp_path):
 
 async def test_non_fits_answer_is_an_error(tmp_path):
     client, _ = client_with([httpx.Response(404, text="not found")])
-    cutouts = CutoutClient(client, FAST, CutoutCache(tmp_path), max_concurrency=1)
+    cutouts = CutoutClient(client, FAST, CutoutCache(tmp_path), governor=governor(1))
 
     with pytest.raises(CutoutError):
         await cutouts.fetch(make_exposure(), 1.0, 2.0, 0.1)
@@ -106,3 +111,13 @@ def test_cache_key_depends_on_position_and_size():
     assert base.digest() == CutoutKey("obs", "D6", 1.0, 2.0, 0.1).digest()
     assert base.digest() != CutoutKey("obs", "D6", 1.0, 2.0, 0.2).digest()
     assert base.digest() != CutoutKey("obs", "D5", 1.0, 2.0, 0.1).digest()
+
+
+async def test_cutout_client_reports_each_attempt_to_governor(tmp_path):
+    client, _ = client_with([httpx.Response(503), httpx.Response(200, content=FITS_BYTES)])
+    tracker = governor()
+    cutouts = CutoutClient(client, FAST, CutoutCache(tmp_path), governor=tracker)
+
+    await cutouts.fetch(make_exposure(), 1.0, 2.0, 0.1)
+
+    assert (tracker.requests, tracker.unavailable) == (2, 1)

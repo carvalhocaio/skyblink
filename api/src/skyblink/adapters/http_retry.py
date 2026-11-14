@@ -25,6 +25,11 @@ class RetryPolicy:
 
 
 Sleep = Callable[[float], Awaitable[None]]
+Observer = Callable[[int | None], None]
+
+
+def _ignore(_: int | None) -> None:
+    return None
 
 
 async def get_with_retry(
@@ -32,6 +37,7 @@ async def get_with_retry(
     url: str,
     policy: RetryPolicy,
     sleep: Sleep = asyncio.sleep,
+    observe: Observer = _ignore,
 ) -> httpx.Response:
     reason = "no attempts"
     for attempt in range(policy.attempts):
@@ -39,8 +45,10 @@ async def get_with_retry(
             async with asyncio.timeout(policy.request_timeout_s):
                 response = await client.get(url)
         except (httpx.TransportError, TimeoutError) as error:
+            observe(None)
             reason = f"{type(error).__name__}: {error}"
         else:
+            observe(response.status_code)
             if response.status_code not in RETRYABLE_STATUS:
                 return response
             reason = f"HTTP {response.status_code}"

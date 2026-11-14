@@ -24,9 +24,7 @@ def star_cutout(path, *, offset: float = 0.0, hot_pixel: bool = False):
     if hot_pixel:
         image[2, 2] = 1e4
         flags[2, 2] |= 1 << 10
-    return write_cutout(
-        path, grid.wcs, image, flags=flags, zodi=np.full(grid.shape, 5.0), planes=PLANES
-    )
+    return write_cutout(path, grid.wcs, image, flags=flags, zodi=np.full(grid.shape, 5.0), planes=PLANES)
 
 
 def test_stack_subtracts_zodi_and_local_background_and_masks_bad_pixels(tmp_path):

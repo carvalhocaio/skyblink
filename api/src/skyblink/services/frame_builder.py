@@ -32,9 +32,7 @@ class NoUsableExposures(Exception):
 
 
 class CutoutFetcher(Protocol):
-    async def fetch(
-        self, exposure: Exposure, ra: float, dec: float, size_deg: float
-    ) -> Path | None: ...
+    async def fetch(self, exposure: Exposure, ra: float, dec: float, size_deg: float) -> Path | None: ...
 
 
 @dataclass(frozen=True)
@@ -123,9 +121,7 @@ class FrameBuilder:
             logger.warning("cutout unavailable for %s %s: %s", exposure.obs_id, exposure.detector, error)
             return None
 
-    async def build(
-        self, exposures: Sequence[Exposure], target: Target, grid: FrameGrid
-    ) -> FrameImage:
+    async def build(self, exposures: Sequence[Exposure], target: Target, grid: FrameGrid) -> FrameImage:
         started = time.perf_counter()
         fetched = await asyncio.gather(*(self._fetch(e, target, grid) for e in exposures))
         downloaded = time.perf_counter()

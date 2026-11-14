@@ -5,9 +5,7 @@ from skyblink.domain.models import Exposure, Season
 SEASON_GAP_DAYS = 30.0
 
 
-def group_into_seasons(
-    exposures: Iterable[Exposure], gap_days: float = SEASON_GAP_DAYS
-) -> list[Season]:
+def group_into_seasons(exposures: Iterable[Exposure], gap_days: float = SEASON_GAP_DAYS) -> list[Season]:
     ordered = sorted(exposures, key=lambda e: e.mjd)
     groups: list[list[Exposure]] = []
     for exposure in ordered:

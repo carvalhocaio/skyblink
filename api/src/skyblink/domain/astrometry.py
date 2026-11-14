@@ -85,7 +85,7 @@ def find_reference_stars(
     rows, cols = image.shape
     return [
         (float(x), float(y))
-        for y, x in zip(*np.nonzero(peaks))
+        for y, x in zip(*np.nonzero(peaks), strict=True)
         if edge <= y < rows - edge
         and edge <= x < cols - edge
         and np.hypot(x - exclude_xy[0], y - exclude_xy[1]) > exclude_radius
