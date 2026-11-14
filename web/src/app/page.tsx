@@ -9,7 +9,8 @@ import { TargetForm } from "@/components/target-form";
 import { Player } from "@/components/player";
 import { JobAlerts, JobProgress } from "@/components/job-status";
 import { MotionCard } from "@/components/motion-card";
-import { AboutSpherex, Faq, HowItWorks } from "@/components/learn";
+import { AboutSpherex, Faq } from "@/components/learn";
+import { Explainer } from "@/components/explainer";
 import { LANGS, useT, type Lang } from "@/lib/i18n";
 import { findTarget, TARGETS } from "@/lib/targets";
 import { useJob, type Target } from "@/lib/use-job";
@@ -77,8 +78,8 @@ function Home() {
   const barnard = TARGETS[0];
   const showBarnard = () => submit({ ra: barnard.ra, dec: barnard.dec, fov: 6 });
   const navLinks = [
-    ["#explore", t.nav.explore],
     ["#how", t.nav.how],
+    ["#explore", t.nav.explore],
     ["#spherex", t.nav.spherex],
     ["#faq", t.nav.faq],
   ];
@@ -131,14 +132,7 @@ function Home() {
 
         <div className={`${WRAP} grid items-center gap-10 pt-6 pb-16 md:pt-10 lg:grid-cols-[1.1fr_1fr] lg:pb-20`}>
           <div className="relative z-10">
-            <p className="fade-up flex flex-wrap gap-2" style={{ animationDelay: "0.05s" }}>
-              {t.hero.tags.map((x) => (
-                <span key={x} className="rounded-full border bg-card/50 px-3 py-1 font-mono text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
-                  {x}
-                </span>
-              ))}
-            </p>
-            <h1 className="fade-up mt-7 text-5xl leading-[0.98] font-semibold tracking-[-0.04em] text-balance sm:text-6xl xl:text-[5.4rem]" style={{ animationDelay: "0.15s" }}>
+            <h1 className="fade-up text-5xl leading-[0.98] font-semibold tracking-[-0.04em] text-balance sm:text-6xl xl:text-[5.4rem]" style={{ animationDelay: "0.15s" }}>
               {t.hero.title}
             </h1>
             <p className="fade-up mt-7 max-w-xl text-lg leading-relaxed text-muted-foreground" style={{ animationDelay: "0.3s" }}>
@@ -161,9 +155,15 @@ function Home() {
       </header>
 
       <main>
+        <section id="how" className={`${WRAP} space-y-10 py-20 md:py-28`}>
+          <SectionLabel n={2}>{t.nav.how}</SectionLabel>
+          <h2 className="max-w-3xl text-3xl leading-[1.1] font-medium tracking-tight md:text-5xl">{t.how.title}</h2>
+          <Explainer />
+        </section>
+
         <section id="explore" className="scroll-mt-0 border-y bg-black/40 backdrop-blur-[2px]">
           <div className={`${WRAP} py-20 md:py-28`}>
-            <SectionLabel n={2}>{t.explore.label}</SectionLabel>
+            <SectionLabel n={3}>{t.explore.label}</SectionLabel>
             <h2 className="mt-8 max-w-4xl text-3xl leading-[1.1] font-medium tracking-tight text-balance md:text-5xl">{t.explore.heading}</h2>
 
             <div className="mt-14 grid gap-10 border-t pt-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
@@ -208,11 +208,6 @@ function Home() {
           </div>
         </section>
 
-        <section id="how" className={`${WRAP} space-y-10 py-20 md:py-28`}>
-          <SectionLabel n={3}>{t.nav.how}</SectionLabel>
-          <h2 className="max-w-3xl text-3xl leading-[1.1] font-medium tracking-tight md:text-5xl">{t.how.title}</h2>
-          <HowItWorks />
-        </section>
 
         <section id="spherex" className={`${WRAP} space-y-10 border-t py-20 md:py-28`}>
           <SectionLabel n={4}>{t.nav.spherex}</SectionLabel>

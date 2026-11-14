@@ -11,7 +11,6 @@ const en = {
     text: "The SPHEREx space telescope photographs the whole sky every six months. SkyBlink plays those photos one after another, like a flipbook, so you can see with your own eyes which stars are on the move.",
     cta: "★ Watch Barnard’s Star move",
     secondary: "How it works",
-    tags: ["SPHEREx", "Infrared", "Sky survey"],
     tagline: "A public window on NASA’s SPHEREx: real infrared pictures of the sky, played season after season.",
     specKind: "Red dwarf · 6 light-years away",
     specMotion: "Measured motion",
@@ -138,16 +137,25 @@ const en = {
   },
   how: {
     title: "How SkyBlink works",
-    steps: [
-      { title: "You pick a spot", text: "Choose one of our featured stars or type any position in the sky." },
-      {
-        title: "We gather SPHEREx’s photos",
-        text: "SPHEREx photographs the whole sky every six months. We collect every picture of your spot and stack each season’s pictures into one clean image.",
-      },
-      {
-        title: "You watch the sky blink",
-        text: "The images play in order, like a flipbook. Faraway stars stay still; anything close to us drifts, and stars that change brightness flicker.",
-      },
+    play: "Play the explanation",
+    pause: "Pause the explanation",
+    more: {
+      summary: "Why blink instead of move? And why does the brightness change?",
+      items: [
+        { title: "Too far away to see them move", text: "Every star travels through space, but these are hundreds of light-years away. In a year they shift far less than one SPHEREx pixel, so they look frozen. Barnard’s Star, only 6 light-years away, is close enough for its drift to show. It’s like a plane high in the sky that seems slow, while a car right next to you whooshes by." },
+        { title: "Young stars: dust passing in front", text: "A young star like RW Aurigae is still surrounded by the disk of gas and dust it was born from. When thicker clumps of dust pass between the star and us, they block part of its light, like clouds drifting in front of the Sun. When they clear, the star looks brighter again. Gas falling onto the star can also make it flare up." },
+        { title: "Old giants: a star that breathes", text: "An old giant like R Draconis has used up the fuel in its core. Its outer layers now swell and shrink in a slow rhythm, about every eight months. As it changes size, its surface also changes temperature, and together that changes how much light it gives off. Astronomers call these stars Mira variables." },
+        { title: "Where to look in SkyBlink", text: "These stars are so bright that their centers saturate SPHEREx’s detector. Watch the glow around them, not the center: that is where the change shows." },
+      ],
+    },
+    cta: "Now try it yourself",
+    labels: { far: "far stars: frozen", near: "nearby star: moving", spot: "same spot", trail: "≈10″ a year", bright: "brighter", dim: "dimmer", season: "Season" },
+    scenes: [
+      { title: "SPHEREx photographs the whole sky", text: "Every six months, the SPHEREx space telescope finishes a full map of the sky. So every spot gets photographed again and again, months apart." },
+      { title: "We gather the photos of one spot", text: "You pick a spot. We find every SPHEREx photo of it and combine each season’s shots into one clean picture: one picture per season." },
+      { title: "We play them like a flipbook", text: "The pictures play in order. Each square is one SPHEREx pixel. Faraway stars sit in the same place in every picture, so they look frozen." },
+      { title: "The crosshair marks the same spot", text: "The crosshair never moves. A nearby star slowly walks away from it: that is real motion through space. Barnard’s Star moves about 10 arcseconds a year." },
+      { title: "Some stars blink instead of moving", text: "Stars too far away to move can still change. Young stars hide behind dust and old giants swell and shrink, so they get brighter and dimmer." },
     ],
   },
   about: {
@@ -266,7 +274,6 @@ const pt: typeof en = {
     text: "O telescópio espacial SPHEREx fotografa o céu inteiro a cada seis meses. O SkyBlink mostra essas fotos uma depois da outra, como um flipbook, para você ver com seus próprios olhos quais estrelas estão em movimento.",
     cta: "★ Ver a Estrela de Barnard se mover",
     secondary: "Como funciona",
-    tags: ["SPHEREx", "Infravermelho", "Mapa do céu"],
     tagline: "Uma janela pública para o SPHEREx da NASA: imagens infravermelhas reais do céu, temporada após temporada.",
     specKind: "Anã vermelha · a 6 anos-luz",
     specMotion: "Movimento medido",
@@ -394,16 +401,25 @@ const pt: typeof en = {
   },
   how: {
     title: "Como o SkyBlink funciona",
-    steps: [
-      { title: "Você escolhe um ponto", text: "Escolha uma das estrelas em destaque ou digite qualquer posição do céu." },
-      {
-        title: "Nós juntamos as fotos do SPHEREx",
-        text: "O SPHEREx fotografa o céu inteiro a cada seis meses. Reunimos todas as fotos do seu ponto e combinamos as de cada temporada em uma imagem limpa.",
-      },
-      {
-        title: "Você vê o céu piscar",
-        text: "As imagens tocam em ordem, como um flipbook. Estrelas distantes ficam paradas; o que está perto de nós se desloca, e estrelas que mudam de brilho piscam.",
-      },
+    play: "Tocar a explicação",
+    pause: "Pausar a explicação",
+    more: {
+      summary: "Por que piscam em vez de andar? E por que o brilho muda?",
+      items: [
+        { title: "Longe demais para vermos se mover", text: "Toda estrela viaja pelo espaço, mas estas estão a centenas de anos-luz. Em um ano elas se deslocam bem menos que um pixel do SPHEREx, então parecem paradas. A Estrela de Barnard, a só 6 anos-luz, está perto o bastante para o deslocamento aparecer. É como um avião lá no alto, que parece devagar, enquanto um carro passando do seu lado é rapidíssimo." },
+        { title: "Estrelas jovens: poeira passando na frente", text: "Uma estrela jovem como RW Aurigae ainda está cercada pelo disco de gás e poeira onde nasceu. Quando nuvens mais densas de poeira passam entre a estrela e nós, bloqueiam parte da luz dela, como nuvens passando na frente do Sol. Quando elas saem, a estrela volta a parecer mais forte. Gás caindo sobre a estrela também pode fazê-la ter surtos de brilho." },
+        { title: "Gigantes velhas: uma estrela que respira", text: "Uma gigante velha como R Draconis já gastou o combustível do núcleo. Agora suas camadas externas incham e encolhem num ritmo lento, mais ou menos a cada oito meses. Ao mudar de tamanho, a superfície também muda de temperatura, e juntas essas mudanças alteram quanta luz ela emite. Astrônomos chamam essas estrelas de variáveis Mira." },
+        { title: "Onde reparar no SkyBlink", text: "Essas estrelas são tão brilhantes que o centro delas satura o detector do SPHEREx. Observe o brilho ao redor, não o centro: é ali que a mudança aparece." },
+      ],
+    },
+    cta: "Agora experimente você",
+    labels: { far: "estrelas distantes: paradas", near: "estrela próxima: se movendo", spot: "mesmo lugar", trail: "≈10″ por ano", bright: "mais forte", dim: "mais fraca", season: "Temporada" },
+    scenes: [
+      { title: "O SPHEREx fotografa o céu inteiro", text: "A cada seis meses, o telescópio espacial SPHEREx termina um mapa completo do céu. Assim, cada ponto é fotografado de novo e de novo, com meses de diferença." },
+      { title: "Juntamos as fotos de um ponto", text: "Você escolhe um ponto. Encontramos todas as fotos do SPHEREx dele e combinamos as de cada temporada em uma imagem limpa: uma imagem por temporada." },
+      { title: "Tocamos como um flipbook", text: "As imagens tocam em ordem. Cada quadradinho é um pixel do SPHEREx. Estrelas distantes ficam no mesmo lugar em todas as imagens, então parecem paradas." },
+      { title: "A mira marca o mesmo lugar", text: "A mira nunca se move. Uma estrela próxima vai se afastando dela devagar: é movimento real pelo espaço. A Estrela de Barnard anda cerca de 10 segundos de arco por ano." },
+      { title: "Algumas estrelas piscam em vez de andar", text: "Estrelas distantes demais para se mover ainda podem mudar. Estrelas jovens se escondem atrás de poeira e gigantes velhas incham e encolhem, então ficam mais fortes e mais fracas." },
     ],
   },
   about: {
