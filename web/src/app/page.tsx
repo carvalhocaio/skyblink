@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
+import { Sparkles } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -54,8 +55,11 @@ function Home() {
     <>
       <nav className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-5 px-4 py-3 text-sm">
-          <a href="#top" className="font-semibold">SkyBlink</a>
-          <div className="flex gap-5 overflow-x-auto">
+          <a href="#top" className="flex shrink-0 items-center gap-1.5 font-semibold">
+            <Sparkles className="size-4 text-primary" aria-hidden />
+            SkyBlink
+          </a>
+          <div className="hidden gap-5 sm:flex">
             <a href="#explore" className="shrink-0 text-muted-foreground hover:text-foreground">{t.nav.explore}</a>
             <a href="#how" className="shrink-0 text-muted-foreground hover:text-foreground">{t.nav.how}</a>
             <a href="#spherex" className="shrink-0 text-muted-foreground hover:text-foreground">{t.nav.spherex}</a>
@@ -79,15 +83,36 @@ function Home() {
         </div>
       </nav>
 
-      <main id="top" className="mx-auto w-full max-w-6xl space-y-20 px-4 py-12">
-        <header className="max-w-3xl space-y-5">
-          <p className="text-sm tracking-widest text-cyan-300 uppercase">{t.hero.kicker}</p>
-          <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">{t.hero.title}</h1>
-          <p className="text-lg text-muted-foreground">{t.hero.text}</p>
-          <Button size="lg" onClick={() => submit({ ra: barnard.ra, dec: barnard.dec, fov: 6 })}>
-            {t.hero.cta}
-          </Button>
-        </header>
+      <header id="top" className="starfield border-b">
+        <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 md:grid-cols-[1fr_340px] md:py-24">
+          <div className="space-y-6">
+            <p className="text-sm font-medium tracking-widest text-primary uppercase">{t.hero.kicker}</p>
+            <h1 className="text-4xl font-semibold tracking-tight text-balance md:text-6xl">{t.hero.title}</h1>
+            <p className="max-w-xl text-lg text-muted-foreground">{t.hero.text}</p>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button size="lg" className="h-11 px-5" onClick={() => submit({ ra: barnard.ra, dec: barnard.dec, fov: 6 })}>
+                {t.hero.cta}
+              </Button>
+              <a href="#how" className="rounded-lg px-4 py-2.5 text-sm font-medium hover:bg-muted">
+                {t.hero.secondary} →
+              </a>
+            </div>
+          </div>
+          <figure className="mx-auto w-full max-w-[340px] space-y-3">
+            {/* eslint-disable-next-line @next/next/no-img-element -- animated GIF, served as-is */}
+            <img
+              src="/demo/barnard.gif"
+              alt={t.hero.gifAlt}
+              width={472}
+              height={472}
+              className="w-full rounded-2xl border border-primary/20 shadow-[0_0_80px_-10px] shadow-primary/30"
+            />
+            <figcaption className="text-center text-xs text-muted-foreground">{t.hero.caption}</figcaption>
+          </figure>
+        </div>
+      </header>
+
+      <main className="mx-auto w-full max-w-6xl space-y-24 px-4 py-16">
 
         <section id="explore" className="grid scroll-mt-20 gap-8 lg:grid-cols-[380px_1fr]">
           <TargetForm key={targetKey} initial={target} error={!!inputError} onSubmit={submit} />

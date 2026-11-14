@@ -25,17 +25,30 @@ export function TargetForm({ initial, error, onSubmit }: Props) {
                 onClick={() => onSubmit({ ra: x.ra, dec: x.dec, fov: 6 })}
                 aria-pressed={active}
                 className={`w-full rounded-lg border p-3 text-left transition-colors outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 ${
-                  active ? "border-primary bg-muted" : ""
+                  active ? "border-primary/60 bg-muted shadow-[0_0_24px_-8px] shadow-primary/40" : ""
                 }`}
               >
-                <span className="flex items-baseline justify-between gap-2">
-                  <span className="font-medium">
-                    {i === 0 && <span aria-hidden>★ </span>}
-                    {x.name}
+                <span className="flex gap-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- 59 px real frame, upscaled pixel-exact */}
+                  <img
+                    src={`/targets/${x.thumb}.png`}
+                    alt=""
+                    width={56}
+                    height={56}
+                    className="size-14 shrink-0 rounded-md border bg-black"
+                    style={{ imageRendering: "pixelated" }}
+                  />
+                  <span className="min-w-0">
+                    <span className="flex flex-wrap items-baseline justify-between gap-x-2">
+                      <span className="font-medium">
+                        {i === 0 && <span aria-hidden>★ </span>}
+                        {x.name}
+                      </span>
+                      <span className="text-xs text-primary">{x.moves ? p.move : p.brightness}</span>
+                    </span>
+                    <span className="mt-1 block text-sm text-muted-foreground">{p.stories[i]}</span>
                   </span>
-                  <span className="text-xs text-cyan-300">{x.moves ? p.move : p.brightness}</span>
                 </span>
-                <span className="mt-1 block text-sm text-muted-foreground">{p.stories[i]}</span>
               </button>
             </li>
           );

@@ -7,9 +7,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-geist-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -84,24 +84,24 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --background: oklch(0.14 0.025 265);
+  --foreground: oklch(0.97 0.01 250);
+  --card: oklch(0.19 0.03 265);
+  --card-foreground: oklch(0.97 0.01 250);
+  --popover: oklch(0.19 0.03 265);
+  --popover-foreground: oklch(0.97 0.01 250);
+  --primary: oklch(0.85 0.13 205);
+  --primary-foreground: oklch(0.18 0.04 250);
+  --secondary: oklch(0.25 0.035 265);
+  --secondary-foreground: oklch(0.97 0.01 250);
+  --muted: oklch(0.23 0.03 265);
+  --muted-foreground: oklch(0.74 0.025 255);
+  --accent: oklch(0.25 0.035 265);
+  --accent-foreground: oklch(0.97 0.01 250);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --border: oklch(1 0 0 / 11%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: oklch(0.85 0.13 205);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -126,5 +126,25 @@
   }
   html {
     @apply font-sans;
+    scroll-behavior: smooth;
+  }
+}
+
+/* Pure-CSS starfield: tiny dots tiled at different sizes so the pattern doesn't repeat visibly. */
+.starfield {
+  background-image:
+    radial-gradient(1px 1px at 20px 30px, oklch(1 0 0 / 0.7), transparent),
+    radial-gradient(1px 1px at 140px 80px, oklch(1 0 0 / 0.5), transparent),
+    radial-gradient(1.5px 1.5px at 90px 150px, oklch(0.9 0.08 210 / 0.8), transparent),
+    radial-gradient(1px 1px at 230px 210px, oklch(1 0 0 / 0.45), transparent),
+    radial-gradient(1px 1px at 310px 40px, oklch(1 0 0 / 0.6), transparent),
+    radial-gradient(1.5px 1.5px at 380px 260px, oklch(0.9 0.06 60 / 0.7), transparent),
+    radial-gradient(ellipse at 70% 0%, oklch(0.35 0.12 265 / 0.45), transparent 60%);
+  background-size: 400px 300px, 400px 300px, 400px 300px, 400px 300px, 400px 300px, 400px 300px, 100% 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
   }
 }

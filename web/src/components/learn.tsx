@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Layers, MousePointerClick, PlayCircle } from "lucide-react";
 import { useT } from "@/lib/i18n";
 
 const DETECTORS = [
@@ -12,17 +13,25 @@ const DETECTORS = [
   { id: "D6", range: "4.4–5.0 µm", color: "#dc2626" },
 ];
 
+const STEP_ICONS = [MousePointerClick, Layers, PlayCircle];
+
 export function HowItWorks() {
   const { t } = useT();
   return (
     <ol className="grid gap-4 md:grid-cols-3">
-      {t.how.steps.map((s, i) => (
-        <li key={i} className="rounded-lg border p-5">
-          <span className="text-3xl font-semibold text-cyan-300">{i + 1}</span>
-          <h3 className="mt-2 font-medium">{s.title}</h3>
-          <p className="mt-1 text-sm text-muted-foreground">{s.text}</p>
-        </li>
-      ))}
+      {t.how.steps.map((s, i) => {
+        const Icon = STEP_ICONS[i];
+        return (
+          <li key={i} className="rounded-xl border bg-card/60 p-6">
+            <span className="flex items-center gap-3 text-primary">
+              <Icon className="size-6" aria-hidden />
+              <span className="text-sm font-medium">{i + 1}</span>
+            </span>
+            <h3 className="mt-3 font-medium">{s.title}</h3>
+            <p className="mt-1 text-sm text-muted-foreground">{s.text}</p>
+          </li>
+        );
+      })}
     </ol>
   );
 }
@@ -41,7 +50,7 @@ export function AboutSpherex() {
         </div>
         <ul className="grid gap-3 text-sm">
           {a.facts.map((f, i) => (
-            <li key={i} className="rounded-lg border p-4">
+            <li key={i} className="rounded-xl border bg-card/60 p-4">
               <b>{f.title}</b>
               <p className="mt-1 text-muted-foreground">{f.text}</p>
             </li>
@@ -52,7 +61,7 @@ export function AboutSpherex() {
       <div className="space-y-3">
         <h3 className="font-medium">{a.detTitle}</h3>
         <p className="text-sm text-muted-foreground">{a.detHelp}</p>
-        <div role="group" aria-label={a.detectors} className="grid grid-cols-6 gap-1">
+        <div role="group" aria-label={a.detectors} className="grid grid-cols-6 gap-0.5 overflow-hidden rounded-lg">
           {DETECTORS.map((x, i) => (
             <button
               key={x.id}
@@ -60,8 +69,8 @@ export function AboutSpherex() {
               aria-pressed={i === picked}
               onClick={() => setPicked(i)}
               style={{ background: x.color }}
-              className={`rounded py-3 font-mono text-sm font-semibold text-white outline-none focus-visible:ring-3 focus-visible:ring-white ${
-                i === picked ? "ring-2 ring-white" : "opacity-60 hover:opacity-90"
+              className={`py-3 font-mono text-sm font-semibold text-white outline-none focus-visible:ring-3 focus-visible:ring-white ${
+                i === picked ? "ring-2 ring-white ring-inset" : "opacity-55 hover:opacity-90"
               }`}
             >
               {x.id}
@@ -72,7 +81,7 @@ export function AboutSpherex() {
           <span>{a.shorter}</span>
           <span>{a.longer}</span>
         </div>
-        <p className="rounded-lg border p-4 text-sm" aria-live="polite">
+        <p className="rounded-xl border bg-card/60 p-4 text-sm" aria-live="polite">
           <b>
             {d.id} · {d.range}
           </b>
@@ -88,7 +97,7 @@ export function AboutSpherex() {
 export function Faq() {
   const { t } = useT();
   return (
-    <div className="divide-y rounded-lg border">
+    <div className="divide-y rounded-xl border bg-card/60">
       {t.faq.items.map((f, i) => (
         <details key={i} className="p-4">
           <summary className="cursor-pointer font-medium">{f.q}</summary>

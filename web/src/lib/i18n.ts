@@ -10,6 +10,9 @@ const en = {
     title: "Watch stars move with a space telescope.",
     text: "The SPHEREx space telescope photographs the whole sky every six months. SkyBlink plays those photos one after another, like a flipbook, so you can see with your own eyes which stars are on the move.",
     cta: "★ Watch Barnard’s Star move",
+    secondary: "How it works",
+    caption: "Real SPHEREx data: Barnard’s Star drifting past the crosshair, Aug 2025 → Sep 2026.",
+    gifAlt: "Animated SPHEREx images of Barnard’s Star moving across three observing seasons",
   },
   pick: {
     title: "1. Pick something to look at",
@@ -88,7 +91,7 @@ const en = {
       },
       {
         what: "An old red giant near the end of its life. It slowly swells and shrinks, a kind of pulsating star called a Mira variable.",
-        change: "Each pulse takes about eight months, and the SPHEREx pictures are a few months apart, so each one catches the star at a different point of its cycle. It is too far away to move, and its center saturates the detector, so changes show up mostly in the glow around it.",
+        change: "Each pulse takes about eight months, and the SPHEREx pictures are a few months apart, so each one catches the star at a different point of its cycle. It is too far away to move, and its center saturates the detector, so changes show up mostly in the glow around it. The dark spot in the middle is not a black hole: the star is so bright there that the detector has no valid reading.",
       },
     ],
   },
@@ -188,6 +191,9 @@ const pt: typeof en = {
     title: "Veja estrelas se movendo com um telescópio espacial.",
     text: "O telescópio espacial SPHEREx fotografa o céu inteiro a cada seis meses. O SkyBlink mostra essas fotos uma depois da outra, como um flipbook, para você ver com seus próprios olhos quais estrelas estão em movimento.",
     cta: "★ Ver a Estrela de Barnard se mover",
+    secondary: "Como funciona",
+    caption: "Dados reais do SPHEREx: a Estrela de Barnard passando pela mira, ago 2025 → set 2026.",
+    gifAlt: "Imagens animadas do SPHEREx mostrando a Estrela de Barnard se movendo ao longo de três temporadas",
   },
   pick: {
     title: "1. Escolha o que observar",
@@ -266,7 +272,7 @@ const pt: typeof en = {
       },
       {
         what: "Uma gigante vermelha velha, perto do fim da vida. Ela incha e encolhe devagar, um tipo de estrela pulsante chamada variável Mira.",
-        change: "Cada pulsação leva cerca de oito meses, e as imagens do SPHEREx têm alguns meses de diferença, então cada uma pega a estrela num ponto diferente do ciclo. Ela está longe demais para se mover, e o centro satura o detector, então as mudanças aparecem mais no brilho ao redor.",
+        change: "Cada pulsação leva cerca de oito meses, e as imagens do SPHEREx têm alguns meses de diferença, então cada uma pega a estrela num ponto diferente do ciclo. Ela está longe demais para se mover, e o centro satura o detector, então as mudanças aparecem mais no brilho ao redor. A mancha escura no meio não é um buraco negro: ali a estrela é tão brilhante que o detector não consegue fazer uma leitura válida.",
       },
     ],
   },
