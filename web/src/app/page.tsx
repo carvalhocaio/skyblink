@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { TargetForm } from "@/components/target-form";
 import { Player } from "@/components/player";
 import { JobAlerts, JobProgress } from "@/components/job-status";
+import { MotionCard } from "@/components/motion-card";
 import { AboutSpherex, Faq, HowItWorks } from "@/components/learn";
 import { LANGS, useT, type Lang } from "@/lib/i18n";
 import { findTarget, TARGETS } from "@/lib/targets";
@@ -149,6 +150,7 @@ function Home() {
                 object={featured && { name: featured.name, index: TARGETS.indexOf(featured) }}
               />
             )}
+            {job && <MotionCard job={job} />}
             {job && <JobAlerts job={job} frames={frames} />}
           </div>
         </section>

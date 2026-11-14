@@ -16,6 +16,13 @@ export type Frame = {
   alerts: JobAlert[];
 };
 
+export type Motion = {
+  detector: string;
+  rate_arcsec_yr: { value: number; error: number };
+  catalog: { name: string; object: string; predicted_rate_arcsec_yr: number; rate_residual_sigma: number } | null;
+  catalog_reason: string | null;
+};
+
 export type Job = {
   status: "queued" | "discovering" | "building" | "done" | "failed";
   target: { ra: number; dec: number; fov_arcmin: number };
@@ -25,6 +32,8 @@ export type Job = {
   frames: Frame[];
   stretch: { fixed_from_frame: string | null };
   alerts: JobAlert[];
+  motion?: Motion | null;
+  motion_reason?: string | null;
 };
 
 export class InputError extends Error {}
