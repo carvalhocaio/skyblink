@@ -113,8 +113,9 @@ class Job:
     seasons: list[Season] = field(default_factory=list)
     frames: list[Frame] = field(default_factory=list)
     alerts: list[Alert] = field(default_factory=list)
-    stretch: StretchParams | None = None
-    stretch_frame_id: str | None = None
+    primary_detector: str | None = None
+    stretches: dict[str, StretchParams] = field(default_factory=dict)
+    stretch_frames: dict[str, str] = field(default_factory=dict)
     eta_seconds: tuple[float, float] | None = None
     created_at: float = 0.0
 
@@ -127,6 +128,10 @@ class Job:
             self.detectors,
             self.max_exposures_per_frame,
         )
+
+    @property
+    def stretch_frame_id(self) -> str | None:
+        return self.stretch_frames.get(self.primary_detector) if self.primary_detector else None
 
     @property
     def finished(self) -> bool:

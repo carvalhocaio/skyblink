@@ -12,6 +12,7 @@ def _env(name: str, default: str) -> str:
 @dataclass(frozen=True)
 class Settings:
     cache_dir: Path
+    cache_max_bytes: int
     output_dir: Path
     max_concurrency: int
     fallback_concurrency: int
@@ -28,6 +29,7 @@ class Settings:
     def from_env(cls) -> "Settings":
         return cls(
             cache_dir=Path(_env("CACHE_DIR", ".cache/cutouts")),
+            cache_max_bytes=int(float(_env("CACHE_MAX_GB", "8")) * 1e9),
             output_dir=Path(_env("OUTPUT_DIR", "out")),
             max_concurrency=int(_env("MAX_CONCURRENCY", "6")),
             fallback_concurrency=int(_env("FALLBACK_CONCURRENCY", "4")),

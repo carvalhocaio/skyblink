@@ -16,6 +16,7 @@ from reproject import reproject_interp
 
 from skyblink.adapters.http_retry import UpstreamUnavailable
 from skyblink.adapters.irsa_cutouts import CutoutError
+from skyblink.domain.alerts import touches_core
 from skyblink.domain.flags import FlagMasks
 from skyblink.domain.grid import FrameGrid
 from skyblink.domain.models import Exposure, Target
@@ -48,6 +49,7 @@ class FrameImage:
     coverage: np.ndarray
     saturated_count: np.ndarray
     n_exposures_used: int
+    saturated_core_exposures: int = 0
     download_s: float = 0.0
     assembly_s: float = 0.0
 
@@ -107,6 +109,7 @@ def stack_cutouts(paths: Sequence[Path], grid: FrameGrid) -> FrameImage:
         coverage=result.coverage,
         saturated_count=np.sum([e.saturated for e in exposures], axis=0),
         n_exposures_used=len(exposures),
+        saturated_core_exposures=sum(touches_core(e.saturated) for e in exposures),
     )
 
 

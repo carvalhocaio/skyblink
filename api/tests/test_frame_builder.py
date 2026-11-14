@@ -40,6 +40,7 @@ def test_stack_subtracts_zodi_and_local_background_and_masks_bad_pixels(tmp_path
     assert np.nanmedian(frame.image) == pytest.approx(0.0, abs=0.05)
     assert frame.coverage[2, 2] == 1
     assert frame.saturated_count[centre, centre] == 2
+    assert frame.saturated_core_exposures == 2
 
 
 class FakeFetcher:
@@ -68,3 +69,16 @@ async def test_builder_fails_when_nothing_is_usable():
 
     with pytest.raises(NoUsableExposures):
         await builder.build([make_exposure()] * 2, TARGET, FrameGrid.centered_on(TARGET))
+
+
+def test_many_saturated_pixels_in_one_exposure_count_once(tmp_path):
+    grid = FrameGrid.centered_on(TARGET)
+    centre = grid.shape[0] // 2
+    flags = np.zeros(grid.shape, dtype=np.int64)
+    flags[centre - 1 : centre + 2, centre - 1 : centre + 2] = 1 << 1
+    blob = write_cutout(tmp_path / "blob.fits", grid.wcs, np.ones(grid.shape), flags=flags, planes=PLANES)
+    clean = write_cutout(tmp_path / "clean.fits", grid.wcs, np.ones(grid.shape), planes=PLANES)
+
+    frame = stack_cutouts([blob, clean], grid)
+
+    assert frame.saturated_core_exposures == 1

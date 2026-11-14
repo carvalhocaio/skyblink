@@ -15,11 +15,17 @@ def sia_client(client: httpx.AsyncClient, settings: Settings) -> SiaClient:
     return SiaClient(client, settings.retry)
 
 
-def cutout_client(client: httpx.AsyncClient, settings: Settings) -> CutoutClient:
+def cutout_cache(settings: Settings) -> CutoutCache:
+    return CutoutCache(settings.cache_dir, settings.cache_max_bytes)
+
+
+def cutout_client(
+    client: httpx.AsyncClient, settings: Settings, cache: CutoutCache | None = None
+) -> CutoutClient:
     governor = ConcurrencyGovernor(
         limit=settings.max_concurrency,
         fallback_limit=settings.fallback_concurrency,
         max_unavailable_ratio=settings.max_unavailable_ratio,
         min_requests=settings.min_requests_for_fallback,
     )
-    return CutoutClient(client, settings.retry, CutoutCache(settings.cache_dir), governor)
+    return CutoutClient(client, settings.retry, cache or cutout_cache(settings), governor)

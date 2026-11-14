@@ -13,6 +13,8 @@ SEVERITY = {
 }
 MIN_EXPOSURES_PER_FRAME = 5
 TARGET_RADIUS_PX = 1
+SATURATED_CORE_MIN_FRACTION = 0.25
+SATURATED_CORE_MIN_EXPOSURES = 2
 
 
 def alert(code: AlertCode) -> Alert:
@@ -27,16 +29,23 @@ def job_alerts(seasons: Sequence[Season]) -> list[Alert]:
     return []
 
 
-def has_saturated_core(saturated_count: np.ndarray, radius: int = TARGET_RADIUS_PX) -> bool:
-    row, col = (saturated_count.shape[0] - 1) // 2, (saturated_count.shape[1] - 1) // 2
-    core = saturated_count[row - radius : row + radius + 1, col - radius : col + radius + 1]
+def touches_core(saturated: np.ndarray, radius: int = TARGET_RADIUS_PX) -> bool:
+    row, col = (saturated.shape[0] - 1) // 2, (saturated.shape[1] - 1) // 2
+    core = saturated[row - radius : row + radius + 1, col - radius : col + radius + 1]
     return bool(np.any(core > 0))
 
 
-def frame_alerts(n_exposures_used: int, saturated_count: np.ndarray) -> list[Alert]:
+def is_saturated_core(saturated_exposures: int, n_exposures: int) -> bool:
+    return (
+        saturated_exposures >= SATURATED_CORE_MIN_EXPOSURES
+        and saturated_exposures >= SATURATED_CORE_MIN_FRACTION * n_exposures
+    )
+
+
+def frame_alerts(n_exposures_used: int, saturated_core_exposures: int) -> list[Alert]:
     alerts = []
     if n_exposures_used < MIN_EXPOSURES_PER_FRAME:
         alerts.append(alert(AlertCode.FEW_EXPOSURES))
-    if has_saturated_core(saturated_count):
+    if is_saturated_core(saturated_core_exposures, n_exposures_used):
         alerts.append(alert(AlertCode.SATURATED_CORE))
     return alerts

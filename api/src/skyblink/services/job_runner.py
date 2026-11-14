@@ -15,7 +15,7 @@ from skyblink.domain.alerts import frame_alerts, job_alerts
 from skyblink.domain.eta import estimate_eta
 from skyblink.domain.grid import FrameGrid
 from skyblink.domain.models import Exposure, Frame, FrameStatus, Job, JobStatus, Target
-from skyblink.domain.planning import plan_frames
+from skyblink.domain.planning import detector_priority, plan_frames
 from skyblink.domain.stretch import StretchParams
 from skyblink.services.discovery import ExposureSearch, discover_seasons
 from skyblink.services.frame_builder import FrameImage, NoUsableExposures
@@ -120,6 +120,7 @@ class JobRunner:
         job.seasons = await discover_seasons(self._search, job.target, job.detectors)
         job.alerts = job_alerts(job.seasons)
         job.frames = plan_frames(job.id, job.seasons, job.detectors, job.max_exposures_per_frame)
+        job.primary_detector = next(iter(detector_priority(job.seasons, job.detectors)), None)
         self._store.register_frames(job)
         job.eta_seconds = estimate_eta([], job.remaining_exposures)
         job.status = JobStatus.BUILDING
@@ -140,7 +141,7 @@ class JobRunner:
     async def _build_frame(self, job: Job, frame: Frame, grid: FrameGrid) -> None:
         try:
             image = await self._builder.build(frame.exposures, job.target, grid)
-            stretch = job.stretch or StretchParams.from_image(image.image)
+            stretch = job.stretches.get(frame.detector) or StretchParams.from_image(image.image)
             path = self._output_dir / job.id / f"{frame.id}.png"
             await asyncio.to_thread(render_png, image.image, stretch, path)
         except NoUsableExposures as error:
@@ -151,12 +152,13 @@ class JobRunner:
             logger.exception("frame %s failed", frame.id)
             frame.status = FrameStatus.FAILED
             return
-        if job.stretch is None:
-            job.stretch, job.stretch_frame_id = stretch, frame.id
+        if frame.detector not in job.stretches:
+            job.stretches[frame.detector] = stretch
+            job.stretch_frames[frame.detector] = frame.id
         frame.image_path = path
         frame.n_exposures_used = image.n_exposures_used
         frame.download_s, frame.assembly_s = image.download_s, image.assembly_s
-        frame.alerts = frame_alerts(image.n_exposures_used, image.saturated_count)
+        frame.alerts = frame_alerts(image.n_exposures_used, image.saturated_core_exposures)
         frame.status = FrameStatus.READY
 
 

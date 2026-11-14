@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from skyblink.domain.alerts import frame_alerts, has_saturated_core, job_alerts
+from skyblink.domain.alerts import frame_alerts, is_saturated_core, job_alerts, touches_core
 from skyblink.domain.eta import MAX_SAFETY_FACTOR, PRIOR_SECONDS_PER_EXPOSURE, estimate_eta
 from skyblink.domain.models import AlertCode, Season
 from skyblink.domain.planning import detector_priority, plan_frames
@@ -43,9 +43,38 @@ def test_frames_respect_exposure_limit_and_keep_available_count():
     assert (len(season1.exposures), season1.n_exposures_available) == (2, 4)
 
 
-def test_without_requested_detectors_priority_follows_exposure_count():
-    assert detector_priority(SEASONS, None) == ["D1", "D6"]
-    assert detector_priority(SEASONS, ["D6", "D6", "D1"]) == ["D6", "D1"]
+def test_without_requested_detectors_d6_comes_first_then_d1_to_d5():
+    assert detector_priority(SEASONS, None) == ["D6", "D1"]
+    assert detector_priority(SEASONS, ["D1", "D6", "D1"]) == ["D1", "D6"]
+
+
+def test_all_detectors_build_d6_per_season_first_then_other_detectors_in_order():
+    seasons = [
+        season(0, 0.0, {d: 2 for d in ("D1", "D2", "D3", "D4", "D5", "D6")}),
+        season(1, 300.0, {d: 2 for d in ("D1", "D3", "D6")}),
+    ]
+
+    frames = plan_frames("job", seasons, None, max_exposures=30)
+
+    assert [f.id.removeprefix("job-") for f in frames] == [
+        "s0-D6",
+        "s1-D6",
+        "s0-D1",
+        "s1-D1",
+        "s0-D2",
+        "s0-D3",
+        "s1-D3",
+        "s0-D4",
+        "s0-D5",
+    ]
+
+
+def test_season_without_primary_detector_still_gets_an_early_frame():
+    seasons = [season(0, 0.0, {"D6": 2, "D1": 2}), season(1, 300.0, {"D2": 2})]
+
+    frames = plan_frames("job", seasons, None, max_exposures=30)
+
+    assert [f.id.removeprefix("job-") for f in frames][:2] == ["s0-D6", "s1-D2"]
 
 
 def test_job_alerts_for_coverage_and_seasons():
@@ -54,24 +83,42 @@ def test_job_alerts_for_coverage_and_seasons():
     assert job_alerts(SEASONS) == []
 
 
-def test_frame_alerts_for_few_exposures_and_saturated_target():
-    saturated = np.zeros((9, 9))
-    saturated[5, 4] = 3
+@pytest.mark.parametrize(
+    ("saturated", "total", "expected"),
+    [
+        (1, 20, False),
+        (4, 20, False),
+        (5, 20, True),
+        (20, 20, True),
+        (1, 4, False),
+        (2, 4, True),
+        (1, 1, False),
+    ],
+)
+def test_saturated_core_needs_a_quarter_of_exposures_and_at_least_two(saturated, total, expected):
+    assert is_saturated_core(saturated, total) is expected
+    codes = [a.code for a in frame_alerts(total, saturated)]
+    assert (AlertCode.SATURATED_CORE in codes) is expected
 
-    alerts = frame_alerts(4, saturated)
+
+def test_frame_alerts_for_few_exposures_and_saturated_target():
+    alerts = frame_alerts(4, 2)
 
     assert [(a.code, a.severity) for a in alerts] == [
         (AlertCode.FEW_EXPOSURES, "warning"),
         (AlertCode.SATURATED_CORE, "info"),
     ]
-    assert frame_alerts(5, np.zeros((9, 9))) == []
+    assert frame_alerts(5, 0) == []
 
 
-def test_saturation_away_from_target_is_ignored():
+def test_saturation_outside_the_core_box_is_ignored():
     saturated = np.zeros((9, 9))
     saturated[0, 0] = 1
+    saturated[4, 6] = 1
 
-    assert not has_saturated_core(saturated)
+    assert not touches_core(saturated)
+    saturated[5, 5] = 1
+    assert touches_core(saturated)
 
 
 def test_eta_uses_prior_then_measured_rates():

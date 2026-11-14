@@ -1,3 +1,4 @@
+import io
 from pathlib import Path
 
 import numpy as np
@@ -51,3 +52,28 @@ def write_cutout(
         ]
     ).writeto(path)
     return path
+
+
+def irsa_cutout_bytes(shape: tuple[int, int] = (7, 6), epsf_rows: int = 50) -> bytes:
+    rng = np.random.default_rng(0)
+    header = fits.Header({"BUNIT": "MJy / sr", "DETECTOR": 6})
+    flags_header = fits.Header({"MSKN0001": "OVERFLOW", "MSKM0001": 2})
+    epsf = fits.BinTableHDU.from_columns(
+        [fits.Column(name="PSF", format="1089D", array=rng.normal(size=(epsf_rows, 1089)))], name="EPSF"
+    )
+    wave = fits.BinTableHDU.from_columns(
+        [fits.Column(name="CVAL", format="9J", array=np.arange(9).reshape(1, 9))], name="WCS-WAVE"
+    )
+    buffer = io.BytesIO()
+    fits.HDUList(
+        [
+            fits.PrimaryHDU(header=fits.Header({"VERSION": "7.0.5"})),
+            fits.ImageHDU(rng.normal(size=shape).astype(np.float32), header, name="IMAGE"),
+            fits.ImageHDU(np.zeros(shape, dtype=np.int32), flags_header, name="FLAGS"),
+            fits.ImageHDU(np.ones(shape, dtype=np.float32), header, name="VARIANCE"),
+            fits.ImageHDU(np.zeros(shape, dtype=np.float32), header, name="ZODI"),
+            epsf,
+            wave,
+        ]
+    ).writeto(buffer)
+    return buffer.getvalue()

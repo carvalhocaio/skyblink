@@ -42,7 +42,8 @@ Endpoints:
   If a job with the same parameters is running or done, its `job_id` and current `status` are returned instead
   of starting a new one (a `failed` job is never reused).
 - `GET /jobs/{job_id}` → `status`, `target`, `progress`, `eta_seconds`, `seasons`, `frames` (sorted by date), `stretch`,
-  `alerts`. `404` for unknown jobs.
+  `alerts`. `404` for unknown jobs. `stretch` = `{fixed_from_frame, by_detector}`: `by_detector` (additive) maps each
+  detector to the frame its brightness scale was fixed on; `fixed_from_frame` is the first detector's entry.
 - `GET /frames/{frame_id}.png` → PNG at native resolution (6.15″/px; scale it up with `image-rendering: pixelated`).
   `404` until the frame is `ready`.
 
@@ -51,19 +52,31 @@ Behaviour and conventions:
 - Jobs run in the background in a single process; state lives in memory (lost on restart). Cutouts are cached on disk.
 - At most 2 jobs build at the same time; the others stay `queued`. Finished jobs are dropped from memory (with their
   PNGs) after 6 h, or earlier when more than 200 jobs are stored.
-- Build order: one frame per season first (first requested detector, or the detector with most exposures when
-  `detectors` is `null`), then the other detectors.
-- Brightness scale (percentiles 1–99.5 + asinh) is fixed on the first ready frame and reused for every frame of the job.
+- Build order: one frame per season of the first detector first (the first requested one; `D6` when `detectors` is
+  `null`, i.e. D1–D6), then the remaining detectors one by one (D1…D5 by default), each in date order.
+- Brightness scale (percentiles 1–99.5 + asinh) is fixed on the first ready frame **of each detector** and reused for
+  that detector's frames; a scale is never shared across detectors (their surface brightness differs a lot).
 - `eta_seconds` is a range recomputed after each frame from the job's own download + assembly time per exposure
   (×0.8 / ×1.25, and the maximum ×1.2 on top); before the first frame it uses 1–3 s per exposure. `{min: null, max: null}` while discovering.
 - `progress.frames_done` counts `ready` and `failed` frames. A failed frame never fails the job.
 - Dates (`start`, `end`, `mid_date`) are ISO 8601 UTC strings, e.g. `2025-08-15T20:45:11Z`.
 - Alerts and severity: `NO_COVERAGE` (error, no exposure covers the target), `SINGLE_SEASON` (warning),
-  `FEW_EXPOSURES` (warning, frame with < 5 exposures), `SATURATED_CORE` (info, `OVERFLOW`/`NONLINEAR`/`BLOOM`
-  within 1 px of the target).
+  `FEW_EXPOSURES` (warning, frame with < 5 exposures), `SATURATED_CORE` (info, see below).
+- `SATURATED_CORE`: an exposure counts (once) when its reprojected `OVERFLOW`/`NONLINEAR`/`BLOOM` mask touches the
+  3×3 box around the target; the frame gets the alert when at least 2 exposures **and** at least 25% of its exposures
+  count. Why: isolated bad pixels flagged `OVERFLOW` (94% also `SUR_ERROR`/`NONFUNC` or NaN) occur at
+  4.96×10⁻⁴ per pixel in 428 D6 cutouts, so "any exposure" raised false alarms on 8.5% of 20-exposure frames and
+  12.5% of 30-exposure frames anywhere on the sky (it fired on WISE 0855 and Epsilon Indi B). With the new rule the
+  worst case is 0.055% (8-exposure frame) and 2.6×10⁻⁸ for 20 exposures; truly saturated stars (Barnard, RW Aur,
+  R Dra) have the flags in 100% of their exposures.
 - Downloads share one global limit across all jobs: 6 simultaneous requests; after ≥ 20 cutout requests, if more
-  than 20% were HTTP 503 it drops to 4. The 503 count is logged after every frame. Simultaneous requests for the same
-  cutout share a single download.
+  than 20% were HTTP 503 it drops to 4. The 503 count and the errors by status (502, 504, timeouts…) are logged after
+  every frame. Simultaneous requests for the same cutout share a single download.
+- Cutout cache: each download is stored compacted, keeping only `IMAGE`, `FLAGS`, `VARIANCE`, `ZODI` and `WCS-WAVE`
+  with their headers (the ~3.9 MB `EPSF` table is dropped): ~4 MB → ~95–185 KB per cutout, with byte-identical kept
+  extensions and identical reprojection. On startup an older cache is compacted in place (once; marker
+  `.compact-v1`). The cache is capped (`SKYBLINK_CACHE_MAX_GB`, default 8 GB on the 10 GB volume): when it grows past
+  the cap, least-recently-used cutouts are removed down to 90% of it (reads refresh a cutout's time).
 
 Useful scripts:
 
@@ -81,8 +94,16 @@ uv run python scripts/build_frame.py --detector D6
 # error bars, coadd centroid, Gaia DR3 prediction and background-star stability
 uv run python scripts/measure_motion.py
 
+# compact an existing local cache in place (the API also does this on startup)
+uv run python scripts/compact_cache.py
+
 # warm the cache of a running API: one D6 job per demo target, one at a time
 uv run python scripts/warm_cache.py https://skyblink-api.fly.dev
+uv run python scripts/warm_cache.py https://skyblink-api.fly.dev --targets "WISE 0855" "Epsilon Indi B"
+
+# position of a target on a date: SIMBAD (CDS, falling back to the Harvard mirror) ICRS position at epoch J2000,
+# proper motion, parallax and radial velocity, propagated with astropy (includes parallax)
+uv run python scripts/simbad_position.py "WISE J085510.83-071442.5" --date 2026-03-01
 ```
 
 Frame recipe (one frame = detector × season; seasons split on gaps > 30 days, computed over all detectors):
@@ -97,6 +118,7 @@ Configuration (environment variables):
 | Variable | Default | Meaning |
 |---|---|---|
 | `SKYBLINK_CACHE_DIR` | `.cache/cutouts` | Disk cache of cutouts |
+| `SKYBLINK_CACHE_MAX_GB` | `8` | Cache size cap; least-recently-used cutouts are evicted beyond it |
 | `SKYBLINK_OUTPUT_DIR` | `out` | Rendered PNGs (API jobs under `out/jobs/`) |
 | `SKYBLINK_MAX_CONCURRENCY` | `6` | Simultaneous cutout requests to IRSA (all jobs together) |
 | `SKYBLINK_FALLBACK_CONCURRENCY` | `4` | Concurrency after too many HTTP 503 |
@@ -114,11 +136,14 @@ Configuration (environment variables):
 Data notes (verified against real IRSA responses):
 
 - Cutouts: `access_url?center=RA,Dec&size=DEG` → FITS with `IMAGE`, `FLAGS`, `VARIANCE`, `ZODI`, `EPSF`, `WCS-WAVE`.
-  The `EPSF` table is ~3.9 MB of the ~4 MB response.
+  The `EPSF` table is ~3.9 MB of the ~4 MB response and is not kept in the cache.
 - Flag bits are defined in the `FLAGS` header by `MSKNnnnn` (name) / `MSKMnnnn` (mask) cards; the code reads them at runtime.
 - A cutout outside the exposure footprint returns HTTP 422 `Arrays do not overlap.` and is treated as "no data".
 - IRSA often answers HTTP 503 transiently; requests are retried with exponential backoff.
 - Barnard's Star moves ~10.4″/yr: use its epoch ~2026 position (RA 269.4464, Dec 4.7668), not J2000.
+- WISE 0855 moves ~8.1″/yr: its 2025–26 position is (133.7601, −7.2423) from `scripts/simbad_position.py`
+  (source: SIMBAD, `WISEA J085510.74-071442.5`, Kirkpatrick et al. 2021, ApJS 253, 7). The older (133.7951, −7.2451)
+  is ~2′ (20 px) off; the J2000 epoch was confirmed in the D6 coadds (S/N 12–19 at the predicted spot).
 
 ### Deploy (Fly.io)
 

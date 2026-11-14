@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from collections.abc import AsyncIterator, Callable
 from contextlib import AsyncExitStack, asynccontextmanager
@@ -10,12 +11,16 @@ from skyblink.api.routes import Services, router
 from skyblink.config import Settings
 from skyblink.services.frame_builder import FrameBuilder
 from skyblink.services.job_runner import JobRunner, RunnerLimits
-from skyblink.wiring import cutout_client, http_client, sia_client
+from skyblink.wiring import cutout_cache, cutout_client, http_client, sia_client
 
 
 def _configure_logging() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     logging.getLogger("httpx").setLevel(logging.WARNING)
+
+
+async def _finish(task: asyncio.Task) -> None:
+    await asyncio.gather(task, return_exceptions=True)
 
 
 def create_app(
@@ -32,7 +37,10 @@ def create_app(
                 app.state.services = services_factory()
             else:
                 client = await stack.enter_async_context(http_client(settings))
-                cutouts = cutout_client(client, settings)
+                cache = cutout_cache(settings)
+                migration = asyncio.create_task(asyncio.to_thread(cache.compact_all))
+                stack.push_async_callback(_finish, migration)
+                cutouts = cutout_client(client, settings, cache)
                 store = JobStore()
                 runner = JobRunner(
                     sia_client(client, settings),

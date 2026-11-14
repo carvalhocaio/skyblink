@@ -5,7 +5,7 @@ from typing import Literal
 from astropy.time import Time
 from pydantic import BaseModel, Field
 
-from skyblink.domain.models import Alert, Frame, FrameStatus, Job, Season
+from skyblink.domain.models import DETECTORS, Alert, Frame, FrameStatus, Job, Season
 
 Detector = Literal["D1", "D2", "D3", "D4", "D5", "D6"]
 
@@ -67,6 +67,7 @@ class FrameView(BaseModel):
 
 class StretchView(BaseModel):
     fixed_from_frame: str | None
+    by_detector: dict[str, str]
 
 
 class JobView(BaseModel):
@@ -129,6 +130,9 @@ def job_view(job: Job, image_url: Callable[[Frame], str]) -> JobView:
         eta_seconds=_eta(job),
         seasons=[_season(s) for s in job.seasons],
         frames=[_frame(f, image_url) for f in by_date],
-        stretch=StretchView(fixed_from_frame=job.stretch_frame_id),
+        stretch=StretchView(
+            fixed_from_frame=job.stretch_frame_id,
+            by_detector={d: job.stretch_frames[d] for d in DETECTORS if d in job.stretch_frames},
+        ),
         alerts=_alerts(job.alerts),
     )

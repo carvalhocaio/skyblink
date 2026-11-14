@@ -6,7 +6,7 @@ import httpx
 TARGETS = {
     "Barnard's Star": (269.4462, 4.7682),
     "Epsilon Indi B": (331.0967, -56.8007),
-    "WISE 0855": (133.7951, -7.2451),
+    "WISE 0855": (133.7601, -7.2423),
     "RW Aurigae": (76.9562, 30.4012),
     "R Draconis": (248.1675, 66.7550),
 }
@@ -31,11 +31,16 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("base_url")
     parser.add_argument("--detector", default="D6")
+    parser.add_argument(
+        "--targets", nargs="*", choices=list(TARGETS), help="subset of targets; all when omitted"
+    )
     parser.add_argument("--poll-s", type=float, default=3.0)
     parser.add_argument("--timeout-s", type=float, default=900.0)
     args = parser.parse_args()
     with httpx.Client(base_url=args.base_url.rstrip("/"), timeout=60) as client:
         for name, (ra, dec) in TARGETS.items():
+            if args.targets and name not in args.targets:
+                continue
             started = time.monotonic()
             body = run_job(client, ra, dec, args.detector, args.poll_s, args.timeout_s)
             frames = body["frames"]

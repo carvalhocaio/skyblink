@@ -1,15 +1,17 @@
-from collections import Counter
 from collections.abc import Sequence
 
 from skyblink.domain.models import DETECTORS, Frame, Season
 from skyblink.domain.seasons import spread_evenly
 
+DEFAULT_PRIMARY_DETECTOR = "D6"
+
 
 def detector_priority(seasons: Sequence[Season], requested: Sequence[str] | None) -> list[str]:
     if requested:
         return list(dict.fromkeys(requested))
-    counts = Counter(e.detector for season in seasons for e in season.exposures)
-    return sorted((d for d in DETECTORS if counts[d]), key=lambda d: -counts[d])
+    present = {e.detector for season in seasons for e in season.exposures}
+    order = [DEFAULT_PRIMARY_DETECTOR, *(d for d in DETECTORS if d != DEFAULT_PRIMARY_DETECTOR)]
+    return [d for d in order if d in present]
 
 
 def frame_id(job_id: str, season: Season, detector: str) -> str:

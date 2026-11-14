@@ -10,6 +10,7 @@ from skyblink.adapters.job_store import JobStore
 from skyblink.api.app import create_app
 from skyblink.api.routes import Services
 from skyblink.config import Settings
+from skyblink.domain.models import Target
 from skyblink.services.frame_builder import FrameImage, NoUsableExposures
 from skyblink.services.job_runner import JobRunner
 from tests.factories import make_exposure
@@ -44,6 +45,7 @@ class FakeBuilder:
             coverage=np.full(grid.shape, len(exposures)),
             saturated_count=saturated,
             n_exposures_used=len(exposures),
+            saturated_core_exposures=len(exposures),
             download_s=0.5 * len(exposures),
             assembly_s=0.1,
         )
@@ -225,3 +227,39 @@ async def test_cors_allows_configured_frontend(tmp_path):
 
     assert allowed.headers["access-control-allow-origin"] == FRONTEND
     assert "access-control-allow-origin" not in other.headers
+
+
+class BrightnessByDetector(FakeBuilder):
+    SCALE = {"D1": 1000.0, "D6": 1.0}
+
+    async def build(self, exposures, target, grid):
+        frame = await super().build(exposures, target, grid)
+        return dataclasses.replace(frame, image=frame.image * self.SCALE[exposures[0].detector])
+
+
+async def test_each_detector_gets_its_own_stretch(tmp_path):
+    store = JobStore()
+    runner = JobRunner(FakeSearch(seasonal_exposures()), BrightnessByDetector(), store, tmp_path)
+    job = runner.submit(Target(269.4462, 4.7682, 6), None, 30)
+    for _ in range(500):
+        if job.finished:
+            break
+        await asyncio.sleep(0.01)
+
+    first_ready = {}
+    for frame in job.frames:
+        first_ready.setdefault(frame.detector, frame.id)
+    assert job.primary_detector == "D6"
+    assert job.stretch_frames == {"D6": first_ready["D6"], "D1": first_ready["D1"]}
+    assert job.stretches["D1"].vmax > 100 * job.stretches["D6"].vmax
+
+
+async def test_api_reports_stretch_by_detector(tmp_path):
+    async with api(tmp_path, FakeSearch(seasonal_exposures()), FakeBuilder()) as client:
+        job_id = (await client.post("/jobs", json={**BARNARD, "detectors": None})).json()["job_id"]
+        body = await wait_finished(client, job_id)
+
+    assert body["stretch"] == {
+        "fixed_from_frame": f"{job_id}-s0-D6",
+        "by_detector": {"D1": f"{job_id}-s0-D1", "D6": f"{job_id}-s0-D6"},
+    }

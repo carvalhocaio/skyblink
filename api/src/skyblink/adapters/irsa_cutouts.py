@@ -4,6 +4,7 @@ from pathlib import Path
 import httpx
 
 from skyblink.adapters.cutout_cache import CutoutCache, CutoutKey
+from skyblink.adapters.fits_compaction import compact_fits
 from skyblink.adapters.http_retry import RetryPolicy, get_with_retry
 from skyblink.adapters.throttle import ConcurrencyGovernor
 from skyblink.domain.models import Exposure
@@ -63,4 +64,5 @@ class CutoutClient:
             return None
         if response.status_code != 200 or not response.content.startswith(FITS_SIGNATURE):
             raise CutoutError(f"{exposure.obs_id} {exposure.detector}: HTTP {response.status_code}")
-        return self._cache.put(key, response.content)
+        compact = await asyncio.to_thread(compact_fits, response.content)
+        return self._cache.put(key, compact)

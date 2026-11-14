@@ -52,3 +52,15 @@ async def test_slot_never_exceeds_limit():
     await asyncio.gather(*(work() for _ in range(6)))
 
     assert peak == 2
+
+
+def test_summary_breaks_errors_down_by_status():
+    governor = make_governor()
+
+    for status in [200, 200, 503, 502, None]:
+        governor.record(status)
+
+    summary = governor.summary()
+    assert "HTTP 503 1 (20%)" in summary
+    assert "502: 1 (20%)" in summary and "timeout/transport: 1 (20%)" in summary
+    assert "200:" not in summary

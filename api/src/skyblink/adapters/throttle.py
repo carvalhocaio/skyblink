@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from collections import Counter
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -24,6 +25,7 @@ class ConcurrencyGovernor:
         self._condition = asyncio.Condition()
         self.requests = 0
         self.unavailable = 0
+        self.statuses: Counter[str] = Counter()
 
     @property
     def limit(self) -> int:
@@ -47,6 +49,7 @@ class ConcurrencyGovernor:
 
     def record(self, status: int | None) -> None:
         self.requests += 1
+        self.statuses["timeout/transport" if status is None else str(status)] += 1
         if status == SERVICE_UNAVAILABLE:
             self.unavailable += 1
         if self._should_fall_back():
@@ -68,7 +71,13 @@ class ConcurrencyGovernor:
         )
 
     def summary(self) -> str:
+        errors = ", ".join(
+            f"{code}: {count} ({100 * count / self.requests:.0f}%)"
+            for code, count in sorted(self.statuses.items())
+            if code != "200"
+        )
         return (
             f"IRSA cutout requests {self.requests}, HTTP 503 {self.unavailable} "
-            f"({100 * self.unavailable_ratio:.0f}%), concurrency {self._limit}"
+            f"({100 * self.unavailable_ratio:.0f}%), concurrency {self._limit}; "
+            f"errors by status: {errors or 'none'}"
         )

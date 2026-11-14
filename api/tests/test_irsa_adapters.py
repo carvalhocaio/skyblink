@@ -1,17 +1,20 @@
 import asyncio
+import io
 
 import httpx
+import numpy as np
 import pytest
+from astropy.io import fits
 
 from skyblink.adapters.cutout_cache import CutoutCache, CutoutKey
 from skyblink.adapters.http_retry import RetryPolicy, UpstreamUnavailable, get_with_retry
 from skyblink.adapters.irsa_cutouts import CutoutClient, CutoutError
 from skyblink.adapters.irsa_sia import merge_collections, parse_sia_csv
 from skyblink.adapters.throttle import ConcurrencyGovernor
-from tests.factories import make_exposure
+from tests.factories import irsa_cutout_bytes, make_exposure
 
 FAST = RetryPolicy(attempts=3, base_delay_s=0, request_timeout_s=5)
-FITS_BYTES = b"SIMPLE  =                    T" + b" " * 50
+FITS_BYTES = irsa_cutout_bytes()
 
 SIA_CSV = (
     "obs_id,energy_bandpassname,t_min,em_min,em_max,access_url,dataproduct_subtype\n"
@@ -84,7 +87,12 @@ async def test_cutout_is_cached_on_disk(tmp_path):
     first = await cutouts.fetch(exposure, 269.4464, 4.7668, 0.1)
     second = await cutouts.fetch(exposure, 269.4464, 4.7668, 0.1)
 
-    assert first == second and first.read_bytes() == FITS_BYTES
+    assert first == second
+    with fits.open(first) as cached, fits.open(io.BytesIO(FITS_BYTES)) as original:
+        assert [hdu.name for hdu in cached] == ["PRIMARY", "IMAGE", "FLAGS", "VARIANCE", "ZODI", "WCS-WAVE"]
+        assert np.array_equal(cached["IMAGE"].data, original["IMAGE"].data)
+        assert cached["FLAGS"].header["MSKN0001"] == "OVERFLOW"
+    assert first.stat().st_size < len(FITS_BYTES) / 5
     assert calls == [f"{exposure.access_url}?center=269.4464,4.7668&size=0.1"]
 
 
