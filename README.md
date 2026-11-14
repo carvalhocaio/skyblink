@@ -85,8 +85,11 @@ Behaviour and conventions:
 - `ALIGNMENT_DRIFT` (warning, per frame): reference stars are picked on the first ready frame of each detector —
   peak S/N ≥ 10 over the frame noise (MAD), not within 3 px of a saturated pixel, the brightest within 3 px
   (isolated), outside the 3×3 box at the centre and ≥ 4 px from the edge. Each later frame of that detector is
-  compared with it: the median offset of the stars (iterative 7×7 centroids) above 0.2 px raises the alert. With
-  fewer than 3 usable stars there is no alert and the log says how many were usable.
+  compared with it star by star (iterative 7×7 centroids). Stars whose offset deviates from the median by more than
+  3× the robust spread (1.4826 × MAD per axis, floored at 0.02 px) are dropped; the median offset of the kept stars
+  is the frame's drift, with error 1.2533 × σ/√n per axis. A drift above 0.2 px raises the alert. With fewer than 3
+  consistent stars the frame gets no drift correction and no alert, and the log lists the kept and dropped stars.
+  Rejection cannot fix a frame where most reference stars are off together; the large drift error then shows it.
 - Downloads share one global limit across all jobs: 6 simultaneous requests; after ≥ 20 cutout requests, if more
   than 20% were HTTP 503 it drops to 4. The 503 count and the errors by status (502, 504, timeouts…) are logged after
   every frame. Simultaneous requests for the same cutout share a single download.
@@ -100,11 +103,14 @@ Behaviour and conventions:
 
 Computed for the first detector (D6 by default) once all its season frames are finished. `motion` is `null` with a
 human-readable `motion_reason` when the number can't be defended: fewer than 2 ready seasons, a season whose
-**peak S/N at the centroid is below 10** (peak of the 7×7 box ÷ frame noise, MAD), or fewer than 3 exposures
-(no error bar).
+**peak S/N at the centroid is below 10** (peak of the 7×7 box ÷ frame noise, MAD), fewer than 3 exposures
+(no error bar), or a season whose frame has fewer than 3 consistent reference stars (its alignment can't be
+corrected).
 
-- Position per season: iterative 7×7 centroid on the stacked frame, corrected by that frame's reference-star median
-  offset (`drift_corrected: false` when fewer than 3 reference stars were usable).
+- Position per season: iterative 7×7 centroid on the stacked frame, corrected by that frame's reference-star drift.
+- Errors have two components, both reported in `offset.error_components` (px and arcsec) and combined in quadrature in
+  the `*_err_*` fields: `statistical` (bootstrap of the target centroid, below) and `alignment` (error of the
+  reference-star median; zero for the reference season).
 - Error bar: bootstrap of the stack — the season's exposures are resampled with replacement, restacked and
   re-centroided 200 times; σ is the spread. The seed comes from the season (id + epoch), so identical requests give
   identical numbers. With 200 resamples the rate varies by σ ≈ 0.01″/yr across seeds (0.10″/yr with 50); it costs
@@ -124,21 +130,41 @@ human-readable `motion_reason` when the number can't be defended: fewer than 2 r
   `residual_sigma` = |(measured − predicted) / σ| combined over both axes; `catalog` names the source
   (`name: "SIMBAD"`, `object`, `coordinates_source` bibcode, the astrometry used), the predicted rate at the same
   epochs and `rate_residual_sigma`. If the lookup fails, `catalog` is `null` and `catalog_reason` says why; the
-  measured motion is kept.
+  measured motion is kept. When the catalog has no parallax the prediction is still made and `catalog_reason` says
+  that annual parallax was left out. Compare with the predicted positions and rate at the same epochs, not with the
+  catalog proper motion alone: seasonal sampling plus parallax can move the apparent rate a lot (eps Ind B: 4.10″/yr
+  predicted at the observed epochs vs 4.68″/yr from proper motion alone).
 - Saturated stars (`SATURATED_CORE`) are centroided on their wings; for Barnard's Star this agrees with Gaia DR3
   within ~1σ.
 
-Barnard's Star, D6 (`target_name: "Barnard's star"`, real dr1 + qr3 discovery, pipeline version 4):
+Validation (pipeline version 5, D6, real dr1 + qr3 discovery, `target_name` set). Errors are total (statistical ⊕
+alignment); residuals combine both axes.
 
-| season | epoch_date | measured offset (E, N) ″ | predicted (E, N) ″ | residual |
-|---|---|---|---|---|
-| 0 | 2025-08-21 | reference | reference | – |
-| 1 | 2026-03-29 | (−0.04 ± 0.61, +6.42 ± 0.37) | (+0.53, +6.18) | 1.13σ |
-| 2 | 2026-08-20 | (−1.39 ± 0.60, +10.25 ± 0.35) | (−0.80, +10.36) | 1.04σ |
+Barnard's Star (`"Barnard's star"`; SIMBAD: Gaia EDR3 astrometry, parallax 546.98 mas). Reference stars: 7 kept,
+0 dropped in both seasons; drift 0.095 and 0.016 px.
 
-Rate 10.48 ± 0.33″/yr measured vs 10.69″/yr predicted at the same epochs (−0.62σ); SIMBAD total proper motion
-10.39″/yr. Reference-star drift 0.095 and 0.016 px (7 stars), no `ALIGNMENT_DRIFT`. The parallax term moves the
-season-1 prediction ~1″ east, but the measured east error (~±0.6″) is too large to tell it apart.
+| season | epoch_date | measured (E, N) ″ | alignment part (E, N) ″ | predicted (E, N) ″ | residual |
+|---|---|---|---|---|---|
+| 0 | 2025-08-21 | reference | – | reference | – |
+| 1 | 2026-03-29 | (−0.04 ± 0.62, +6.42 ± 0.38) | (0.09, 0.06) | (+0.53, +6.18) | 1.12σ |
+| 2 | 2026-08-20 | (−1.39 ± 0.60, +10.25 ± 0.35) | (0.05, 0.06) | (−0.80, +10.36) | 1.03σ |
+
+Rate 10.47 ± 0.34″/yr vs 10.65″/yr predicted at the same epochs (−0.53σ).
+
+Epsilon Indi B (`"eps Ind B"`; SIMBAD: Gaia EDR3, parallax 270.66 mas, no radial velocity). Two of its five
+reference stars are inconsistent (constant offsets of −0.6 and −0.9 px, likely biased centroids in the first season):
+season 1 keeps 3 and drops both, season 2 keeps all 5 (three agree on the wrong offset, so the median follows them
+and `ALIGNMENT_DRIFT` stays, with a ±0.27 px drift error), season 3 keeps 4 and drops 1.
+
+| season | epoch_date | measured (E, N) ″ | alignment part (E, N) ″ | predicted (E, N) ″ | residual |
+|---|---|---|---|---|---|
+| 0 | 2025-05-06 | reference | – | reference | – |
+| 1 | 2025-10-06 | (+1.68 ± 0.21, −1.77 ± 0.42) | (0.17, 0.38) | (+1.25, −1.33) | 2.31σ |
+| 2 | 2026-04-29 | (+0.16 ± 1.67, −2.79 ± 0.37) | (1.66, 0.35) | (+3.90, −2.40) | 2.47σ |
+| 3 | 2026-09-25 | (+4.44 ± 1.54, −4.06 ± 0.44) | (1.53, 0.43) | (+5.15, −3.73) | 0.88σ |
+
+Rate 4.67 ± 0.38″/yr vs 4.10″/yr predicted at the same epochs (+1.52σ). Before the robust rule (pipeline 4) the
+same data gave 4.15 ± 0.06″/yr with an alignment error that was not propagated.
 
 Saved results include `PIPELINE_VERSION` in their key: any change to frames, alerts or fields bumps it and old saved
 results are ignored.

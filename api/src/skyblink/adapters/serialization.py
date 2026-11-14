@@ -78,16 +78,7 @@ def motion_from_dict(data: dict[str, Any] | None) -> Motion | None:
     if data is None:
         return None
     seasons = tuple(
-        SeasonMotion(
-            **{
-                **season,
-                "position_px": _pair(season["position_px"]),
-                "position_err_px": _pair(season["position_err_px"]),
-                "offset_px": _pair(season["offset_px"]),
-                "offset_err_px": _pair(season["offset_err_px"]),
-                "predicted_offset_px": _pair(season["predicted_offset_px"]),
-            }
-        )
+        SeasonMotion(**{key: _pair(value) if key.endswith("_px") else value for key, value in season.items()})
         for season in data["seasons"]
     )
     prediction = data["prediction"]

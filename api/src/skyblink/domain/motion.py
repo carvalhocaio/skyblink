@@ -6,7 +6,14 @@ from dataclasses import dataclass
 import numpy as np
 from astropy.wcs import WCS
 
-from skyblink.domain.astrometry import CENTROID_HALF_WIDTH, Drift, centroid, frame_centre, frame_noise
+from skyblink.domain.astrometry import (
+    CENTROID_HALF_WIDTH,
+    MIN_REFERENCE_STARS,
+    Drift,
+    centroid,
+    frame_centre,
+    frame_noise,
+)
 from skyblink.domain.grid import SPHEREX_PIXEL_ARCSEC
 from skyblink.domain.proper_motion import StellarAstrometry, apparent_position
 from skyblink.domain.stacking import weighted_mean_stack
@@ -48,8 +55,12 @@ class SeasonMotion:
     drift_corrected: bool
     position_px: tuple[float, float]
     position_err_px: tuple[float, float]
+    position_stat_err_px: tuple[float, float]
+    position_align_err_px: tuple[float, float]
     offset_px: tuple[float, float]
     offset_err_px: tuple[float, float]
+    offset_stat_err_px: tuple[float, float]
+    offset_align_err_px: tuple[float, float]
     predicted_offset_px: tuple[float, float] | None = None
     residual_sigma: float | None = None
 
@@ -130,22 +141,35 @@ def _measure_season(frame: SeasonFrame, samples: int) -> SeasonMotion:
             f"season {frame.season_id} has {n} exposures; "
             f"{MIN_EXPOSURES_FOR_ERROR} are needed for an error bar"
         )
+    if frame.drift is None:
+        raise MotionUnavailable(
+            f"season {frame.season_id} has fewer than {MIN_REFERENCE_STARS} consistent reference stars, "
+            "so its alignment cannot be corrected"
+        )
     rng = np.random.default_rng(seed_for(frame.season_id, frame.epoch))
-    error = bootstrap_centroid(frame.exposure_data, frame.exposure_variance, found, samples, rng)
-    drift = frame.drift or Drift(0.0, 0.0, 0)
-    position = (found[0] - drift.dx, found[1] - drift.dy)
+    statistical = bootstrap_centroid(frame.exposure_data, frame.exposure_variance, found, samples, rng)
+    alignment = (frame.drift.dx_err, frame.drift.dy_err)
+    position = (found[0] - frame.drift.dx, found[1] - frame.drift.dy)
     return SeasonMotion(
         season_id=frame.season_id,
         frame_id=frame.frame_id,
         mid_mjd=frame.mid_mjd,
         epoch_mjd=frame.epoch,
         snr=snr,
-        drift_corrected=frame.drift is not None,
+        drift_corrected=True,
         position_px=position,
-        position_err_px=error,
+        position_err_px=_quadrature(statistical, alignment),
+        position_stat_err_px=statistical,
+        position_align_err_px=alignment,
         offset_px=(0.0, 0.0),
         offset_err_px=(0.0, 0.0),
+        offset_stat_err_px=(0.0, 0.0),
+        offset_align_err_px=(0.0, 0.0),
     )
+
+
+def _quadrature(a: tuple[float, float], b: tuple[float, float]) -> tuple[float, float]:
+    return float(np.hypot(a[0], b[0])), float(np.hypot(a[1], b[1]))
 
 
 def fit_rate(times_yr: np.ndarray, values: np.ndarray, sigmas: np.ndarray) -> tuple[float, float]:
@@ -181,10 +205,9 @@ def measure_motion(
                 season.position_px[0] - reference.position_px[0],
                 season.position_px[1] - reference.position_px[1],
             ),
-            offset_err_px=(
-                float(np.hypot(season.position_err_px[0], reference.position_err_px[0])),
-                float(np.hypot(season.position_err_px[1], reference.position_err_px[1])),
-            ),
+            offset_err_px=_quadrature(season.position_err_px, reference.position_err_px),
+            offset_stat_err_px=_quadrature(season.position_stat_err_px, reference.position_stat_err_px),
+            offset_align_err_px=_quadrature(season.position_align_err_px, reference.position_align_err_px),
         )
         for season in seasons[1:]
     ]

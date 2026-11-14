@@ -74,6 +74,18 @@ class StretchView(BaseModel):
     by_detector: dict[str, str]
 
 
+class ErrorComponentView(BaseModel):
+    dx_px: float
+    dy_px: float
+    east_arcsec: float
+    north_arcsec: float
+
+
+class ErrorComponentsView(BaseModel):
+    statistical: ErrorComponentView
+    alignment: ErrorComponentView
+
+
 class OffsetView(BaseModel):
     dx_px: float
     dy_px: float
@@ -85,6 +97,7 @@ class OffsetView(BaseModel):
     north_err_arcsec: float
     total_arcsec: float
     total_err_arcsec: float
+    error_components: ErrorComponentsView
 
 
 class PredictedOffsetView(BaseModel):
@@ -186,7 +199,17 @@ def _eta(job: Job) -> EtaView:
     return EtaView(min=math.floor(low), max=math.ceil(high))
 
 
-def _offset(dx: float, dy: float, ex: float, ey: float) -> OffsetView:
+def _component(error: tuple[float, float]) -> ErrorComponentView:
+    return ErrorComponentView(
+        dx_px=error[0],
+        dy_px=error[1],
+        east_arcsec=error[0] * SPHEREX_PIXEL_ARCSEC,
+        north_arcsec=error[1] * SPHEREX_PIXEL_ARCSEC,
+    )
+
+
+def _offset(season: SeasonMotion) -> OffsetView:
+    (dx, dy), (ex, ey) = season.offset_px, season.offset_err_px
     total = math.hypot(dx, dy)
     total_err = math.hypot(dx * ex, dy * ey) / total if total > 0 else math.hypot(ex, ey)
     return OffsetView(
@@ -200,6 +223,10 @@ def _offset(dx: float, dy: float, ex: float, ey: float) -> OffsetView:
         north_err_arcsec=ey * SPHEREX_PIXEL_ARCSEC,
         total_arcsec=total * SPHEREX_PIXEL_ARCSEC,
         total_err_arcsec=total_err * SPHEREX_PIXEL_ARCSEC,
+        error_components=ErrorComponentsView(
+            statistical=_component(season.offset_stat_err_px),
+            alignment=_component(season.offset_align_err_px),
+        ),
     )
 
 
@@ -224,7 +251,7 @@ def _season_motion(season: SeasonMotion) -> SeasonMotionView:
         epoch_date=mjd_to_iso(season.epoch_mjd),
         peak_snr=season.snr,
         drift_corrected=season.drift_corrected,
-        offset=_offset(*season.offset_px, *season.offset_err_px),
+        offset=_offset(season),
         predicted_offset=_predicted(season.predicted_offset_px),
         residual_sigma=season.residual_sigma,
     )

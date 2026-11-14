@@ -104,11 +104,14 @@ def report(measurements: list[SeasonMeasurement]) -> None:
         f"({np.hypot(*residual) / sigma:.1f} sigma)"
     )
     stars = select_reference_stars(first.frame.image, first.frame.saturated_count)
-    drift, usable = measure_drift(first.frame.image, last.frame.image, stars)
-    if drift is None:
-        print(f"  background stars: only {usable} usable (need 3), alignment not checked")
+    measurement = measure_drift(first.frame.image, last.frame.image, stars)
+    if measurement.drift is None:
+        print(f"  background stars: {len(measurement.kept)} consistent of {measurement.usable} (need 3)")
     else:
-        print(f"  background stars: n={drift.n_stars} median offset = {drift.magnitude:.3f} px")
+        print(
+            f"  background stars: {measurement.drift.n_stars} kept, {len(measurement.dropped)} dropped, "
+            f"median offset = {measurement.drift.magnitude:.3f} px"
+        )
 
 
 async def main() -> None:

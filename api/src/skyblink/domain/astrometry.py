@@ -96,6 +96,10 @@ def find_reference_stars(
 REFERENCE_MIN_SNR = 10.0
 CENTRE_EXCLUSION_RADIUS = 1.5
 MIN_REFERENCE_STARS = 3
+OUTLIER_SPREADS = 3.0
+MAD_TO_SIGMA = 1.4826
+MIN_SPREAD_PX = 0.02
+MEDIAN_ERROR_FACTOR = 1.2533
 
 
 @dataclass(frozen=True)
@@ -103,10 +107,36 @@ class Drift:
     dx: float
     dy: float
     n_stars: int
+    dx_err: float = 0.0
+    dy_err: float = 0.0
 
     @property
     def magnitude(self) -> float:
         return float(np.hypot(self.dx, self.dy))
+
+
+@dataclass(frozen=True)
+class DriftMeasurement:
+    drift: Drift | None
+    kept: tuple[tuple[tuple[float, float], tuple[float, float]], ...]
+    dropped: tuple[tuple[tuple[float, float], tuple[float, float]], ...]
+
+    @property
+    def usable(self) -> int:
+        return len(self.kept) + len(self.dropped)
+
+
+def consistent_offsets(offsets: np.ndarray) -> np.ndarray:
+    median = np.median(offsets, axis=0)
+    deviation = np.abs(offsets - median)
+    spread = np.maximum(MAD_TO_SIGMA * np.median(deviation, axis=0), MIN_SPREAD_PX)
+    return np.all(deviation <= OUTLIER_SPREADS * spread, axis=1)
+
+
+def median_with_error(offsets: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    median = np.median(offsets, axis=0)
+    scatter = np.std(offsets, axis=0, ddof=1)
+    return median, MEDIAN_ERROR_FACTOR * scatter / np.sqrt(len(offsets))
 
 
 def frame_noise(image: np.ndarray) -> float:
@@ -131,13 +161,19 @@ def select_reference_stars(
 
 def measure_drift(
     reference: np.ndarray, image: np.ndarray, stars: list[tuple[float, float]]
-) -> tuple[Drift | None, int]:
-    offsets = []
+) -> DriftMeasurement:
+    measured = []
     for star in stars:
         before, after = centroid(reference, star), centroid(image, star)
         if before is not None and after is not None:
-            offsets.append((after[0] - before[0], after[1] - before[1]))
-    if len(offsets) < MIN_REFERENCE_STARS:
-        return None, len(offsets)
-    dx, dy = np.median(np.array(offsets), axis=0)
-    return Drift(float(dx), float(dy), len(offsets)), len(offsets)
+            measured.append((star, (after[0] - before[0], after[1] - before[1])))
+    if len(measured) < MIN_REFERENCE_STARS:
+        return DriftMeasurement(None, tuple(measured), ())
+    keep = consistent_offsets(np.array([offset for _, offset in measured]))
+    kept = tuple(m for m, k in zip(measured, keep, strict=True) if k)
+    dropped = tuple(m for m, k in zip(measured, keep, strict=True) if not k)
+    if len(kept) < MIN_REFERENCE_STARS:
+        return DriftMeasurement(None, kept, dropped)
+    median, error = median_with_error(np.array([offset for _, offset in kept]))
+    drift = Drift(float(median[0]), float(median[1]), len(kept), float(error[0]), float(error[1]))
+    return DriftMeasurement(drift, kept, dropped)

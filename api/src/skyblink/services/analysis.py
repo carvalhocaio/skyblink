@@ -8,7 +8,13 @@ import numpy as np
 
 from skyblink.adapters.simbad import CatalogEntry, CatalogLookupError
 from skyblink.domain.alerts import alert, is_alignment_drift
-from skyblink.domain.astrometry import MIN_REFERENCE_STARS, Drift, measure_drift, select_reference_stars
+from skyblink.domain.astrometry import (
+    MIN_REFERENCE_STARS,
+    Drift,
+    DriftMeasurement,
+    measure_drift,
+    select_reference_stars,
+)
 from skyblink.domain.grid import FrameGrid
 from skyblink.domain.models import AlertCode, Frame, FrameStatus, Job
 from skyblink.domain.motion import (
@@ -39,6 +45,13 @@ def catalog_source(entry: CatalogEntry) -> CatalogSource:
         parallax_mas=star.parallax_mas if entry.parallax_known else None,
         radial_velocity_km_s=star.radial_velocity_km_s if entry.radial_velocity_known else None,
     )
+
+
+def _describe(measurement: DriftMeasurement) -> str:
+    def listed(items) -> str:
+        return ", ".join(f"({x:.0f},{y:.0f}) {dx:+.2f},{dy:+.2f}" for (x, y), (dx, dy) in items) or "none"
+
+    return f"kept [{listed(measurement.kept)}] dropped [{listed(measurement.dropped)}]"
 
 
 class JobAnalysis:
@@ -80,17 +93,26 @@ class JobAnalysis:
                 )
                 return None
             return Drift(0.0, 0.0, len(stars))
-        drift, usable = measure_drift(reference[0], image.image, reference[1])
+        measurement = measure_drift(reference[0], image.image, reference[1])
+        drift = measurement.drift
         if drift is None:
             logger.info(
-                "frame %s: alignment not checked, %d usable reference stars (need %d)",
+                "frame %s: alignment not corrected, %d consistent of %d usable reference stars (need %d); %s",
                 frame.id,
-                usable,
+                len(measurement.kept),
+                measurement.usable,
                 MIN_REFERENCE_STARS,
+                _describe(measurement),
             )
             return None
         logger.info(
-            "frame %s: drift %.3f px from %d reference stars", frame.id, drift.magnitude, drift.n_stars
+            "frame %s: drift %.3f px (±%.3f, ±%.3f) from %d stars; %s",
+            frame.id,
+            drift.magnitude,
+            drift.dx_err,
+            drift.dy_err,
+            drift.n_stars,
+            _describe(measurement),
         )
         if is_alignment_drift(drift):
             frame.alerts.append(alert(AlertCode.ALIGNMENT_DRIFT))
@@ -135,4 +157,10 @@ class JobAnalysis:
             return dataclasses.replace(motion, prediction_reason=reason)
         mjds = [season.epoch_mjd for season in motion.seasons]
         predicted = await asyncio.to_thread(predict_pixels, entry.astrometry, mjds, grid.wcs)
-        return compare_with_catalog(motion, predicted, catalog_source(entry))
+        compared = compare_with_catalog(motion, predicted, catalog_source(entry))
+        if not entry.parallax_known:
+            reason = (
+                f"{entry.catalog} has no parallax for {entry.object}; the prediction ignores annual parallax"
+            )
+            compared = dataclasses.replace(compared, prediction_reason=reason)
+        return compared

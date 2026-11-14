@@ -8,7 +8,7 @@ from astropy.coordinates import SkyCoord
 
 from skyblink.adapters.serialization import motion_from_dict, motion_to_dict
 from skyblink.adapters.simbad import CatalogEntry
-from skyblink.domain.astrometry import Drift, measure_drift, select_reference_stars
+from skyblink.domain.astrometry import Drift, measure_drift, median_with_error, select_reference_stars
 from skyblink.domain.grid import FrameGrid
 from skyblink.domain.models import AlertCode, Frame, FrameStatus, Job, Target
 from skyblink.domain.motion import (
@@ -79,10 +79,10 @@ def test_drift_is_the_median_star_offset():
     reference = stars_image(BACKGROUND_STARS)
     moved = stars_image(BACKGROUND_STARS, shift=(0.4, -0.2), seed=3)
 
-    drift, usable = measure_drift(reference, moved, BACKGROUND_STARS)
+    measurement = measure_drift(reference, moved, BACKGROUND_STARS)
 
-    assert usable == 4
-    assert (drift.dx, drift.dy) == pytest.approx((0.4, -0.2), abs=0.03)
+    assert measurement.usable == 4 and measurement.dropped == ()
+    assert (measurement.drift.dx, measurement.drift.dy) == pytest.approx((0.4, -0.2), abs=0.03)
 
 
 def make_frame(frame_id: str, season: int) -> Frame:
@@ -107,7 +107,10 @@ def frame_image(image: np.ndarray, data=None, variance=None) -> FrameImage:
     )
 
 
-def season_frame(season: int, mjd: float, centre_shift, amplitude=50.0, n=12, noise=0.05, drift=None):
+ALIGNED = Drift(0.0, 0.0, 5)
+
+
+def season_frame(season: int, mjd: float, centre_shift, amplitude=50.0, n=12, noise=0.05, drift=ALIGNED):
     rng = np.random.default_rng(season)
     data = np.stack(
         [
@@ -247,7 +250,10 @@ async def test_prediction_failure_keeps_the_measured_motion():
     for frame, season in zip(
         job.frames, [season_frame(0, 60000.0, (0, 0)), season_frame(1, 60365.0, (0, 1))], strict=True
     ):
-        analysis.frame_ready(frame, frame_image(season.image, season.exposure_data, season.exposure_variance))
+        with_reference_stars = season.image + stars_image(BACKGROUND_STARS, noise=0.0)
+        analysis.frame_ready(
+            frame, frame_image(with_reference_stars, season.exposure_data, season.exposure_variance)
+        )
 
     await analysis.maybe_compute_motion(FrameGrid.centered_on(job.target))
 
@@ -276,3 +282,72 @@ def test_rate_uses_the_exposure_epoch_not_the_frame_mid_date():
 
     assert measure_motion(late_mid_date, "D6").rate_arcsec_yr == measure_motion(truth, "D6").rate_arcsec_yr
     assert measure_motion(late_mid_date, "D6").seasons[1].epoch_mjd == 60365.25
+
+
+FIVE_STARS = [*BACKGROUND_STARS, (25.0, 50.0)]
+
+
+def per_star_image(shifts: list[tuple[float, float]], stars=FIVE_STARS, seed=5) -> np.ndarray:
+    image = np.random.default_rng(seed).normal(0.0, 0.01, SHAPE)
+    for star, shift in zip(stars, shifts, strict=True):
+        image += stars_image([star], shift=shift, noise=0.0)
+    return image
+
+
+def test_outlier_reference_stars_are_dropped_before_the_median():
+    shifts = [(0.1, 0.0), (0.1, 0.0), (0.1, 0.0), (0.7, 0.0), (0.7, 0.6)]
+
+    measurement = measure_drift(per_star_image([(0.0, 0.0)] * 5), per_star_image(shifts, seed=6), FIVE_STARS)
+
+    assert [star for star, _ in measurement.dropped] == FIVE_STARS[3:]
+    assert len(measurement.kept) == 3
+    assert (measurement.drift.dx, measurement.drift.dy) == pytest.approx((0.1, 0.0), abs=0.02)
+
+
+def test_fewer_than_three_consistent_stars_means_no_correction_no_alert_and_no_motion(caplog):
+    stars = FIVE_STARS[:3]
+    shifts = [(0.0, 0.0), (0.02, 0.0), (0.9, 0.0)]
+    job = Job(
+        id="j", target=Target(1, 2), detectors=("D6",), max_exposures_per_frame=30, primary_detector="D6"
+    )
+    analysis = JobAnalysis(job, resolver=None)
+    first, second = make_frame("j-s0-D6", 0), make_frame("j-s1-D6", 1)
+
+    with caplog.at_level(logging.INFO):
+        analysis.frame_ready(first, frame_image(per_star_image([(0.0, 0.0)] * 3, stars)))
+        analysis.frame_ready(second, frame_image(per_star_image(shifts, stars, seed=7)))
+    measurement = measure_drift(
+        per_star_image([(0.0, 0.0)] * 3, stars), per_star_image(shifts, stars, seed=7), stars
+    )
+
+    assert measurement.drift is None and len(measurement.kept) == 2 and len(measurement.dropped) == 1
+    assert second.alerts == []
+    assert "2 consistent of 3 usable reference stars" in caplog.text
+    with pytest.raises(MotionUnavailable, match="fewer than 3 consistent reference stars"):
+        measure_motion([season_frame(0, 60000.0, (0, 0)), season_frame(1, 60365.0, (0, 1), drift=None)], "D6")
+
+
+def test_median_offset_error_uses_the_scatter_of_kept_stars_and_their_number():
+    offsets = np.array([[0.10, 0.0], [0.12, 0.02], [0.08, -0.02], [0.11, 0.01]])
+
+    median, error = median_with_error(offsets)
+
+    assert median == pytest.approx((0.105, 0.005))
+    assert error == pytest.approx(1.2533 * np.std(offsets, axis=0, ddof=1) / 2)
+
+
+def test_alignment_error_is_added_in_quadrature_and_reported_separately():
+    frames = [
+        season_frame(0, 60000.0, (0.0, 0.0)),
+        season_frame(1, 60365.25, (0.0, 1.0), drift=Drift(0.0, 0.0, 5, dx_err=0.03, dy_err=0.04)),
+    ]
+
+    reference, later = measure_motion(frames, "D6").seasons
+
+    assert later.position_align_err_px == (0.03, 0.04)
+    assert later.position_err_px == pytest.approx(np.hypot(later.position_stat_err_px, (0.03, 0.04)))
+    assert later.offset_stat_err_px == pytest.approx(
+        np.hypot(later.position_stat_err_px, reference.position_stat_err_px)
+    )
+    assert later.offset_align_err_px == pytest.approx((0.03, 0.04))
+    assert later.offset_err_px == pytest.approx(np.hypot(later.offset_stat_err_px, later.offset_align_err_px))
