@@ -99,6 +99,7 @@ class SeasonMotionView(BaseModel):
     season_id: int
     frame_id: str
     mid_date: str
+    epoch_date: str
     peak_snr: float
     drift_corrected: bool
     offset: OffsetView
@@ -220,6 +221,7 @@ def _season_motion(season: SeasonMotion) -> SeasonMotionView:
         season_id=season.season_id,
         frame_id=season.frame_id,
         mid_date=mjd_to_iso(season.mid_mjd),
+        epoch_date=mjd_to_iso(season.epoch_mjd),
         peak_snr=season.snr,
         drift_corrected=season.drift_corrected,
         offset=_offset(*season.offset_px, *season.offset_err_px),

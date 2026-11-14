@@ -64,7 +64,7 @@ def offline_settings(tmp_path, discovery_ttl_s: float = 24 * 3600) -> Settings:
 
 
 @asynccontextmanager
-async def running_api(settings: Settings, irsa: FakeIrsa):
+async def running_api(settings: Settings, irsa: FakeIrsa, base_url: str = "http://test"):
     async with httpx.AsyncClient(transport=httpx.MockTransport(irsa.handler)) as irsa_client:
         app = create_app(
             settings,
@@ -72,7 +72,7 @@ async def running_api(settings: Settings, irsa: FakeIrsa):
         )
         async with app.router.lifespan_context(app):
             transport = httpx.ASGITransport(app=app)
-            async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            async with httpx.AsyncClient(transport=transport, base_url=base_url) as client:
                 yield client
 
 
@@ -113,3 +113,23 @@ async def test_without_persisted_result_falls_back_to_cached_discovery_and_cutou
     assert body["status"] == "done"
     assert [f["status"] for f in body["frames"]] == ["ready"] * 3
     assert irsa.calls and set(irsa.calls) == {"/SIA"}
+
+
+async def test_saved_result_has_no_urls_and_image_url_follows_each_request_host(tmp_path):
+    settings = offline_settings(tmp_path)
+    irsa = await warm_up(tmp_path, settings)
+    irsa.failing = True
+    saved = next((tmp_path / "out" / "results").glob("*/job.json")).read_text()
+
+    urls = {}
+    for base in ("http://localhost:8000", "https://skyblink-api.fly.dev"):
+        async with running_api(settings, irsa, base_url=base) as client:
+            job_id = (await client.post("/jobs", json=REQUEST)).json()["job_id"]
+            headers = {"x-forwarded-proto": "https"} if base.startswith("https") else {}
+            urls[base] = (await client.get(f"/jobs/{job_id}", headers=headers)).json()["frames"][0][
+                "image_url"
+            ]
+
+    assert "/frames/" not in saved and "image_url" not in saved and str(tmp_path) not in saved
+    assert urls["http://localhost:8000"].startswith("http://localhost:8000/frames/")
+    assert urls["https://skyblink-api.fly.dev"].startswith("https://skyblink-api.fly.dev/frames/")

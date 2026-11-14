@@ -12,7 +12,7 @@ from skyblink.domain.proper_motion import StellarAstrometry, apparent_position
 from skyblink.domain.stacking import weighted_mean_stack
 
 MOTION_MIN_SNR = 10.0
-BOOTSTRAP_RESAMPLES = 50
+BOOTSTRAP_RESAMPLES = 200
 MIN_EXPOSURES_FOR_ERROR = 3
 DAYS_PER_YEAR = 365.25
 MIN_SIGMA_PX = 1e-3
@@ -31,6 +31,11 @@ class SeasonFrame:
     exposure_data: np.ndarray
     exposure_variance: np.ndarray
     drift: Drift | None
+    epoch_mjd: float | None = None
+
+    @property
+    def epoch(self) -> float:
+        return self.mid_mjd if self.epoch_mjd is None or not np.isfinite(self.epoch_mjd) else self.epoch_mjd
 
 
 @dataclass(frozen=True)
@@ -38,6 +43,7 @@ class SeasonMotion:
     season_id: int
     frame_id: str
     mid_mjd: float
+    epoch_mjd: float
     snr: float
     drift_corrected: bool
     position_px: tuple[float, float]
@@ -104,8 +110,8 @@ def bootstrap_centroid(
     return float(spread[0]), float(spread[1])
 
 
-def seed_for(season_id: int, mid_mjd: float) -> int:
-    return zlib.crc32(f"{season_id}:{mid_mjd:.6f}".encode())
+def seed_for(season_id: int, epoch_mjd: float) -> int:
+    return zlib.crc32(f"{season_id}:{epoch_mjd:.6f}".encode())
 
 
 def _measure_season(frame: SeasonFrame, samples: int) -> SeasonMotion:
@@ -124,7 +130,7 @@ def _measure_season(frame: SeasonFrame, samples: int) -> SeasonMotion:
             f"season {frame.season_id} has {n} exposures; "
             f"{MIN_EXPOSURES_FOR_ERROR} are needed for an error bar"
         )
-    rng = np.random.default_rng(seed_for(frame.season_id, frame.mid_mjd))
+    rng = np.random.default_rng(seed_for(frame.season_id, frame.epoch))
     error = bootstrap_centroid(frame.exposure_data, frame.exposure_variance, found, samples, rng)
     drift = frame.drift or Drift(0.0, 0.0, 0)
     position = (found[0] - drift.dx, found[1] - drift.dy)
@@ -132,6 +138,7 @@ def _measure_season(frame: SeasonFrame, samples: int) -> SeasonMotion:
         season_id=frame.season_id,
         frame_id=frame.frame_id,
         mid_mjd=frame.mid_mjd,
+        epoch_mjd=frame.epoch,
         snr=snr,
         drift_corrected=frame.drift is not None,
         position_px=position,
@@ -165,7 +172,7 @@ def measure_motion(
 ) -> Motion:
     if len(frames) < 2:
         raise MotionUnavailable("motion needs at least two seasons with a ready frame")
-    seasons = [_measure_season(frame, samples) for frame in sorted(frames, key=lambda f: f.mid_mjd)]
+    seasons = [_measure_season(frame, samples) for frame in sorted(frames, key=lambda f: f.epoch)]
     reference = seasons[0]
     with_offsets = [reference] + [
         dataclasses.replace(
@@ -182,7 +189,7 @@ def measure_motion(
         for season in seasons[1:]
     ]
     rate, rate_err = total_rate_arcsec_yr(
-        [s.mid_mjd for s in seasons],
+        [s.epoch_mjd for s in seasons],
         np.array([s.position_px for s in seasons]),
         np.array([s.position_err_px for s in seasons]),
     )
@@ -214,7 +221,7 @@ def compare_with_catalog(motion: Motion, predicted_px: np.ndarray, source: Catal
             residual = float(np.hypot(rx, ry))
         seasons.append(dataclasses.replace(season, predicted_offset_px=offset, residual_sigma=residual))
     predicted_rate, _ = total_rate_arcsec_yr(
-        [s.mid_mjd for s in motion.seasons],
+        [s.epoch_mjd for s in motion.seasons],
         predicted_px,
         np.array([s.position_err_px for s in motion.seasons]),
     )

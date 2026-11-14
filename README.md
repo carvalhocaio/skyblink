@@ -106,15 +106,19 @@ human-readable `motion_reason` when the number can't be defended: fewer than 2 r
 - Position per season: iterative 7×7 centroid on the stacked frame, corrected by that frame's reference-star median
   offset (`drift_corrected: false` when fewer than 3 reference stars were usable).
 - Error bar: bootstrap of the stack — the season's exposures are resampled with replacement, restacked and
-  re-centroided 50 times; σ is the spread. The seed comes from the season (id + date), so identical requests give
-  identical numbers. With 50 resamples σ itself is uncertain by ~10%.
+  re-centroided 200 times; σ is the spread. The seed comes from the season (id + epoch), so identical requests give
+  identical numbers. With 200 resamples the rate varies by σ ≈ 0.01″/yr across seeds (0.10″/yr with 50); it costs
+  ~2.6 s per job on the Fly machine.
+- Epoch: each season is placed at `epoch_date`, the mean `MJD-AVG` of the exposures that went into the stack. That is
+  the epoch the stacked centroid represents; the frame's `mid_date` (midpoint of first and last exposure) can be
+  two weeks off when one late exposure stretches the season, which biased the rate by ~4% on Barnard.
 - `offset`: from the first season (`reference_season_id`), in grid pixels (`dx_px` +x = west, `dy_px` +y = north)
   and arcsec (`east_arcsec`, `north_arcsec`; 6.15″/px), with errors; `total_arcsec` ± `total_err_arcsec`.
 - `rate_arcsec_yr {value, error}`: weighted linear fit of the season positions vs time. It is the *apparent* rate
   (it includes annual parallax).
 - With `target_name`: the name is resolved in SIMBAD (`scripts/simbad_position.py` logic, CDS with Harvard mirror
   fallback): position (epoch J2000), proper motion, parallax and radial velocity. The position at each season's
-  `mid_date` is propagated with `apply_space_motion`, and annual parallax is added as the offset between the star
+  `epoch_date` is propagated with `apply_space_motion`, and annual parallax is added as the offset between the star
   and a very distant object in the same direction after transforming both to GCRS at that time (aberration is
   common to every star and already absorbed by the image WCS). Each season then gets `predicted_offset` and
   `residual_sigma` = |(measured − predicted) / σ| combined over both axes; `catalog` names the source
@@ -124,18 +128,17 @@ human-readable `motion_reason` when the number can't be defended: fewer than 2 r
 - Saturated stars (`SATURATED_CORE`) are centroided on their wings; for Barnard's Star this agrees with Gaia DR3
   within ~1σ.
 
-Barnard's Star, D6, from the local cache with IRSA unreachable (`target_name: "Barnard's star"`):
+Barnard's Star, D6 (`target_name: "Barnard's star"`, real dr1 + qr3 discovery, pipeline version 4):
 
-| season | mid_date | measured offset (E, N) ″ | predicted (E, N) ″ | residual |
+| season | epoch_date | measured offset (E, N) ″ | predicted (E, N) ″ | residual |
 |---|---|---|---|---|
 | 0 | 2025-08-21 | reference | reference | – |
-| 1 | 2026-04-11 | (−0.04 ± 0.57, +6.42 ± 0.47) | (+0.47, +6.59) | 0.96σ |
-| 2 | 2026-08-18 | (−1.43 ± 0.55, +10.25 ± 0.45) | (−0.78, +10.32) | 1.18σ |
+| 1 | 2026-03-29 | (−0.04 ± 0.61, +6.42 ± 0.37) | (+0.53, +6.18) | 1.13σ |
+| 2 | 2026-08-20 | (−1.39 ± 0.60, +10.25 ± 0.35) | (−0.80, +10.36) | 1.04σ |
 
-Rate 10.83 ± 0.38″/yr measured vs 10.65″/yr predicted at the same epochs (+0.46σ); SIMBAD total proper motion
-10.39″/yr. Reference-star drift 0.095 and 0.021 px (7 stars), no `ALIGNMENT_DRIFT`. For season 1 the parallax term
-moves the prediction ~1″ east ((+0.47, +6.59)″ with it, (−0.51, +6.63)″ without), but the measured east error
-(±0.57″) is too large to tell the two apart (0.96σ vs 0.95σ).
+Rate 10.48 ± 0.33″/yr measured vs 10.69″/yr predicted at the same epochs (−0.62σ); SIMBAD total proper motion
+10.39″/yr. Reference-star drift 0.095 and 0.016 px (7 stars), no `ALIGNMENT_DRIFT`. The parallax term moves the
+season-1 prediction ~1″ east, but the measured east error (~±0.6″) is too large to tell it apart.
 
 Saved results include `PIPELINE_VERSION` in their key: any change to frames, alerts or fields bumps it and old saved
 results are ignored.
@@ -236,6 +239,23 @@ fly apps create skyblink-api --org personal
 fly volumes create skyblink_data --app skyblink-api --region lax --size 10 --yes
 fly deploy --app skyblink-api --ha=false        # also for every later update
 ```
+
+Seeding the volume (so the demo targets work with IRSA down): build the discovery cache, compact cutouts and saved
+results locally (run the API locally and `scripts/warm_cache.py` against it), then upload and unpack them as the app
+user, and restart:
+
+```fish
+tar -C api -czf seed.tgz --exclude='*.part' --transform 's,^\.cache/cutouts,cache,;s,^\.cache/discovery,discovery,' \
+    .cache/cutouts .cache/discovery out/results
+fly ssh sftp put seed.tgz /data/seed.tgz --app skyblink-api
+fly ssh console --app skyblink-api -C "setpriv --reuid=nonroot --regid=nonroot --init-groups tar -xzf /data/seed.tgz -C /data"
+fly ssh console --app skyblink-api -C "rm /data/seed.tgz"
+fly machine restart 2869342f39e098 --app skyblink-api
+```
+
+Saved results only count for the `PIPELINE_VERSION` that produced them, so reseed after a version bump. Seeded on
+2026-11-14 (version 4): Barnard D6 with and without `target_name`, WISE 0855, RW Aur and R Dra in D6, plus the real
+discovery of the five demo targets.
 
 Allow the frontend in CORS (restarts the machine, which clears in-memory jobs):
 

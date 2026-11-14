@@ -82,3 +82,13 @@ def test_many_saturated_pixels_in_one_exposure_count_once(tmp_path):
     frame = stack_cutouts([blob, clean], grid)
 
     assert frame.saturated_core_exposures == 1
+
+
+def test_stack_epoch_is_the_mean_epoch_of_the_exposures_used(tmp_path):
+    grid = FrameGrid.centered_on(TARGET)
+    paths = [
+        write_cutout(tmp_path / f"{mjd}.fits", grid.wcs, np.ones(grid.shape), planes=PLANES, mjd=mjd)
+        for mjd in (61268.0, 61270.0, 61272.0, 61305.0)
+    ]
+
+    assert stack_cutouts(paths, grid).epoch_mjd == 61278.75

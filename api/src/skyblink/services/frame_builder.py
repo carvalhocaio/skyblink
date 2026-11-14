@@ -41,6 +41,7 @@ class ReprojectedExposure:
     data: np.ndarray
     variance: np.ndarray
     saturated: np.ndarray
+    mjd: float = float("nan")
 
 
 @dataclass(frozen=True)
@@ -52,6 +53,7 @@ class FrameImage:
     saturated_core_exposures: int = 0
     exposure_data: np.ndarray | None = None
     exposure_variance: np.ndarray | None = None
+    epoch_mjd: float = float("nan")
     download_s: float = 0.0
     assembly_s: float = 0.0
 
@@ -73,6 +75,7 @@ def reproject_exposure(path: Path, grid: FrameGrid) -> ReprojectedExposure:
     with fits.open(path) as hdul, warnings.catch_warnings():
         warnings.simplefilter("ignore", FITSFixedWarning)
         wcs = WCS(hdul["IMAGE"].header)
+        mjd = float(hdul["IMAGE"].header.get("MJD-AVG", hdul["IMAGE"].header.get("MJD-OBS", np.nan)))
         image = hdul["IMAGE"].data.astype(np.float64)
         zodi = hdul["ZODI"].data.astype(np.float64)
         variance = hdul["VARIANCE"].data.astype(np.float64)
@@ -86,7 +89,7 @@ def reproject_exposure(path: Path, grid: FrameGrid) -> ReprojectedExposure:
     outside = footprint <= 0
     data[outside] = np.nan
     projected_variance[outside] = np.nan
-    return ReprojectedExposure(data, projected_variance, np.nan_to_num(saturated) > 0)
+    return ReprojectedExposure(data, projected_variance, np.nan_to_num(saturated) > 0, mjd)
 
 
 def _load_all(paths: Sequence[Path], grid: FrameGrid) -> list[ReprojectedExposure]:
@@ -97,6 +100,11 @@ def _load_all(paths: Sequence[Path], grid: FrameGrid) -> list[ReprojectedExposur
         except (OSError, KeyError, ValueError) as error:
             logger.warning("skipping unreadable cutout %s: %s", path, error)
     return loaded
+
+
+def _mean_epoch(mjds: list[float]) -> float:
+    finite = [mjd for mjd in mjds if np.isfinite(mjd)]
+    return float(np.mean(finite)) if finite else float("nan")
 
 
 def stack_cutouts(paths: Sequence[Path], grid: FrameGrid) -> FrameImage:
@@ -114,6 +122,7 @@ def stack_cutouts(paths: Sequence[Path], grid: FrameGrid) -> FrameImage:
         saturated_core_exposures=sum(touches_core(e.saturated) for e in exposures),
         exposure_data=data,
         exposure_variance=variance,
+        epoch_mjd=_mean_epoch([e.mjd for e in exposures]),
     )
 
 

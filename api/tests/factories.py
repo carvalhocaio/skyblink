@@ -33,8 +33,11 @@ def write_cutout(
     variance: np.ndarray | None = None,
     zodi: np.ndarray | None = None,
     planes: dict[int, str] | None = None,
+    mjd: float | None = None,
 ) -> Path:
     header = wcs.to_header()
+    if mjd is not None:
+        header["MJD-AVG"] = mjd
     flags_header = header.copy()
     for plane, name in (planes or {}).items():
         flags_header[f"MSKN{plane:04d}"] = name

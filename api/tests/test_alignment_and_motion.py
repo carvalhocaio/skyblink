@@ -268,3 +268,11 @@ def test_motion_is_reproducible_across_jobs():
     assert [(s.offset_px, s.offset_err_px) for s in first.seasons] == [
         (s.offset_px, s.offset_err_px) for s in again.seasons
     ]
+
+
+def test_rate_uses_the_exposure_epoch_not_the_frame_mid_date():
+    truth = [season_frame(0, 60000.0, (0.0, 0.0)), season_frame(1, 60365.25, (0.0, 1.0))]
+    late_mid_date = [truth[0], dataclasses.replace(truth[1], mid_mjd=60381.25, epoch_mjd=60365.25)]
+
+    assert measure_motion(late_mid_date, "D6").rate_arcsec_yr == measure_motion(truth, "D6").rate_arcsec_yr
+    assert measure_motion(late_mid_date, "D6").seasons[1].epoch_mjd == 60365.25

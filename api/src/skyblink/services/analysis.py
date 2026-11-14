@@ -1,6 +1,7 @@
 import asyncio
 import dataclasses
 import logging
+import time
 from collections.abc import Awaitable, Callable
 
 import numpy as np
@@ -60,6 +61,7 @@ class JobAnalysis:
                     exposure_data=image.exposure_data,
                     exposure_variance=image.exposure_variance,
                     drift=drift,
+                    epoch_mjd=image.epoch_mjd,
                 )
             )
 
@@ -102,6 +104,7 @@ class JobAnalysis:
         if self._motion_done or not self._primary_finished():
             return
         self._motion_done = True
+        started = time.perf_counter()
         try:
             motion = await asyncio.to_thread(measure_motion, self._season_frames, self._job.primary_detector)
         except MotionUnavailable as error:
@@ -113,11 +116,12 @@ class JobAnalysis:
         self._job.motion = motion
         self._season_frames = []
         logger.info(
-            "job %s: motion %.2f ± %.2f arcsec/yr over %d seasons",
+            "job %s: motion %.2f ± %.2f arcsec/yr over %d seasons (computed in %.1fs)",
             self._job.id,
             motion.rate_arcsec_yr,
             motion.rate_err_arcsec_yr,
             len(motion.seasons),
+            time.perf_counter() - started,
         )
 
     async def _with_prediction(self, motion: Motion, grid: FrameGrid) -> Motion:
@@ -129,6 +133,6 @@ class JobAnalysis:
             reason = str(error) or "catalog lookup timed out"
             logger.warning("job %s: no catalog prediction: %s", self._job.id, reason)
             return dataclasses.replace(motion, prediction_reason=reason)
-        mjds = [season.mid_mjd for season in motion.seasons]
+        mjds = [season.epoch_mjd for season in motion.seasons]
         predicted = await asyncio.to_thread(predict_pixels, entry.astrometry, mjds, grid.wcs)
         return compare_with_catalog(motion, predicted, catalog_source(entry))
