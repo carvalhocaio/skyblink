@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Check, ChevronLeft, ChevronRight, Link2, Pause, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatMonth as month, type Frame } from "@/lib/api";
@@ -29,6 +29,7 @@ export function Player({ frames, waiting, object }: Props) {
   const { unlock } = useEggs();
   const [uncertain, setUncertain] = useState(false);
   const [width, setWidth] = useState(0);
+  const root = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     try {
@@ -57,7 +58,8 @@ export function Player({ frames, waiting, object }: Props) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement;
-      if (el.closest("input, textarea, select") || e.altKey || e.ctrlKey || e.metaKey) return;
+      // Only while the player has focus, so Space still scrolls the rest of the page.
+      if (!root.current?.contains(el) || e.altKey || e.ctrlKey || e.metaKey) return;
       if (e.key === " " && el.tagName !== "BUTTON") {
         e.preventDefault();
         setPlaying((p) => !p);
@@ -71,8 +73,15 @@ export function Player({ frames, waiting, object }: Props) {
   if (n === 0) return null;
 
   return (
-    <div className="space-y-3">
-      <div className="relative mx-auto aspect-square w-full max-w-[472px] overflow-hidden rounded-xl border bg-black shadow-[0_0_80px_-30px_oklch(0.85_0.13_205/0.5)]" onClick={poke}>
+    <div ref={root} className="space-y-3">
+      <div
+        tabIndex={0}
+        role="group"
+        aria-label={p.imageAlt}
+        aria-describedby="player-keys"
+        className="relative mx-auto aspect-square w-full max-w-[472px] overflow-hidden rounded-xl border bg-black shadow-[0_0_80px_-30px_oklch(0.85_0.13_205/0.5)] outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+        onClick={poke}
+      >
         {ready.map((f, i) => (
           // eslint-disable-next-line @next/next/no-img-element -- tiny PNGs from the API, upscaled pixel-exact
           <img
@@ -168,7 +177,7 @@ export function Player({ frames, waiting, object }: Props) {
         ) : (
           <p className="mt-1">{p.whatText}</p>
         )}
-        <p className="mt-2 text-xs">{p.keys}</p>
+        <p id="player-keys" className="mt-2 text-xs">{p.keys}</p>
       </div>
     </div>
   );

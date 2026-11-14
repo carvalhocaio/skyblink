@@ -4,7 +4,7 @@ import { useSearchParams } from "next/navigation";
 
 const en = {
   locale: "en-US",
-  nav: { explore: "Explore", how: "How it works", spherex: "About SPHEREx", faq: "Questions", language: "Language" },
+  nav: { explore: "Explore", how: "How it works", spherex: "About SPHEREx", faq: "Questions", language: "Language", skip: "Skip to content" },
   hero: {
     kicker: "See the sky change",
     title: "Stars move. Here’s the proof.",
@@ -37,9 +37,9 @@ const en = {
     ra: "RA",
     dec: "Dec",
     fov: "Zoom (arcmin)",
-    fovHelp: "Zoom is the width of the picture. The full Moon is about 30 arcmin wide; 6 is a good start.",
+    fovHelp: "Zoom is the width of the picture, from 1 to 15 arcmin. The full Moon is about 30 arcmin wide; 6 is a good start.",
     submit: "Show me this spot",
-    inputError: "Check the values: RA 0–360° or 0–24h, Dec −90–90°, zoom 1–30 arcmin.",
+    inputError: "Check the values: RA 0–360° or 0–24h, Dec −90–90°, zoom 1–15 arcmin.",
     speedNote: "Featured stars open instantly; a new spot takes about a minute.",
   },
   explore: {
@@ -62,6 +62,7 @@ const en = {
     done: "Done",
     failed: "Failed",
     searching: "Searching the archive…",
+    measuring: "Measuring the motion…",
     ready: (done: number, total: number) => `${done} of ${total} pictures ready`,
     about: "about",
     progress: "Progress",
@@ -80,7 +81,7 @@ const en = {
     whatTitle: "What am I looking at?",
     whatText:
       "Each picture is one SPHEREx season, months apart, in infrared light our eyes can’t see. Brighter means more infrared light. Keep your eye on the crosshair: it marks the same spot in every picture. Faraway stars stay put; a nearby star slowly drifts away from it.",
-    keys: "Keyboard: Space to play or pause, ← and → to step through the pictures.",
+    keys: "Keyboard: with the picture focused, Space plays or pauses and ← → step through the pictures.",
     copy: "Copy link",
     copied: "Link copied",
     compass: "North is up, east is left",
@@ -207,18 +208,55 @@ const en = {
       },
     ],
     detTitle: "A rainbow you can’t see: SPHEREx’s six detectors",
-    detHelp: "Each detector sees a different slice of infrared light. Tap one to learn what it’s good at.",
+    detHelp: "SPHEREx splits infrared light into 102 colors using six detectors. Watch what each one picks up, or tap one to explore it.",
     detectors: "Detectors",
-    shorter: "← shorter waves",
-    longer: "longer waves, cooler things →",
-    detText: [
-      "Just past red light. Shows ordinary stars and faraway galaxies.",
-      "Starts to see through the dust that hides stars from our eyes.",
-      "Peers deeper into the dusty clouds where new stars are born.",
-      "Holds the “fingerprint” of water ice, frozen on tiny dust grains in space.",
-      "Holds the fingerprint of frozen carbon dioxide (dry ice).",
-      "Holds the fingerprint of carbon monoxide ice, and it’s where cold brown dwarfs glow brightest. That’s why SkyBlink uses it to hunt for things that move.",
-    ],
+    shorter: "shorter waves",
+    longer: "longer waves",
+    det: {
+      play: "Play the detector tour",
+      pause: "Pause the detector tour",
+      good: "Good for",
+      all: "All",
+      redshift: "redshift",
+      dwarf: "brown dwarf",
+      steps: [
+        {
+          title: "How one telescope sees 102 colors",
+          text: "Light collected by the telescope lands on six detectors, each with 2,048 × 2,048 pixels. In front of each one sits a filter whose color shifts gradually from one edge to the other, so a single detector records 17 slices of infrared. As SPHEREx sweeps the sky, every point passes under all of them: 6 × 17 = 102 colors, a full spectrum for every spot in the sky.",
+          good: "Turning a picture into a spectrum, for the whole sky",
+        },
+        {
+          title: "Just past red",
+          text: "This is the infrared closest to the light our eyes see, which stops at about 0.7 µm. Stars like the Sun still shine brightly here, so this detector shows the familiar starry sky, together with the light of countless faraway galaxies.",
+          good: "Ordinary stars, distant galaxies",
+        },
+        {
+          title: "Seeing through dust",
+          text: "Space is full of tiny dust grains that block visible light, the way haze dims a sunset. Longer infrared waves slip past them, so stars hidden behind dust start to show up. Many galaxies also have a bump in their light near 1.6 µm, made by old, cool stars, which helps tell how far away they are.",
+          good: "Stars behind dust, galaxy distances",
+        },
+        {
+          title: "Galaxies stretched by distance",
+          text: "As the universe expands, light from faraway galaxies gets stretched to longer waves. This is called redshift. By finding where known features of a galaxy’s light land among these colors, SPHEREx estimates the distance to hundreds of millions of galaxies and builds a 3D map of them. That map tests what happened in the first instant after the Big Bang.",
+          good: "A 3D map of galaxies, the early universe",
+        },
+        {
+          title: "The fingerprint of water ice",
+          text: "In cold clouds between the stars, water freezes onto dust grains as a thin frost. Water ice absorbs light near 3.0 µm, carving a dip into the light of any star shining through the cloud. The deeper the dip, the more ice there is. Ice like this may be where much of the water in planets like Earth came from.",
+          good: "Water ice in star-forming clouds",
+        },
+        {
+          title: "Dry ice in space",
+          text: "Frozen carbon dioxide, the same stuff as dry ice, leaves its own dip at 4.27 µm. This detector splits light more finely than the first four, so it can catch narrow features like this one. Comparing it with water ice shows how cold the cloud is and how much starlight has processed the ice.",
+          good: "Carbon dioxide ice",
+        },
+        {
+          title: "Cold ices and cold worlds",
+          text: "Carbon monoxide only freezes in the coldest corners of a cloud, below about −253 °C, and its ice shows up at 4.67 µm. This is also where cold brown dwarfs shine brightest: methane in their air blocks other colors, so their light escapes around 4.5 µm. That’s why SkyBlink uses D6 to catch things that move.",
+          good: "Carbon monoxide ice, brown dwarfs, SkyBlink",
+        },
+      ],
+    },
     colorNote: "Colors here are just for illustration: infrared light has no color to our eyes.",
   },
   faq: {
@@ -299,7 +337,7 @@ const en = {
 
 const pt: typeof en = {
   locale: "pt-BR",
-  nav: { explore: "Explorar", how: "Como funciona", spherex: "Sobre o SPHEREx", faq: "Dúvidas", language: "Idioma" },
+  nav: { explore: "Explorar", how: "Como funciona", spherex: "Sobre o SPHEREx", faq: "Dúvidas", language: "Idioma", skip: "Pular para o conteúdo" },
   hero: {
     kicker: "Veja o céu mudar",
     title: "Estrelas se movem. Aqui está a prova.",
@@ -332,9 +370,9 @@ const pt: typeof en = {
     ra: "RA",
     dec: "Dec",
     fov: "Zoom (arcmin)",
-    fovHelp: "Zoom é a largura da imagem. A Lua cheia mede cerca de 30 arcmin; 6 é um bom começo.",
+    fovHelp: "Zoom é a largura da imagem, de 1 a 15 arcmin. A Lua cheia mede cerca de 30 arcmin; 6 é um bom começo.",
     submit: "Mostrar este ponto",
-    inputError: "Confira os valores: RA 0–360° ou 0–24h, Dec −90–90°, zoom 1–30 arcmin.",
+    inputError: "Confira os valores: RA 0–360° ou 0–24h, Dec −90–90°, zoom 1–15 arcmin.",
     speedNote: "As estrelas em destaque abrem na hora; um ponto novo leva cerca de um minuto.",
   },
   explore: {
@@ -357,6 +395,7 @@ const pt: typeof en = {
     done: "Pronto",
     failed: "Falhou",
     searching: "Buscando no arquivo…",
+    measuring: "Medindo o movimento…",
     ready: (done, total) => `${done} de ${total} imagens prontas`,
     about: "cerca de",
     progress: "Progresso",
@@ -375,7 +414,7 @@ const pt: typeof en = {
     whatTitle: "O que estou vendo?",
     whatText:
       "Cada imagem é uma temporada do SPHEREx, com meses de diferença, em luz infravermelha que nossos olhos não enxergam. Mais claro significa mais luz infravermelha. Fique de olho na mira: ela marca o mesmo ponto em todas as imagens. Estrelas distantes ficam paradas; uma estrela próxima vai se afastando dela devagar.",
-    keys: "Teclado: Espaço para tocar ou pausar, ← e → para passar as imagens.",
+    keys: "Teclado: com a imagem em foco, Espaço toca ou pausa e ← → passam as imagens.",
     copy: "Copiar link",
     copied: "Link copiado",
     compass: "Norte para cima, leste para a esquerda",
@@ -503,18 +542,55 @@ const pt: typeof en = {
       },
     ],
     detTitle: "Um arco-íris invisível: os seis detectores do SPHEREx",
-    detHelp: "Cada detector enxerga uma faixa diferente da luz infravermelha. Toque em um para saber no que ele é bom.",
+    detHelp: "O SPHEREx divide a luz infravermelha em 102 cores usando seis detectores. Veja o que cada um capta, ou toque em um para explorar.",
     detectors: "Detectores",
-    shorter: "← ondas mais curtas",
-    longer: "ondas mais longas, objetos mais frios →",
-    detText: [
-      "Logo depois do vermelho. Mostra estrelas comuns e galáxias distantes.",
-      "Começa a enxergar através da poeira que esconde estrelas dos nossos olhos.",
-      "Enxerga mais fundo nas nuvens de poeira onde nascem novas estrelas.",
-      "Contém a “impressão digital” do gelo de água, congelado em minúsculos grãos de poeira no espaço.",
-      "Contém a impressão digital do gás carbônico congelado (gelo seco).",
-      "Contém a impressão digital do gelo de monóxido de carbono, e é onde anãs marrons frias brilham mais. Por isso o SkyBlink usa este detector para caçar objetos que se movem.",
-    ],
+    shorter: "ondas mais curtas",
+    longer: "ondas mais longas",
+    det: {
+      play: "Tocar o tour dos detectores",
+      pause: "Pausar o tour dos detectores",
+      good: "Bom para",
+      all: "Todos",
+      redshift: "desvio para o vermelho",
+      dwarf: "anã marrom",
+      steps: [
+        {
+          title: "Como um telescópio enxerga 102 cores",
+          text: "A luz coletada pelo telescópio cai em seis detectores, cada um com 2.048 × 2.048 pixels. Na frente de cada um há um filtro cuja cor muda aos poucos de uma borda à outra, então um único detector registra 17 faixas de infravermelho. Enquanto o SPHEREx varre o céu, cada ponto passa por todas elas: 6 × 17 = 102 cores, um espectro completo para cada ponto do céu.",
+          good: "Transformar uma foto em espectro, para o céu inteiro",
+        },
+        {
+          title: "Logo depois do vermelho",
+          text: "É o infravermelho mais próximo da luz que nossos olhos enxergam, que vai até cerca de 0,7 µm. Estrelas como o Sol ainda brilham forte aqui, então este detector mostra o céu estrelado conhecido, junto com a luz de inúmeras galáxias distantes.",
+          good: "Estrelas comuns, galáxias distantes",
+        },
+        {
+          title: "Enxergando através da poeira",
+          text: "O espaço está cheio de grãos minúsculos de poeira que bloqueiam a luz visível, como a neblina apaga um pôr do sol. Ondas infravermelhas mais longas passam por eles, então estrelas escondidas atrás da poeira começam a aparecer. Muitas galáxias também têm uma saliência na luz perto de 1,6 µm, feita por estrelas velhas e frias, que ajuda a saber a que distância elas estão.",
+          good: "Estrelas atrás da poeira, distância das galáxias",
+        },
+        {
+          title: "Galáxias esticadas pela distância",
+          text: "Como o universo está se expandindo, a luz de galáxias distantes é esticada para ondas mais longas. Isso se chama desvio para o vermelho. Ao descobrir onde caem, entre essas cores, os traços conhecidos da luz de uma galáxia, o SPHEREx estima a distância de centenas de milhões de galáxias e monta um mapa 3D delas. Esse mapa testa o que aconteceu no primeiro instante depois do Big Bang.",
+          good: "Um mapa 3D das galáxias, o universo primordial",
+        },
+        {
+          title: "A impressão digital do gelo de água",
+          text: "Em nuvens frias entre as estrelas, a água congela sobre grãos de poeira como uma geada fina. O gelo de água absorve luz perto de 3,0 µm, abrindo um vale na luz de qualquer estrela que brilhe através da nuvem. Quanto mais fundo o vale, mais gelo existe ali. Gelo assim pode ser a origem de boa parte da água de planetas como a Terra.",
+          good: "Gelo de água em nuvens onde nascem estrelas",
+        },
+        {
+          title: "Gelo seco no espaço",
+          text: "O gás carbônico congelado, o mesmo do gelo seco, deixa seu próprio vale em 4,27 µm. Este detector separa a luz em fatias mais finas que os quatro primeiros, então consegue pegar traços estreitos como este. Comparar com o gelo de água mostra quão fria é a nuvem e quanto a luz das estrelas já transformou o gelo.",
+          good: "Gelo de gás carbônico",
+        },
+        {
+          title: "Gelos frios e mundos frios",
+          text: "O monóxido de carbono só congela nos cantos mais frios de uma nuvem, abaixo de cerca de −253 °C, e o gelo dele aparece em 4,67 µm. É também onde as anãs marrons frias brilham mais: o metano na atmosfera delas bloqueia outras cores, então a luz escapa por volta de 4,5 µm. Por isso o SkyBlink usa o D6 para caçar objetos que se movem.",
+          good: "Gelo de monóxido de carbono, anãs marrons, SkyBlink",
+        },
+      ],
+    },
     colorNote: "As cores aqui são só ilustrativas: a luz infravermelha não tem cor para os nossos olhos.",
   },
   faq: {

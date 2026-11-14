@@ -252,3 +252,21 @@
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* Detector tour */
+.ex-flow { stroke-dasharray: 4 6; animation: ex-flow 0.8s linear infinite; }
+@keyframes ex-flow { to { stroke-dashoffset: -10; } }
+.ex-twinkle { transform-box: fill-box; transform-origin: center; animation: ex-twinkle 1.8s ease-in-out infinite alternate; }
+@keyframes ex-twinkle { from { opacity: 0.25; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
+.ex-breathe { transform-box: fill-box; transform-origin: center; animation: ex-breathe 2s ease-in-out infinite alternate; }
+@keyframes ex-breathe { from { transform: scale(0.88); } to { transform: scale(1.08); } }
+.ex-veil { animation: ex-veil 3.5s ease-in-out infinite alternate; }
+@keyframes ex-veil { 0%, 15% { opacity: 1; } 85%, 100% { opacity: 0.12; } }
+.ex-shift { animation: ex-shift 3.5s ease-in-out infinite alternate; }
+@keyframes ex-shift { from { transform: translateX(0); } to { transform: translateX(50px); } }
+.ex-redden { fill: #fde68a; animation: ex-redden 3.5s ease-in-out infinite alternate; }
+@keyframes ex-redden { to { fill: #f87171; } }
+.ex-draw { stroke-dasharray: 1; animation: ex-draw 1.6s ease-out both; }
+@keyframes ex-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+.ex-bob { animation: ex-bob 2.2s ease-in-out infinite alternate; }
+@keyframes ex-bob { to { transform: translateY(-4px) rotate(8deg); } }

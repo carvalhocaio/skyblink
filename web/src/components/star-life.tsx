@@ -288,7 +288,7 @@ export function StarLife({ section, onPick }: Props) {
     return (
       <div key={`${i}-${out ? "out" : cap.n}`} className={`absolute inset-0 text-center ${out ? "line-out" : "line-in"}`} aria-hidden={out}>
         <p className="text-[clamp(16px,2.05vh,21px)] leading-tight font-semibold tracking-[-0.012em]">{s.t}</p>
-        <p className="mt-1.5 text-[clamp(12.5px,1.55vh,15px)] text-white/50">
+        <p className="mt-1.5 text-[clamp(12.5px,1.55vh,15px)] text-white/65">
           <b className="mr-1.5 font-medium text-white">{s.b}</b>
           {s.c}
         </p>
@@ -310,7 +310,7 @@ export function StarLife({ section, onPick }: Props) {
       <canvas ref={canvasRef} aria-hidden className="absolute inset-0 size-full cursor-grab touch-pan-y active:cursor-grabbing" />
       <div className="relative flex flex-col items-center">
         <div ref={ballRef} className="pointer-events-none relative aspect-square w-[min(100%,26rem)]">
-          <span className="absolute right-0 bottom-2 font-mono text-[10px] tracking-[0.2em] text-white/35 uppercase">{L.illustration}</span>
+          <span className="absolute right-0 bottom-2 font-mono text-[10px] tracking-[0.2em] text-white/55 uppercase">{L.illustration}</span>
         </div>
         <div className="relative mt-1 h-[92px] w-full max-w-md">
           {cap.prev !== null && line(cap.prev, true)}
@@ -339,12 +339,12 @@ export function StarLife({ section, onPick }: Props) {
               />
             ))}
           </div>
-          <div className="pointer-events-none absolute inset-x-0 top-[54px] flex justify-between text-[12.5px] text-white/40">
+          <div className="pointer-events-none absolute inset-x-0 top-[54px] flex justify-between text-[12.5px] text-white/60">
             <span className={cap.cur === 0 ? "font-medium text-white" : ""}>{L.start}</span>
             <span className={cap.cur === LAST ? "font-medium text-white" : ""}>{L.end}</span>
           </div>
         </div>
-        <p className="mt-2 max-w-[26rem] text-center text-xs leading-relaxed text-white/45">{L.branches}</p>
+        <p className="mt-2 max-w-[26rem] text-center text-xs leading-relaxed text-white/60">{L.branches}</p>
       </div>
     </>
   );

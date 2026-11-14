@@ -4,22 +4,13 @@ import { useState } from "react";
 import { ExternalLink } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import { SpherexModel } from "@/components/spherex-model";
+import { Detectors } from "@/components/detectors";
 
-const DETECTORS = [
-  { id: "D1", range: "0.75–1.1 µm", color: "#7c3aed" },
-  { id: "D2", range: "1.1–1.6 µm", color: "#2563eb" },
-  { id: "D3", range: "1.6–2.4 µm", color: "#0891b2" },
-  { id: "D4", range: "2.4–3.8 µm", color: "#059669" },
-  { id: "D5", range: "3.8–4.4 µm", color: "#ca8a04" },
-  { id: "D6", range: "4.4–5.0 µm", color: "#dc2626" },
-];
 
 export function AboutSpherex() {
   const { t } = useT();
   const a = t.about;
-  const [picked, setPicked] = useState(5);
   const [part, setPart] = useState(0);
-  const d = DETECTORS[picked];
   return (
     <div className="space-y-14">
       <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start">
@@ -75,37 +66,12 @@ export function AboutSpherex() {
         ))}
       </ul>
 
-      <div className="space-y-3">
-        <h3 className="font-medium">{a.detTitle}</h3>
-        <p className="text-sm text-muted-foreground">{a.detHelp}</p>
-        <div role="group" aria-label={a.detectors} className="grid grid-cols-6 gap-0.5 overflow-hidden rounded-md">
-          {DETECTORS.map((x, i) => (
-            <button
-              key={x.id}
-              type="button"
-              aria-pressed={i === picked}
-              onClick={() => setPicked(i)}
-              style={{ background: x.color }}
-              className={`py-3 font-mono text-sm font-semibold text-white outline-none focus-visible:ring-3 focus-visible:ring-white ${
-                i === picked ? "ring-2 ring-white ring-inset" : "opacity-55 hover:opacity-90"
-              }`}
-            >
-              {x.id}
-            </button>
-          ))}
+      <div className="space-y-5">
+        <div className="space-y-2">
+          <h3 className="text-2xl font-medium tracking-tight">{a.detTitle}</h3>
+          <p className="max-w-2xl text-muted-foreground">{a.detHelp}</p>
         </div>
-        <div className="flex justify-between text-xs text-muted-foreground">
-          <span>{a.shorter}</span>
-          <span>{a.longer}</span>
-        </div>
-        <p className="rounded-xl border bg-card/70 backdrop-blur-sm p-4 text-sm" aria-live="polite">
-          <b>
-            {d.id} · {d.range}
-          </b>
-          <br />
-          {a.detText[picked]}
-        </p>
-        <p className="text-xs text-muted-foreground">{a.colorNote}</p>
+        <Detectors />
       </div>
 
       <div className="space-y-4">

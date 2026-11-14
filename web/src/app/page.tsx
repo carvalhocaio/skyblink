@@ -100,6 +100,9 @@ function Home() {
     <>
       <Sky />
       {apple}
+      <a href="#main" className="sr-only z-[60] rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground focus:not-sr-only focus:fixed focus:top-3 focus:left-3">
+        {t.nav.skip}
+      </a>
       <header id="top" ref={heroRef} className="relative overflow-hidden bg-black">
         <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-24 bg-gradient-to-b from-transparent to-background" />
         <div className={`${WRAP} relative z-10 flex h-18 items-center justify-between gap-4`}>
@@ -154,7 +157,7 @@ function Home() {
         </div>
       </header>
 
-      <main>
+      <main id="main" tabIndex={-1} className="outline-none">
         <section id="how" className={`${WRAP} space-y-10 py-20 md:py-28`}>
           <SectionLabel n={2}>{t.nav.how}</SectionLabel>
           <h2 className="max-w-3xl text-3xl leading-[1.1] font-medium tracking-tight md:text-5xl">{t.how.title}</h2>
