@@ -20,7 +20,10 @@ NASA Space Apps Challenge 2026 · *Planet X and SPHEREx*
 |---|---|
 | ![Barnard's Star moving across three SPHEREx seasons](docs/demo/barnard.gif) | ![First and last season with the measured displacement](docs/demo/barnard_compare.png) |
 
-More animations: [Epsilon Indi B](docs/demo/eps_indi_b.gif) · [WISE 0855−0714](docs/demo/wise0855.gif)
+| Epsilon Indi B, D6, four seasons | WISE 0855−0714, D6, three seasons |
+|---|---|
+| ![Epsilon Indi B across four SPHEREx seasons](docs/demo/eps_indi_b.gif) | ![WISE 0855−0714 across three SPHEREx seasons](docs/demo/wise0855.gif) |
+| The diagonal streak (2025-10) and the ring at the top are instrumental artifacts not caught by the pixel flags, not changes in the sky. The tool flags alignment drift in one season. | The source is faint, so its motion is not reported (S/N < 10), and the first frame uses only 3 exposures. |
 
 ## How it works
 
