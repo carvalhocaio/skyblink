@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState, type ReactNode } from "react";
+import { Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import { ArrowRight, Box, Cat } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import { findTarget, TARGETS } from "@/lib/targets";
 import { useJob, type Target } from "@/lib/use-job";
 import { EggsProvider, useEggs, useNewton } from "@/lib/eggs";
 import { Sky } from "@/components/sky";
+import { StarLife } from "@/components/star-life";
 
 const DETECTOR = "D6";
 const WRAP = "mx-auto w-full max-w-7xl px-4 md:px-10";
@@ -40,6 +41,7 @@ function Home() {
   const router = useRouter();
   const { lang, t } = useT();
   const [run, setRun] = useState(0);
+  const heroRef = useRef<HTMLElement>(null);
 
   const ra = num(params.get("ra"));
   const dec = num(params.get("dec"));
@@ -89,8 +91,9 @@ function Home() {
     <>
       <Sky />
       {apple}
-      <header id="top" className={`${WRAP} relative`}>
-        <div className="flex h-18 items-center justify-between gap-4">
+      <header id="top" ref={heroRef} className="relative overflow-hidden bg-black">
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-24 bg-gradient-to-b from-transparent to-background" />
+        <div className={`${WRAP} relative z-10 flex h-18 items-center justify-between gap-4`}>
           <button type="button" onClick={tapLogo} className="flex min-h-11 items-center gap-2.5 text-lg font-semibold tracking-tight select-none" aria-label="SkyBlink">
             <span aria-hidden className="logo-dot" />
             SkyBlink
@@ -118,8 +121,8 @@ function Home() {
           </nav>
         </div>
 
-        <div className="grid items-center gap-14 pt-10 pb-24 md:pt-16 lg:grid-cols-[1.1fr_1fr] lg:pb-32">
-          <div>
+        <div className={`${WRAP} grid items-center gap-10 pt-6 pb-16 md:pt-10 lg:grid-cols-[1.1fr_1fr] lg:pb-20`}>
+          <div className="relative z-10">
             <p className="fade-up flex flex-wrap gap-2" style={{ animationDelay: "0.05s" }}>
               {t.hero.tags.map((x) => (
                 <span key={x} className="rounded-full border bg-card/50 px-3 py-1 font-mono text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
@@ -143,29 +146,9 @@ function Home() {
             </div>
           </div>
 
-          <figure className="fade-up relative mx-auto w-full max-w-[460px]" style={{ animationDelay: "0.35s" }}>
-            <div className="relative">
-            <div aria-hidden className="eyepiece-ring absolute -inset-5 rounded-full" />
-            <div className="relative aspect-square overflow-hidden rounded-full border-2 border-white/10 bg-black shadow-[0_0_120px_-20px_oklch(0.85_0.13_205/0.45)]">
-              {/* eslint-disable-next-line @next/next/no-img-element -- animated GIF of real SPHEREx frames, served as-is */}
-              <img src="/demo/barnard.gif" alt={t.hero.gifAlt} width={472} height={472} className="size-full scale-[1.32] object-cover" style={{ imageRendering: "pixelated" }} />
-              <div aria-hidden className="pointer-events-none absolute inset-0 rounded-full shadow-[inset_0_0_60px_20px_black]" />
-            </div>
-            </div>
-            <dl className="mt-10 grid grid-cols-3 gap-3 text-center">
-              {[
-                [t.hero.specMotion, `${(10.5).toLocaleString(t.locale)}″`],
-                [t.hero.specSeasons, "3"],
-                [t.hero.specDetector, "D6"],
-              ].map(([k, v]) => (
-                <div key={k} className="rounded-xl border bg-card/50 px-2 py-3 backdrop-blur-sm">
-                  <dt className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase">{k}</dt>
-                  <dd className="mt-1 text-xl font-semibold tabular-nums">{v}</dd>
-                </div>
-              ))}
-            </dl>
-            <figcaption className="sr-only">{barnard.name}: {t.hero.specKind}</figcaption>
-          </figure>
+          <div>
+            <StarLife section={heroRef} onPick={(i) => submit({ ra: TARGETS[i].ra, dec: TARGETS[i].dec, fov: 6 })} />
+          </div>
         </div>
       </header>
 
