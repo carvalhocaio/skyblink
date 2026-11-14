@@ -1,9 +1,9 @@
-# Skyblink
+# SkyBlink
 
 **Watch the sky move: SPHEREx images of any patch of sky, played as a time-lapse, with the motion measured and
 checked against Gaia.**
 
-Enter a position (RA/Dec) and a field of view. Skyblink finds every SPHEREx exposure of that region in the IRSA
+Enter a position (RA/Dec) and a field of view. SkyBlink finds every SPHEREx exposure of that region in the IRSA
 archive, cleans and stacks them into one image per observing season, and plays the seasons as a short looping
 animation with a fixed crosshair, so nearby stars and brown dwarfs visibly drift while the background stays still.
 For the object at the centre it measures the motion with honest error bars, compares it with the catalog
@@ -11,7 +11,8 @@ prediction at the same dates, and flags anything that could mislead.
 
 NASA Space Apps Challenge 2026 · *Planet X and SPHEREx*
 
-- **Live tool:** [Vercel URL — to be added]
+- **Live tool:** <https://skyblink-swart.vercel.app> — or jump straight to
+  [Barnard's Star](https://skyblink-swart.vercel.app/?ra=269.4462&dec=4.7682&fov=6)
 - **API:** <https://skyblink-api.fly.dev> (try [`/health`](https://skyblink-api.fly.dev/health))
 - **Demo deck:** [link — to be added]
 - **Technical reference:** [`api/README.md`](api/README.md)
