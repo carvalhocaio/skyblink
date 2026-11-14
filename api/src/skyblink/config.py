@@ -17,6 +17,9 @@ class Settings:
     fallback_concurrency: int
     max_unavailable_ratio: float
     min_requests_for_fallback: int
+    max_active_jobs: int
+    max_stored_jobs: int
+    job_ttl_s: float
     retry: RetryPolicy
     cors_origins: tuple[str, ...]
 
@@ -25,10 +28,13 @@ class Settings:
         return cls(
             cache_dir=Path(_env("CACHE_DIR", ".cache/cutouts")),
             output_dir=Path(_env("OUTPUT_DIR", "out")),
-            max_concurrency=int(_env("MAX_CONCURRENCY", "8")),
-            fallback_concurrency=int(_env("FALLBACK_CONCURRENCY", "6")),
+            max_concurrency=int(_env("MAX_CONCURRENCY", "6")),
+            fallback_concurrency=int(_env("FALLBACK_CONCURRENCY", "4")),
             max_unavailable_ratio=float(_env("MAX_503_RATIO", "0.2")),
             min_requests_for_fallback=int(_env("MIN_REQUESTS_FOR_FALLBACK", "20")),
+            max_active_jobs=int(_env("MAX_ACTIVE_JOBS", "2")),
+            max_stored_jobs=int(_env("MAX_STORED_JOBS", "200")),
+            job_ttl_s=float(_env("JOB_TTL_HOURS", "6")) * 3600,
             retry=RetryPolicy(
                 attempts=int(_env("RETRY_ATTEMPTS", "5")),
                 base_delay_s=float(_env("RETRY_BASE_DELAY_S", "2")),

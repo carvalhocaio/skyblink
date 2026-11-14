@@ -1,0 +1,13 @@
+.venv
+.cache
+out
+tests
+**/__pycache__
+.pytest_cache
+.ruff_cache
+*.fits
+.env
+.env.*
+fly.toml
+Dockerfile
+.dockerignore

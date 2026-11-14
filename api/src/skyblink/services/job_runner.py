@@ -1,7 +1,11 @@
 import asyncio
 import logging
+import resource
+import shutil
+import time
 import uuid
 from collections.abc import Callable, Sequence
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
@@ -27,6 +31,20 @@ def _no_summary() -> str:
     return ""
 
 
+def peak_rss_mb() -> float:
+    return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024
+
+
+@dataclass(frozen=True)
+class RunnerLimits:
+    max_active_jobs: int = 2
+    max_stored_jobs: int = 200
+    job_ttl_s: float = 6 * 3600
+
+
+DEFAULT_LIMITS = RunnerLimits()
+
+
 class JobRunner:
     def __init__(
         self,
@@ -35,12 +53,17 @@ class JobRunner:
         store: JobStore,
         output_dir: Path,
         throttle_summary: Callable[[], str] = _no_summary,
+        limits: RunnerLimits = DEFAULT_LIMITS,
+        clock: Callable[[], float] = time.time,
     ):
         self._search = search
         self._builder = builder
         self._store = store
         self._output_dir = output_dir
         self._throttle_summary = throttle_summary
+        self._limits = limits
+        self._clock = clock
+        self._active = asyncio.Semaphore(limits.max_active_jobs)
         self._tasks: set[asyncio.Task[None]] = set()
 
     def submit(self, target: Target, detectors: Sequence[str] | None, max_exposures_per_frame: int) -> Job:
@@ -49,7 +72,12 @@ class JobRunner:
             target=target,
             detectors=tuple(dict.fromkeys(detectors)) if detectors else None,
             max_exposures_per_frame=max_exposures_per_frame,
+            created_at=self._clock(),
         )
+        existing = self._store.find_reusable(job.key)
+        if existing is not None:
+            return existing
+        self._evict_old_jobs()
         self._store.add(job)
         task = asyncio.create_task(self.run(job))
         self._tasks.add(task)
@@ -61,9 +89,25 @@ class JobRunner:
             task.cancel()
         await asyncio.gather(*self._tasks, return_exceptions=True)
 
+    def _evict_old_jobs(self) -> None:
+        evicted = self._store.evict(self._clock(), self._limits.max_stored_jobs, self._limits.job_ttl_s)
+        for job in evicted:
+            shutil.rmtree(self._output_dir / job.id, ignore_errors=True)
+        if evicted:
+            logger.info("evicted %d old jobs, %d kept", len(evicted), len(self._store))
+
     async def run(self, job: Job) -> None:
         try:
-            await self._run(job)
+            async with self._active:
+                started = time.perf_counter()
+                await self._run(job)
+            logger.info(
+                "job %s %s in %.0fs, peak RSS %.0f MB",
+                job.id,
+                job.status,
+                time.perf_counter() - started,
+                peak_rss_mb(),
+            )
         except asyncio.CancelledError:
             job.status = JobStatus.FAILED
             raise

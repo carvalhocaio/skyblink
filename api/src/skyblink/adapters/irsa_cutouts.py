@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 
 import httpx
@@ -35,16 +36,25 @@ class CutoutClient:
         self._policy = policy
         self._cache = cache
         self.governor = governor
+        self._pending: dict[CutoutKey, asyncio.Future[Path | None]] = {}
 
     async def fetch(self, exposure: Exposure, ra: float, dec: float, size_deg: float) -> Path | None:
         key = CutoutKey(exposure.obs_id, exposure.detector, ra, dec, size_deg)
         cached = self._cache.get(key)
         if cached is not None:
             return cached.path
+        pending = self._pending.get(key)
+        if pending is None:
+            pending = asyncio.ensure_future(self._download(exposure, key))
+            self._pending[key] = pending
+            pending.add_done_callback(lambda _: self._pending.pop(key, None))
+        return await asyncio.shield(pending)
+
+    async def _download(self, exposure: Exposure, key: CutoutKey) -> Path | None:
         async with self.governor.slot():
             response = await get_with_retry(
                 self._client,
-                cutout_url(exposure, ra, dec, size_deg),
+                cutout_url(exposure, key.ra, key.dec, key.size_deg),
                 self._policy,
                 observe=self.governor.record,
             )

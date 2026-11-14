@@ -116,6 +116,21 @@ class Job:
     stretch: StretchParams | None = None
     stretch_frame_id: str | None = None
     eta_seconds: tuple[float, float] | None = None
+    created_at: float = 0.0
+
+    @property
+    def key(self) -> tuple:
+        return (
+            self.target.ra,
+            self.target.dec,
+            self.target.fov_arcmin,
+            self.detectors,
+            self.max_exposures_per_frame,
+        )
+
+    @property
+    def finished(self) -> bool:
+        return self.status in (JobStatus.DONE, JobStatus.FAILED)
 
     @property
     def frames_done(self) -> int:

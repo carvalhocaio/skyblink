@@ -1,3 +1,5 @@
+import asyncio
+
 import httpx
 import pytest
 
@@ -121,3 +123,20 @@ async def test_cutout_client_reports_each_attempt_to_governor(tmp_path):
     await cutouts.fetch(make_exposure(), 1.0, 2.0, 0.1)
 
     assert (tracker.requests, tracker.unavailable) == (2, 1)
+
+
+async def test_concurrent_requests_for_same_cutout_share_one_download(tmp_path):
+    calls = 0
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        await asyncio.sleep(0.01)
+        return httpx.Response(200, content=FITS_BYTES)
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        cutouts = CutoutClient(client, FAST, CutoutCache(tmp_path), governor=governor(4))
+        paths = await asyncio.gather(*(cutouts.fetch(make_exposure(), 1.0, 2.0, 0.1) for _ in range(5)))
+
+    assert calls == 1
+    assert len(set(paths)) == 1

@@ -21,6 +21,11 @@ def _services(request: Request) -> Services:
     return request.app.state.services
 
 
+@router.get("/health")
+async def health() -> dict[str, str]:
+    return {"status": "ok"}
+
+
 @router.post("/jobs", status_code=status.HTTP_202_ACCEPTED, response_model=JobCreated)
 async def create_job(body: JobRequest, request: Request) -> JobCreated:
     job = _services(request).runner.submit(

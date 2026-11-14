@@ -9,7 +9,7 @@ from skyblink.adapters.job_store import JobStore
 from skyblink.api.routes import Services, router
 from skyblink.config import Settings
 from skyblink.services.frame_builder import FrameBuilder
-from skyblink.services.job_runner import JobRunner
+from skyblink.services.job_runner import JobRunner, RunnerLimits
 from skyblink.wiring import cutout_client, http_client, sia_client
 
 
@@ -40,6 +40,11 @@ def create_app(
                     store,
                     settings.output_dir / "jobs",
                     cutouts.governor.summary,
+                    RunnerLimits(
+                        max_active_jobs=settings.max_active_jobs,
+                        max_stored_jobs=settings.max_stored_jobs,
+                        job_ttl_s=settings.job_ttl_s,
+                    ),
                 )
                 app.state.services = Services(store=store, runner=runner)
             try:

@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from skyblink.domain.alerts import frame_alerts, has_saturated_core, job_alerts
-from skyblink.domain.eta import PRIOR_SECONDS_PER_EXPOSURE, estimate_eta
+from skyblink.domain.eta import MAX_SAFETY_FACTOR, PRIOR_SECONDS_PER_EXPOSURE, estimate_eta
 from skyblink.domain.models import AlertCode, Season
 from skyblink.domain.planning import detector_priority, plan_frames
 from tests.factories import make_exposure
@@ -75,6 +75,9 @@ def test_saturation_away_from_target_is_ignored():
 
 
 def test_eta_uses_prior_then_measured_rates():
-    assert estimate_eta([], 10) == pytest.approx(tuple(10 * p for p in PRIOR_SECONDS_PER_EXPOSURE))
-    assert estimate_eta([(20.0, 10), (60.0, 20)], 10) == pytest.approx((10 * 2.0 * 0.8, 10 * 3.0 * 1.25))
+    low, high = PRIOR_SECONDS_PER_EXPOSURE
+    assert estimate_eta([], 10) == pytest.approx((10 * low, 10 * high * MAX_SAFETY_FACTOR))
+    assert estimate_eta([(20.0, 10), (60.0, 20)], 10) == pytest.approx(
+        (10 * 2.0 * 0.8, 10 * 3.0 * 1.25 * 1.2)
+    )
     assert estimate_eta([(20.0, 10)], 0) == (0.0, 0.0)
