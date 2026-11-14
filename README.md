@@ -24,7 +24,16 @@ uv run python scripts/measure_cutout.py
 
 # extensions and flag bits of downloaded cutouts
 uv run python scripts/inspect_cutout.py path/to/cutout.fits
+
+# one co-added frame per season (shared stretch) + GIF, defaults to Barnard's Star in D6
+uv run python scripts/build_frame.py --detector D6
 ```
+
+Frame recipe (one frame = detector × season; seasons split on gaps > 30 days, computed over all detectors):
+ZODI subtraction → local background (sigma-clipped median, `SOURCE` pixels ignored) → mask of
+`SUR_ERROR, NONFUNC, MISSING_DATA, HOT, COLD, PERSIST, BLOOM, SNOWBALL, HALO` (saturation kept) →
+reprojection to a target-centred 6.15″ grid → inverse-variance mean with outlier rejection where a pixel
+has ≥ 5 exposures → percentile + asinh stretch computed on the first frame and reused.
 
 Configuration (environment variables):
 
