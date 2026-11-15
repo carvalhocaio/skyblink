@@ -6,7 +6,7 @@ from astropy.time import Time
 from pydantic import BaseModel, Field
 
 from skyblink.domain.grid import SPHEREX_PIXEL_ARCSEC
-from skyblink.domain.models import DETECTORS, Alert, Frame, FrameStatus, Job, Season
+from skyblink.domain.models import DETECTORS, Alert, Exposure, Frame, FrameStatus, Job, Season
 from skyblink.domain.motion import CatalogComparison, Motion, SeasonMotion
 
 Detector = Literal["D1", "D2", "D3", "D4", "D5", "D6"]
@@ -57,6 +57,14 @@ class AlertView(BaseModel):
     severity: str
 
 
+class ExposureView(BaseModel):
+    obs_id: str
+    collection: str
+    date: str
+    wavelength_um: tuple[float, float]
+    access_url: str
+
+
 class FrameView(BaseModel):
     id: str
     season_id: int
@@ -68,6 +76,8 @@ class FrameView(BaseModel):
     n_exposures_available: int
     image_url: str | None
     alerts: list[AlertView]
+    # The archive exposures planned for this frame; n_exposures_used of them made it into the stack.
+    exposures: list[ExposureView]
 
 
 class StretchView(BaseModel):
@@ -116,6 +126,10 @@ class SeasonMotionView(BaseModel):
     epoch_date: str
     peak_snr: float
     drift_corrected: bool
+    # Centroid in the frame's pixel grid (x = column, y = row from the bottom, pixel centres at
+    # integers), corrected for the frame's alignment drift. The PNG is north up: its row is height - 1 - y.
+    position_px: tuple[float, float]
+    position_err_px: tuple[float, float]
     offset: OffsetView
     predicted_offset: PredictedOffsetView | None
     residual_sigma: float | None
@@ -177,6 +191,16 @@ def _season(season: Season) -> SeasonView:
     )
 
 
+def _exposure(exposure: Exposure) -> ExposureView:
+    return ExposureView(
+        obs_id=exposure.obs_id,
+        collection=exposure.collection,
+        date=mjd_to_iso(exposure.mjd),
+        wavelength_um=(round(exposure.wavelength_um[0], 4), round(exposure.wavelength_um[1], 4)),
+        access_url=exposure.access_url,
+    )
+
+
 def _frame(frame: Frame, image_url: Callable[[Frame], str]) -> FrameView:
     low, high = frame.wavelength_um
     return FrameView(
@@ -190,6 +214,7 @@ def _frame(frame: Frame, image_url: Callable[[Frame], str]) -> FrameView:
         n_exposures_available=frame.n_exposures_available,
         image_url=image_url(frame) if frame.status == FrameStatus.READY else None,
         alerts=_alerts(frame.alerts),
+        exposures=[_exposure(e) for e in frame.exposures],
     )
 
 
@@ -252,6 +277,8 @@ def _season_motion(season: SeasonMotion) -> SeasonMotionView:
         epoch_date=mjd_to_iso(season.epoch_mjd),
         peak_snr=season.snr,
         drift_corrected=season.drift_corrected,
+        position_px=season.position_px,
+        position_err_px=season.position_err_px,
         offset=_offset(season),
         predicted_offset=_predicted(season.predicted_offset_px),
         residual_sigma=season.residual_sigma,

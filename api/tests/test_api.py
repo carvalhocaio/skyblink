@@ -161,8 +161,17 @@ async def test_job_lifecycle_matches_contract(tmp_path):
         "n_exposures_available",
         "image_url",
         "alerts",
+        "exposures",
     }
     assert frame["status"] == "ready"
+    assert len(frame["exposures"]) == frame["n_exposures_available"] == 6
+    assert frame["exposures"][0] == {
+        "obs_id": "0.0-D1-0",
+        "collection": "spherex_dr1",
+        "date": "2025-08-13T00:00:00Z",
+        "wavelength_um": [4.4115, 5.0096],
+        "access_url": "https://irsa.example/0.0-D1-0D1.fits",
+    }
     assert frame["alerts"] == [{"code": "SATURATED_CORE", "severity": "info"}]
     assert body["stretch"]["fixed_from_frame"].endswith("-s0-D6")
     assert body["alerts"] == []

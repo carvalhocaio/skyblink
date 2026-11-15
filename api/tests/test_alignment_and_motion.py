@@ -351,3 +351,17 @@ def test_alignment_error_is_added_in_quadrature_and_reported_separately():
     )
     assert later.offset_align_err_px == pytest.approx((0.03, 0.04))
     assert later.offset_err_px == pytest.approx(np.hypot(later.offset_stat_err_px, later.offset_align_err_px))
+
+
+def test_api_reports_positions_in_the_frame_grid():
+    from skyblink.api.schemas import _motion
+
+    motion = measure_motion(
+        [season_frame(0, 60000.0, (0.0, 0.0)), season_frame(1, 60365.0, (0.0, 1.0))], "D6"
+    )
+    view = _motion(motion)
+
+    assert [v.position_px for v in view.seasons] == [s.position_px for s in motion.seasons]
+    reference, later = view.seasons
+    assert later.offset.dx_px == pytest.approx(later.position_px[0] - reference.position_px[0])
+    assert later.offset.dy_px == pytest.approx(later.position_px[1] - reference.position_px[1])
