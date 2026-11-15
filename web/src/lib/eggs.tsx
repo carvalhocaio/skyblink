@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
-import { Atom, Gamepad2 } from "lucide-react";
+import { Atom, Gamepad2, Star } from "lucide-react";
 import { useT } from "@/lib/i18n";
 
 export const EGGS = ["newton", "galileo", "einstein", "curie", "schrodinger", "heisenberg", "hawking", "feynman"] as const;
@@ -49,8 +49,8 @@ export function EggsProvider({ children }: { children: ReactNode }) {
       document.documentElement.classList.add("radium");
       setTimeout(() => document.documentElement.classList.remove("radium"), 9000);
     }
+    if (foundRef.current.has(e)) return; // the effect replays, the toast only greets a first find
     setToast(e);
-    if (foundRef.current.has(e)) return;
     const next = new Set(foundRef.current).add(e);
     foundRef.current = next;
     setFound(next);
@@ -148,10 +148,16 @@ function EggTray({ toast }: { toast: Egg | null }) {
       <button
         type="button"
         popoverTarget="egg-panel"
-        className="fixed right-4 bottom-4 z-50 flex min-h-11 items-center gap-2 rounded-full border bg-card/80 px-4 font-mono text-xs backdrop-blur transition hover:-translate-y-0.5 hover:border-primary/50"
+        className={`fixed right-4 bottom-4 z-50 flex min-h-11 items-center gap-2 rounded-full border bg-card/80 px-4 font-mono text-xs backdrop-blur transition hover:-translate-y-0.5 ${
+          found.size === EGGS.length ? "border-amber-200/50 hover:border-amber-200" : "hover:border-primary/50"
+        }`}
         aria-label={`${g.tray}: ${found.size}/${EGGS.length}`}
       >
-        <Atom className={`size-4 text-primary ${found.size ? "" : "atom-idle"}`} aria-hidden />
+        {found.size === EGGS.length ? (
+          <Star className="size-4 fill-amber-200 text-amber-200" aria-hidden />
+        ) : (
+          <Atom className={`size-4 text-primary ${found.size ? "" : "atom-idle"}`} aria-hidden />
+        )}
         <span className="tabular-nums">
           {found.size}/{EGGS.length}
         </span>
@@ -187,7 +193,7 @@ function EggTray({ toast }: { toast: Egg | null }) {
                   {ok && <span className="ml-2 text-xs text-muted-foreground">{x.years}</span>}
                 </p>
                 {ok && <EggLine egg={e} />}
-                <p className={`mt-1 text-xs ${ok ? "text-muted-foreground" : "text-primary/80"}`}>{ok ? x.how : x.hint}</p>
+                <p className={`mt-1 text-xs text-muted-foreground ${ok ? "" : "italic"}`}>{ok ? x.how : x.hint}</p>
               </li>
             );
           })}

@@ -21,7 +21,7 @@ export function AboutSpherex() {
   const [part, setPart] = useState(0);
   return (
     <div className="space-y-14">
-      <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start">
+      <div className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start">
         <div className="space-y-4">
           <div className="overflow-hidden rounded-xl border bg-[radial-gradient(ellipse_at_50%_40%,oklch(0.25_0.05_230/0.6),transparent_70%)]">
             <SpherexModel selected={part} onSelect={setPart} label={`${a.modelTitle}: ${a.parts.map((x) => x.name).join(", ")}`} />

@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image", title: "SkyBlink: stars move. Here’s the proof.", description },
 };
 
-export const viewport: Viewport = { themeColor: "#05070d" };
+export const viewport: Viewport = { themeColor: "#05070d", colorScheme: "dark" };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
