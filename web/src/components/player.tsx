@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, ChevronLeft, ChevronRight, Link2, Pause, Play } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Pause, Play, Share2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatMonth as month, type Frame } from "@/lib/api";
 import { useT } from "@/lib/i18n";
@@ -46,13 +46,15 @@ export function Player({ frames, waiting, object, center }: Props) {
     const at = skyAt(center, width / PX_PER_ARCMIN, x / w, y / h);
     return [`RA ${formatRA(at.ra)}`, `Dec ${formatDec(at.dec)}`];
   };
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<"copied" | "failed" | null>(null);
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(location.href);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {}
+      setCopied("copied");
+    } catch {
+      setCopied("failed");
+    }
+    setTimeout(() => setCopied(null), 2000);
   };
   const poke = () => {
     setUncertain(true);
@@ -158,8 +160,8 @@ export function Player({ frames, waiting, object, center }: Props) {
           ))}
         </div>
         <Button variant="outline" size="sm" onClick={copy} className="ml-2" aria-live="polite">
-          {copied ? <Check aria-hidden /> : <Link2 aria-hidden />}
-          {copied ? p.copied : p.copy}
+          {copied === "copied" ? <Check aria-hidden /> : copied === "failed" ? <X aria-hidden /> : <Share2 aria-hidden />}
+          {copied === "copied" ? p.copied : copied === "failed" ? p.copyFailed : p.copy}
         </Button>
       </div>
 

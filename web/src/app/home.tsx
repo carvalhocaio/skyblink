@@ -23,6 +23,16 @@ import ClickSpark from "@/components/ClickSpark";
 const DETECTOR = "D6";
 const WRAP = "mx-auto w-full max-w-7xl px-4 md:px-10";
 const PAD = "scroll-mt-16 py-24 md:py-32";
+
+// Scroll explicitly instead of relying on the URL hash: it also works when the URL does not change, and a sticky
+// anchor (the player on wide screens) is measured from its column's natural start, not from where it is stuck.
+function scrollToAnchor(id: string) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const from = getComputedStyle(el).position === "sticky" && el.parentElement ? el.parentElement : el;
+  const top = from.getBoundingClientRect().top + scrollY - parseFloat(getComputedStyle(el).scrollMarginTop || "0");
+  scrollTo({ top, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+}
 const MONO = "font-mono text-[11px] tracking-[0.2em] uppercase";
 
 function num(v: string | null) {
@@ -72,7 +82,8 @@ function Home() {
     const q = new URLSearchParams(params);
     for (const [k, v] of Object.entries(changes)) q.set(k, String(v));
     if (q.get("lang") === "en") q.delete("lang");
-    router.push(`?${q}${hash}`, { scroll: !!hash });
+    router.push(`?${q}${hash}`, { scroll: false });
+    if (hash) requestAnimationFrame(() => scrollToAnchor(hash.slice(1)));
   };
   const submit = (x: Target) => {
     setRun((r) => r + 1);
@@ -112,6 +123,7 @@ function Home() {
 
   const { unlock } = useEggs();
   const { tap: tapLogo, node: apple } = useNewton();
+  const toTop = () => scrollTo({ top: 0, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   const [cat, setCat] = useState<boolean | null>(null);
   const openBox = () => {
     setCat(Math.random() < 0.5);
@@ -131,7 +143,7 @@ function Home() {
       </a>
       <div id="top" className={`sticky top-0 z-50 transition-colors duration-300 ${menu ? "border-b bg-background" : scrolled ? "border-b bg-background/75 backdrop-blur-md" : "border-b border-transparent bg-black"}`}>
         <div className={`${WRAP} flex h-16 items-center justify-between gap-4`}>
-          <button type="button" onClick={tapLogo} className="flex min-h-11 items-center gap-2.5 text-lg font-semibold tracking-tight select-none" aria-label="SkyBlink">
+          <button type="button" onClick={(e) => { toTop(); tapLogo(e); }} className="flex min-h-11 items-center gap-2.5 text-lg font-semibold tracking-tight select-none" aria-label="SkyBlink">
             <span aria-hidden className="logo-dot" />
             SkyBlink
           </button>
@@ -328,7 +340,7 @@ function Home() {
               SkyBlink
             </p>
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">{t.hero.tagline}</p>
-            <Button size="lg" className="mt-6 h-12 rounded-full px-6 text-[15px] transition-transform hover:-translate-y-0.5 active:translate-y-0" onClick={showBarnard}>
+            <Button size="lg" variant="outline" className="mt-6 h-12 rounded-full px-6 text-[15px] transition hover:-translate-y-0.5 hover:border-primary/60 active:translate-y-0" onClick={showBarnard}>
               {t.hero.cta}
             </Button>
           </div>
