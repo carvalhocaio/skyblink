@@ -44,6 +44,9 @@ Endpoints:
   detector to the frame its brightness scale was fixed on; `fixed_from_frame` is the first detector's entry.
   Additive Level 3 fields: `target.name` (the `target_name` sent, or `null`), `motion` and `motion_reason`
   (see *Measured motion* below).
+  Additive provenance: each frame lists `exposures`, the archive exposures planned for it (`obs_id`,
+  `collection`, `date`, `wavelength_um`, `access_url` of the original IRSA file); `n_exposures_used` of them made it
+  into the stack.
 - `GET /frames/{frame_id}.png` → PNG at native resolution (6.15″/px; scale it up with `image-rendering: pixelated`).
   `404` until the frame is `ready`.
 
@@ -104,6 +107,9 @@ human-readable `motion_reason` when the number can't be defended: fewer than 2 r
 corrected).
 
 - Position per season: iterative 7×7 centroid on the stacked frame, corrected by that frame's reference-star drift.
+  Reported (additive) as `position_px` / `position_err_px`: x = column, y = row counted from the bottom, pixel
+  centres at integers. The PNG is drawn north up, so the position sits at PNG row `height - 1 - y`; it is the
+  drift-corrected position, off the pictured one by the frame's drift (< 0.2 px unless `ALIGNMENT_DRIFT`).
 - Errors have two components, both reported in `offset.error_components` (px and arcsec) and combined in quadrature in
   the `*_err_*` fields: `statistical` (bootstrap of the target centroid, below) and `alignment` (error of the
   reference-star median; zero for the reference season).
