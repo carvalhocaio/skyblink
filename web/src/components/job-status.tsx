@@ -14,7 +14,7 @@ export function JobProgress({ job }: { job: Job }) {
   return (
     <div className="space-y-2">
       <div className="flex justify-between text-sm">
-        <span aria-live="polite">{t.status[job.status]}</span>
+        <span>{t.status[job.status]}</span>
         <span className="text-muted-foreground tabular-nums">
           {searching
             ? t.status.searching

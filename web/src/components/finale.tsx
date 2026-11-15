@@ -19,7 +19,11 @@ export default function Finale({ onPlay, onClose }: { onPlay: () => void; onClos
 
   useEffect(() => {
     dlg.current?.showModal();
-    dlg.current?.querySelector<HTMLElement>("[data-autofocus]")?.focus(); // showModal ignores React's autoFocus
+    // The card fades in after about 3 s: hold focus on the dialog until then, so the focused button is visible.
+    dlg.current?.focus();
+    const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const id = setTimeout(() => dlg.current?.querySelector<HTMLElement>("[data-autofocus]")?.focus(), reduced ? 0 : 3500);
+    return () => clearTimeout(id);
   }, []);
 
   useEffect(() => {
@@ -143,8 +147,9 @@ export default function Finale({ onPlay, onClose }: { onPlay: () => void; onClos
     <dialog
       ref={dlg}
       onClose={onClose}
+      tabIndex={-1}
       aria-labelledby="finale-title"
-      className="m-auto w-[min(32rem,calc(100vw-2rem))] max-h-[92dvh] overflow-y-auto rounded-2xl border bg-card p-0 text-foreground shadow-2xl backdrop:bg-black/75 backdrop:backdrop-blur-sm"
+      className="m-auto outline-none w-[min(32rem,calc(100vw-2rem))] max-h-[92dvh] overflow-y-auto rounded-2xl border bg-card p-0 text-foreground shadow-2xl backdrop:bg-black/75 backdrop:backdrop-blur-sm"
     >
       <button type="button" onClick={() => dlg.current?.close()} aria-label={t.game.close} className="absolute top-2 right-2 z-10 flex size-11 items-center justify-center rounded-full text-muted-foreground hover:text-foreground">
         <X className="size-5" aria-hidden />

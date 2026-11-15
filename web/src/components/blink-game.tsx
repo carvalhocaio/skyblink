@@ -70,12 +70,17 @@ export default function BlinkGame({ onClose }: { onClose: () => void }) {
   const [picked, setPicked] = useState(-1);
   const [misses, setMisses] = useState(0);
   const nextBtn = useRef<HTMLButtonElement>(null);
+  const prompt = useRef<HTMLLegendElement>(null);
   const R = rounds[round];
 
   useEffect(() => {
     dlg.current?.showModal();
     dlg.current?.querySelector<HTMLElement>("[data-autofocus]")?.focus(); // showModal ignores React's autoFocus
   }, []);
+  // Each new round replaces the button that had focus: move focus to the new question instead of losing it.
+  useEffect(() => {
+    if (stage === "play") prompt.current?.focus();
+  }, [round, stage]);
   useEffect(() => {
     if (done !== null) nextBtn.current?.focus();
   }, [done]);
@@ -137,7 +142,7 @@ export default function BlinkGame({ onClose }: { onClose: () => void }) {
           <>
             {R.kind === "quiz" ? (
               <fieldset className="space-y-3">
-                <legend className="mb-3 text-lg font-medium">{R.q}</legend>
+                <legend ref={prompt} tabIndex={-1} className="mb-3 text-lg font-medium outline-none">{R.q}</legend>
                 {R.options.map((o, i) => {
                   const state = done === null ? "" : i === R.answer ? "border-emerald-400 bg-emerald-400/10" : i === picked ? "border-red-400 bg-red-400/10" : "opacity-60";
                   return (
@@ -166,17 +171,18 @@ export default function BlinkGame({ onClose }: { onClose: () => void }) {
             )}
 
             {done !== null && (
-              <div aria-live="polite" className="space-y-3 rounded-xl border bg-background/60 p-4 text-sm">
-                <p className={`font-medium ${done ? "text-emerald-400" : "text-amber-300"}`}>
+              <div className="space-y-3 rounded-xl border bg-background/60 p-4 text-sm">
+                <p id="game-feedback" className={`font-medium ${done ? "text-emerald-400" : "text-amber-300"}`}>
                   {R.kind === "quiz" ? (done ? G.correct : G.wrong) : G.right}
                 </p>
-                <p className="leading-relaxed text-muted-foreground">{R.fact}</p>
+                <p id="game-fact" className="leading-relaxed text-muted-foreground">{R.fact}</p>
                 <a href={R.ref.href} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-1.5 text-primary underline-offset-4 hover:underline">
                   {G.learn}: {R.ref.label}
+                  <span className="sr-only"> {t.foot.newTab}</span>
                   <ExternalLink className="size-3.5" aria-hidden />
                 </a>
                 <div>
-                  <Button ref={nextBtn} className="h-11 rounded-full px-6" onClick={advance}>
+                  <Button ref={nextBtn} aria-describedby="game-feedback game-fact" className="h-11 rounded-full px-6" onClick={advance}>
                     {round + 1 >= rounds.length ? G.finish : G.nextRound}
                   </Button>
                 </div>
@@ -208,6 +214,7 @@ export default function BlinkGame({ onClose }: { onClose: () => void }) {
                     <a href={l.href} target="_blank" rel="noopener noreferrer" className="flex min-h-12 items-center justify-between gap-3 px-4 hover:text-primary">
                       <span>
                         {l.label} <span className="text-muted-foreground">· {l.by}</span>
+                        <span className="sr-only"> {t.foot.newTab}</span>
                       </span>
                       <ExternalLink className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
                     </a>

@@ -32,7 +32,8 @@ export function Player({ frames, waiting, object, center }: Props) {
   const [broken, setBroken] = useState<ReadonlySet<string>>(new Set());
   const ready = frames.filter((f) => f.status === "ready" && f.image_url && !broken.has(f.id));
   const [index, setIndex] = useState(0);
-  const [playing, setPlaying] = useState(true);
+  // Plays on its own unless the visitor asked for less motion; then Play starts it.
+  const [playing, setPlaying] = useState(() => typeof window === "undefined" || !matchMedia("(prefers-reduced-motion: reduce)").matches);
   const [speed, setSpeed] = useState(SPEEDS[1]);
   const n = ready.length;
   const current = Math.min(index, n - 1);
@@ -162,7 +163,10 @@ export function Player({ frames, waiting, object, center }: Props) {
             </Button>
           ))}
         </div>
-        <Button variant="outline" size="sm" onClick={copy} className="ml-2" aria-live="polite">
+        <span role="status" className="sr-only">
+          {copied === "copied" ? p.copied : copied === "failed" ? p.copyFailed : ""}
+        </span>
+        <Button variant="outline" size="sm" onClick={copy} className="ml-2">
           {copied === "copied" ? <Check aria-hidden /> : copied === "failed" ? <X aria-hidden /> : <Share2 aria-hidden />}
           {copied === "copied" ? p.copied : copied === "failed" ? p.copyFailed : p.copy}
         </Button>

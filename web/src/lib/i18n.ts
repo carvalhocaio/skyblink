@@ -451,7 +451,7 @@ const en = {
       feynman: { quote: true, name: "Richard Feynman", years: "1918–1988", line: "What I cannot create, I do not understand.", hint: "Developers know where to look.", how: "You found him in the developer console." },
     },
   },
-  foot: { sections: "Sections", sources: "Sources" },
+  foot: { sections: "Sections", sources: "Sources", newTab: "(opens in a new tab)" },
   footer:
     "Made by team Capivaláxias for the NASA Space Apps Challenge 2026. Not an official NASA website. Images: SPHEREx public data (NASA/IPAC IRSA). Star positions: ESA Gaia DR3.",
 };
@@ -906,7 +906,7 @@ const pt: typeof en = {
       feynman: { quote: true, name: "Richard Feynman", years: "1918–1988", line: "O que eu não consigo criar, eu não entendo.", hint: "Desenvolvedores sabem onde procurar.", how: "Você o encontrou no console do navegador." },
     },
   },
-  foot: { sections: "Seções", sources: "Fontes" },
+  foot: { sections: "Seções", sources: "Fontes", newTab: "(abre em nova aba)" },
   footer:
     "Feito pelo time Capivaláxias para o NASA Space Apps Challenge 2026. Não é um site oficial da NASA. Imagens: dados públicos do SPHEREx (NASA/IPAC IRSA). Posições de estrelas: ESA Gaia DR3.",
 };

@@ -103,7 +103,8 @@ const FlipCard: React.FC<FlipCardProps> = ({
   shadowColor = '#000000',
   shadowOpacity = 0.45,
   disabled = false,
-  ariaLabel = 'Flip card',
+  // No default: the visible face then names the button, so the answer is read once it is flipped.
+  ariaLabel,
   className = ''
 }) => {
   const reduce = useReducedMotion();

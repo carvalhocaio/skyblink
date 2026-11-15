@@ -117,7 +117,15 @@ export function EggsProvider({ children }: { children: ReactNode }) {
       {children}
       <EggTray toast={toast} />
       {show === "finale" && <Finale onPlay={() => setShow("game")} onClose={() => setShow((s) => (s === "finale" ? null : s))} />}
-      {show === "game" && <BlinkGame onClose={() => setShow(null)} />}
+      {show === "game" && (
+        <BlinkGame
+          onClose={() => {
+            setShow(null);
+            // The finale that opened the game is gone, so send focus back to the tray instead of the page top.
+            requestAnimationFrame(() => document.querySelector<HTMLElement>('[popovertarget="egg-panel"]')?.focus());
+          }}
+        />
+      )}
     </EggCtx.Provider>
   );
 }
@@ -166,6 +174,8 @@ function EggTray({ toast }: { toast: Egg | null }) {
       <div
         id="egg-panel"
         popover="auto"
+        role="dialog"
+        aria-label={g.tray}
         className="egg-panel fixed inset-auto right-4 bottom-18 m-0 max-h-[70vh] w-[min(24rem,calc(100vw-2rem))] overflow-y-auto rounded-xl border bg-card p-5 text-foreground shadow-2xl"
       >
         <p className="font-medium">{g.tray}</p>

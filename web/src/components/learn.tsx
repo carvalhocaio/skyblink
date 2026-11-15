@@ -83,7 +83,6 @@ export function AboutSpherex() {
                 hoverScale={1.02}
                 background="color-mix(in oklab, var(--card) 85%, transparent)"
                 color="var(--card-foreground)"
-                ariaLabel={`${f.title} ${a.flip}`}
                 front={
                   <div className={`${face} transition-colors group-hover:border-primary/50`}>
                     <span className="mb-4 flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">

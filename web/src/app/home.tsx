@@ -70,6 +70,16 @@ function Home() {
   // Nothing to show or measure: the alert says why, so skip the "couldn't measure the motion" card.
   const noCoverage = job?.status === "done" && (frames.length === 0 || job.alerts.some((a) => a.code === "NO_COVERAGE"));
   const allFailed = job?.status === "done" && frames.length > 0 && frames.every((f) => f.status === "failed");
+  // One live region that is always on the page, so screen readers hear each step, including the end.
+  const readyCount = frames.filter((f) => f.status === "ready").length;
+  const liveStatus =
+    !target || error || inputError || job?.status === "failed"
+      ? ""
+      : !job
+        ? t.watch.starting
+        : job.status === "done"
+          ? `${t.status.done}. ${t.status.ready(readyCount, frames.length)}`
+          : `${t.status[job.status]} ${job.progress.frames_total ? t.status.ready(job.progress.frames_done, job.progress.frames_total) : ""}`;
   const featured = findTarget(target?.ra, target?.dec);
   const name = featured && t.pick.names[TARGETS.indexOf(featured)];
 
@@ -183,7 +193,7 @@ function Home() {
               type="button"
               onClick={() => setMenu((m) => !m)}
               aria-expanded={menu}
-              aria-controls="mobile-menu"
+              aria-controls={menu ? "mobile-menu" : undefined}
               aria-label={menu ? t.nav.close : t.nav.menu}
               className="flex size-11 items-center justify-center rounded-full border bg-card/60 text-foreground transition-colors hover:border-white/30 active:scale-95 lg:hidden"
             >
@@ -220,7 +230,8 @@ function Home() {
         </nav>
       )}
 
-      <header ref={heroRef} className="relative overflow-hidden bg-black">
+      {/* While the full-screen menu is open, the page behind it is out of reach for focus and screen readers. */}
+      <header ref={heroRef} inert={menu} className="relative overflow-hidden bg-black">
         <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-24 bg-gradient-to-b from-transparent to-background" />
         <div className={`${WRAP} grid items-center gap-10 py-12 lg:min-h-[calc(100svh-4rem)] lg:grid-cols-[1.1fr_1fr] lg:py-16`}>
           <div className="relative z-10">
@@ -260,7 +271,7 @@ function Home() {
         </div>
       </header>
 
-      <main id="main" tabIndex={-1} className="outline-none">
+      <main id="main" tabIndex={-1} inert={menu} className="outline-none">
         <section id="how" className={`${WRAP} space-y-10 ${PAD}`}>
           <SectionLabel n={1}>{t.nav.how}</SectionLabel>
           <h2 className="max-w-3xl text-3xl leading-[1.1] font-medium tracking-tight md:text-5xl">{t.how.title}</h2>
@@ -278,11 +289,14 @@ function Home() {
                 <TargetForm key={targetKey} initial={target} error={!!inputError} onSubmit={submit} />
               </ClickSpark>
 
-              <div id="watch" className="min-w-0 scroll-mt-20 space-y-4 lg:sticky lg:top-24 lg:self-start" aria-labelledby="watch-title">
+              <div id="watch" role="region" className="min-w-0 scroll-mt-20 space-y-4 lg:sticky lg:top-24 lg:self-start" aria-labelledby="watch-title">
                 <h3 id="watch-title" className={`text-muted-foreground ${MONO}`}>
                   {t.watch.title}
                   {name && <span className="text-foreground">: {name}</span>}
                 </h3>
+                <p role="status" className="sr-only">
+                  {liveStatus}
+                </p>
                 {(badLink || inputError) && (
                   <Alert variant="destructive">
                     <AlertDescription>{t.watch.badLink}</AlertDescription>
@@ -344,7 +358,7 @@ function Home() {
         </section>
       </main>
 
-      <footer className="border-t bg-black/50">
+      <footer inert={menu} className="border-t bg-black/50">
         <div className={`${WRAP} grid gap-12 py-16 md:grid-cols-[1.4fr_1fr_1fr]`}>
           <div>
             <p className="flex items-center gap-2.5 text-2xl font-semibold tracking-tight">
@@ -375,6 +389,7 @@ function Home() {
                 <li key={l.href}>
                   <a href={l.href} target="_blank" rel="noopener noreferrer" className="group inline-flex min-h-10 items-center gap-1.5 text-sm transition-colors hover:text-primary">
                     {l.label}
+                    <span className="sr-only"> {t.foot.newTab}</span>
                     <ArrowUpRight className="size-3.5 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-primary" aria-hidden />
                   </a>
                 </li>
