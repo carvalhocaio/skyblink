@@ -42,6 +42,13 @@ export function buildJob(id: string, origin: string): Job {
         n_exposures_available: s.n_exposures,
         image_url: i < ready ? `${origin}/api/mock/frames/${hash}-s${i}-D6.png` : null,
         alerts: [{ code: "SATURATED_CORE", severity: "info" }],
+        exposures: Array.from({ length: s.n_exposures }, (_, k) => ({
+          obs_id: `mock-${s.id}-${k}`,
+          collection: "spherex_dr1",
+          date: s.start,
+          wavelength_um: [4.4115, 5.0096] as [number, number],
+          access_url: "https://irsa.ipac.caltech.edu/Missions/spherex.html",
+        })),
       }));
 
   return {
@@ -72,7 +79,10 @@ export function buildJob(id: string, origin: string): Job {
               east_err_arcsec: i ? 0.3 : 0,
               north_err_arcsec: i ? 0.35 : 0,
             },
-            predicted_offset: { east_arcsec: 0.4 * i, north_arcsec: 9.4 * i, total_arcsec: Math.hypot(0.4 * i, 9.4 * i) },
+            // The mock star sits at row 29 − 1.5·season from the top of a 59 px image: y from the bottom is 29 + 1.5·season.
+            position_px: [29, 29 + 1.5 * i] as [number, number],
+            position_err_px: [0.05, 0.06] as [number, number],
+            predicted_offset: { dx_px: (-0.4 * i) / 6.15, dy_px: (9.4 * i) / 6.15, east_arcsec: 0.4 * i, north_arcsec: 9.4 * i, total_arcsec: Math.hypot(0.4 * i, 9.4 * i) },
             residual_sigma: i ? -0.5 : null,
             peak_snr: 120,
             drift_corrected: true,

@@ -6,6 +6,9 @@ export const API_URL =
 export type Severity = "error" | "warning" | "info";
 export type JobAlert = { code: string; severity: Severity };
 
+/** One archive exposure planned for a frame, with the link to its original IRSA file. Optional: newer API only. */
+export type Exposure = { obs_id: string; collection: string; date: string; wavelength_um: [number, number]; access_url: string };
+
 export type Frame = {
   id: string;
   season_id: number;
@@ -17,6 +20,7 @@ export type Frame = {
   n_exposures_available: number;
   image_url: string | null;
   alerts: JobAlert[];
+  exposures?: Exposure[];
 };
 
 /** Where the star sat in one season, measured from the images, relative to the reference season. */
@@ -30,6 +34,9 @@ export type SeasonMotion = {
   epoch_date?: string;
   peak_snr?: number;
   drift_corrected?: boolean;
+  /** Drift-corrected centroid in the frame grid: x = column, y = row from the bottom (PNG row = height − 1 − y). */
+  position_px?: [number, number];
+  position_err_px?: [number, number];
   offset: XY & {
     dx_px: number;
     dy_px: number;
@@ -39,7 +46,7 @@ export type SeasonMotion = {
     north_err_arcsec?: number;
     error_components?: { statistical: XY; alignment: XY };
   };
-  predicted_offset?: (XY & { total_arcsec: number }) | null;
+  predicted_offset?: (XY & { dx_px?: number; dy_px?: number; total_arcsec: number }) | null;
   residual_sigma?: number | null;
 };
 

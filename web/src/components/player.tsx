@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, ChevronLeft, ChevronRight, GitCompareArrows, Pause, Play, Share2, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Crosshair as Target, GitCompareArrows, Pause, Play, Share2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatMonth as month, type Frame, type Motion } from "@/lib/api";
 import { useT } from "@/lib/i18n";
@@ -12,6 +12,9 @@ import Crosshair from "@/components/Crosshair";
 import Counter from "@/components/Counter";
 
 const SPEEDS = [1200, 600, 250];
+// Same identities as the "Where did it go?" chart (cyan measured, amber predicted), lighter to stand out on the black sky.
+const MEASURED = "#22d3ee";
+const PREDICTED = "#fbbf24";
 // SPHEREx pixels are 6.15″ wide, so one arcminute is about 9.8 pixels of the original image.
 const PX_PER_ARCMIN = 60 / 6.15;
 
@@ -44,6 +47,7 @@ export function Player({ frames, waiting, object, center, motion }: Props) {
   const animating = playing && n > 1;
   // First ↔ last: blinking only the two ends makes a sub-pixel drift easier to see than the full loop.
   const [compare, setCompare] = useState(false);
+  const [markers, setMarkers] = useState(true);
   const seq = compare && n > 2 ? [0, n - 1] : Array.from({ length: n }, (_, i) => i);
   const advance = (i: number, d: number) => seq[(seq.indexOf(Math.min(i, n - 1)) + d + seq.length) % seq.length];
   const { unlock } = useEggs();
@@ -108,6 +112,13 @@ export function Player({ frames, waiting, object, center, motion }: Props) {
   const ref = motion?.seasons?.find((s) => s.season_id === motion.reference_season_id);
   const here = motion?.seasons?.find((s) => s.frame_id === frame.id);
   const shift = !here || !ref ? null : here === ref ? p.reference : p.moved(fmt(here.offset.total_arcsec), fmt(here.offset.total_err_arcsec), month(ref.mid_date, t.locale));
+  // Positions on the picture (newer API only): the measured centroid, and the catalog's prediction placed from the
+  // reference season's measured position. Grid y counts from the bottom; the PNG is north up.
+  const canMark = !!motion?.seasons?.some((s) => s.position_px);
+  const measuredAt = here?.position_px ?? null;
+  const po = here?.predicted_offset;
+  const predictedAt = ref?.position_px && po?.dx_px !== undefined && po.dy_px !== undefined ? [ref.position_px[0] + po.dx_px, ref.position_px[1] + po.dy_px] : null;
+  const toSvg = ([x, y]: number[]) => [x + 0.5, width - 0.5 - y];
 
   return (
     <div ref={root} className="space-y-3">
@@ -132,6 +143,18 @@ export function Player({ frames, waiting, object, center, motion }: Props) {
             style={{ imageRendering: "pixelated" }}
           />
         ))}
+        {markers && width > 0 && (measuredAt || predictedAt) && (
+          <svg viewBox={`0 0 ${width} ${width}`} className="pointer-events-none absolute inset-0 size-full" aria-hidden>
+            {predictedAt && (() => {
+              const [x, y] = toSvg(predictedAt);
+              return <rect x={x - 1.6} y={y - 1.6} width={3.2} height={3.2} transform={`rotate(45 ${x} ${y})`} fill="none" stroke={PREDICTED} strokeWidth={2} vectorEffect="non-scaling-stroke" />;
+            })()}
+            {measuredAt && (() => {
+              const [x, y] = toSvg(measuredAt);
+              return <circle cx={x} cy={y} r={2.4} fill="none" stroke={MEASURED} strokeWidth={2} vectorEffect="non-scaling-stroke" />;
+            })()}
+          </svg>
+        )}
         <Reticle uncertain={uncertain} />
         <span className="absolute top-2 right-2 flex items-center gap-1.5 rounded bg-black/70 px-2 py-1 font-mono text-[10px] tracking-widest text-white uppercase">
           <span aria-hidden className="size-1.5 rounded-full bg-primary" />
@@ -198,6 +221,12 @@ export function Player({ frames, waiting, object, center, motion }: Props) {
           <GitCompareArrows aria-hidden />
           {p.compare}
         </Button>
+        {canMark && (
+          <Button variant={markers ? "secondary" : "outline"} size="sm" aria-pressed={markers} title={p.markersHint} onClick={() => setMarkers((m) => !m)} className="ml-2">
+            <Target aria-hidden />
+            {p.markers}
+          </Button>
+        )}
         <span role="status" className="sr-only">
           {copied === "copied" ? p.copied : copied === "failed" ? p.copyFailed : ""}
         </span>
@@ -241,6 +270,22 @@ export function Player({ frames, waiting, object, center, motion }: Props) {
         )}
       </p>
       {compare && <p className="text-center text-xs text-muted-foreground">{p.compareHint}</p>}
+      {markers && (measuredAt || predictedAt) && (
+        <p className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+          {measuredAt && (
+            <span className="flex items-center gap-1.5">
+              <svg width="12" height="12" aria-hidden><circle cx="6" cy="6" r="4.5" fill="none" stroke={MEASURED} strokeWidth="2" /></svg>
+              {p.markerMeasured}
+            </span>
+          )}
+          {predictedAt && (
+            <span className="flex items-center gap-1.5">
+              <svg width="12" height="12" aria-hidden><rect x="3" y="3" width="6" height="6" transform="rotate(45 6 6)" fill="none" stroke={PREDICTED} strokeWidth="2" /></svg>
+              {p.markerPredicted}
+            </span>
+          )}
+        </p>
+      )}
       <div className="rounded-xl border bg-card/70 backdrop-blur-sm p-5 text-sm text-muted-foreground">
         <p className="font-medium text-foreground">{object ? object.name : p.whatTitle}</p>
         {object ? (

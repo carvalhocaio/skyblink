@@ -108,6 +108,50 @@ export function DataDrawer({ job, frames, name }: { job: Job; frames: Frame[]; n
           </div>
         </div>
 
+        {frames.some((f) => f.exposures?.length) && (
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">{d.filesHint}</p>
+            {frames.map((f) =>
+              f.exposures?.length ? (
+                <details key={f.id} className="rounded-lg border">
+                  <summary className="flex min-h-10 cursor-pointer items-center px-3 text-xs">
+                    {day(f.mid_date)} · {d.files(f.exposures.length)}
+                  </summary>
+                  <div className="max-h-64 overflow-auto border-t">
+                    <table className="w-full text-xs">
+                      <thead className="sticky top-0 bg-card text-muted-foreground">
+                        <tr>
+                          <th className={th}>{d.obsId}</th>
+                          <th className={th}>{d.date}</th>
+                          <th className={th}>{d.collection}</th>
+                          <th className={th}>µm</th>
+                          <th className={th}><span className="sr-only">{d.open}</span></th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {f.exposures.map((e) => (
+                          <tr key={e.obs_id}>
+                            <td className={`${td} font-mono`}>{e.obs_id}</td>
+                            <td className={td}>{e.date.slice(0, 16).replace("T", " ")}</td>
+                            <td className={td}>{e.collection}</td>
+                            <td className={td}>{n(e.wavelength_um[0])}–{n(e.wavelength_um[1])}</td>
+                            <td className={td}>
+                              <a href={e.access_url} target="_blank" rel="noopener noreferrer" className="text-primary underline-offset-4 hover:underline">
+                                {d.open}
+                                <span className="sr-only"> ({t.foot.newTab})</span>
+                              </a>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </details>
+              ) : null,
+            )}
+          </div>
+        )}
+
         {motion && (motion.seasons?.length ?? 0) > 0 && (
           <div className="space-y-2">
             <h4 className="font-medium">{d.positions}</h4>
