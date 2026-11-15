@@ -16,10 +16,16 @@ const geistMono = Geist_Mono({
 
 const description = "Real NASA SPHEREx images of the sky, played season after season, so you can see with your own eyes which stars are on the move.";
 
+// Absolute base for share images, canonical and hreflang links (search engines need full URLs). On Vercel it is
+// the production domain, also on previews, so a preview never claims to be the canonical page.
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : undefined);
+
 // Share image: opengraph-image.png / twitter-image.png beside this file.
 // On Vercel the share URLs resolve on their own; elsewhere set NEXT_PUBLIC_SITE_URL.
 export const metadata: Metadata = {
-  metadataBase: process.env.NEXT_PUBLIC_SITE_URL ? new URL(process.env.NEXT_PUBLIC_SITE_URL) : undefined,
+  metadataBase: SITE_URL ? new URL(SITE_URL) : undefined,
   title: "SkyBlink: watch stars move in NASA SPHEREx images",
   description,
   // The same page in two languages: search engines link each version to the other.
