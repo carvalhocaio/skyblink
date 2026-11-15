@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useT } from "@/lib/i18n";
+import { Gloss } from "@/components/gloss";
 import { TARGETS } from "@/lib/targets";
 import type { Target } from "@/lib/use-job";
 
@@ -79,8 +80,8 @@ export function TargetForm({ initial, error, onSubmit }: Props) {
 
       <p className="text-xs text-muted-foreground">{p.speedNote}</p>
 
-      <details className="rounded-md border p-4" open={error || bad}>
-        <summary className="cursor-pointer text-sm font-medium">{p.custom}</summary>
+      <details id="custom-spot" className="scroll-mt-24 rounded-xl border bg-card/70 p-4 transition-colors hover:border-white/20" open={error || bad}>
+        <summary className="flex min-h-11 cursor-pointer items-center text-sm font-medium">{p.custom}</summary>
         <form
           className="mt-4 space-y-4"
           onSubmit={(e) => {
@@ -92,13 +93,13 @@ export function TargetForm({ initial, error, onSubmit }: Props) {
             if (ok) onSubmit(x);
           }}
         >
-          <p id="spot-help" className="text-sm text-muted-foreground">{p.customHelp}</p>
+          <p id="spot-help" className="text-sm text-muted-foreground"><Gloss text={p.customHelp} /></p>
           <div className="grid grid-cols-3 gap-3">
             <Field name="ra" label={p.ra} value={initial?.ra} placeholder="17h 57m 48s" invalid={error || bad} />
             <Field name="dec" label={p.dec} value={initial?.dec} placeholder="+4° 41′ 36″" invalid={error || bad} />
             <Field name="fov" label={p.fov} value={initial?.fov ?? 6} invalid={error || bad} />
           </div>
-          <p className="text-xs text-muted-foreground">{p.fovHelp}</p>
+          <p className="text-xs text-muted-foreground"><Gloss text={p.fovHelp} /></p>
           {(error || bad) && (
             <p id="spot-error" role="alert" className="text-sm text-destructive">
               {p.inputError}

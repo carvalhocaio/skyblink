@@ -1,17 +1,21 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import { Atom } from "lucide-react";
+import dynamic from "next/dynamic";
+import { Atom, Gamepad2 } from "lucide-react";
 import { useT } from "@/lib/i18n";
 
 export const EGGS = ["newton", "galileo", "einstein", "curie", "schrodinger", "heisenberg", "hawking", "feynman"] as const;
 export type Egg = (typeof EGGS)[number];
 
+const Finale = dynamic(() => import("@/components/finale"), { ssr: false });
+const BlinkGame = dynamic(() => import("@/components/blink-game"), { ssr: false });
+
 const KEY = "skyblink-eggs";
 const TYPED: Partial<Record<string, Egg>> = { einstein: "einstein", curie: "curie" };
 
-type Ctx = { found: Set<Egg>; unlock: (e: Egg) => void; reset: () => void; timeScale: number };
-const EggCtx = createContext<Ctx>({ found: new Set(), unlock: () => {}, reset: () => {}, timeScale: 1 });
+type Ctx = { found: Set<Egg>; unlock: (e: Egg) => void; reset: () => void; timeScale: number; play: () => void };
+const EggCtx = createContext<Ctx>({ found: new Set(), unlock: () => {}, reset: () => {}, timeScale: 1, play: () => {} });
 export const useEggs = () => useContext(EggCtx);
 
 function load(): Set<Egg> {
@@ -27,6 +31,7 @@ export function EggsProvider({ children }: { children: ReactNode }) {
   const [found, setFound] = useState<Set<Egg>>(new Set());
   const [toast, setToast] = useState<Egg | null>(null);
   const [timeScale, setTimeScale] = useState(1);
+  const [show, setShow] = useState<null | "finale" | "game">(null);
   const foundRef = useRef(found);
 
   useEffect(() => {
@@ -49,6 +54,7 @@ export function EggsProvider({ children }: { children: ReactNode }) {
     const next = new Set(foundRef.current).add(e);
     foundRef.current = next;
     setFound(next);
+    if (next.size === EGGS.length) setTimeout(() => setShow("finale"), 2000); // let the last toast land first
     try {
       localStorage.setItem(KEY, JSON.stringify([...next]));
     } catch {}
@@ -87,16 +93,31 @@ export function EggsProvider({ children }: { children: ReactNode }) {
       "font: 600 14px system-ui; color: #67e8f9",
       "font: 12px system-ui; color: #a3a3a3",
     );
+    // Opening DevTools is enough: docked in the window (Chrome's default), it shrinks the page far
+    // below the window size. ponytail: no browser API says "DevTools is open"; an undocked DevTools
+    // is not noticed (typing feynman() still works), and a big page zoom can unlock him early.
+    const sized = () => {
+      if (matchMedia("(pointer: coarse)").matches) return; // phones: toolbars change the window size
+      if (outerWidth - innerWidth > 200 || outerHeight - innerHeight > 260) {
+        removeEventListener("resize", sized);
+        unlock("feynman");
+      }
+    };
+    addEventListener("resize", sized);
+    sized();
     return () => {
       removeEventListener("keydown", onKey);
       delete w.feynman;
+      removeEventListener("resize", sized);
     };
   }, [unlock]);
 
   return (
-    <EggCtx.Provider value={{ found, unlock, reset, timeScale }}>
+    <EggCtx.Provider value={{ found, unlock, reset, timeScale, play: () => setShow("game") }}>
       {children}
       <EggTray toast={toast} />
+      {show === "finale" && <Finale onPlay={() => setShow("game")} onClose={() => setShow((s) => (s === "finale" ? null : s))} />}
+      {show === "game" && <BlinkGame onClose={() => setShow(null)} />}
     </EggCtx.Provider>
   );
 }
@@ -104,12 +125,13 @@ export function EggsProvider({ children }: { children: ReactNode }) {
 function EggTray({ toast }: { toast: Egg | null }) {
   const { t } = useT();
   const g = t.eggs;
-  const { found, reset } = useEggs();
+  const { found, reset, play } = useEggs();
   return (
     <>
-      <div aria-live="polite" className="pointer-events-none fixed right-24 bottom-4 left-4 z-50 flex justify-end sm:right-4 sm:bottom-20">
+      {/* Phones: under the top bar, so it never covers the player's buttons; taps pass through it. */}
+      <div aria-live="polite" className="pointer-events-none fixed top-20 right-4 left-4 z-50 flex justify-center sm:top-auto sm:bottom-20 sm:justify-end">
         {toast && (
-          <div key={toast} className="egg-toast pointer-events-auto max-w-sm rounded-xl border border-primary/30 bg-card/95 px-3 py-2 shadow-2xl backdrop-blur sm:p-4">
+          <div key={toast} className="egg-toast pointer-events-none max-w-sm rounded-xl border border-primary/30 bg-card/95 px-3 py-2 shadow-2xl backdrop-blur sm:p-4">
             <p className="font-mono text-[10px] tracking-[0.2em] text-primary uppercase">
               {g.found} · {found.size}/{EGGS.length}
             </p>
@@ -142,6 +164,18 @@ function EggTray({ toast }: { toast: Egg | null }) {
       >
         <p className="font-medium">{g.tray}</p>
         <p className="mt-1 text-sm text-muted-foreground">{g.trayHint}</p>
+        {found.size === EGGS.length && (
+          <button
+            type="button"
+            popoverTarget="egg-panel"
+            popoverTargetAction="hide"
+            onClick={play}
+            className="mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:-translate-y-0.5"
+          >
+            <Gamepad2 className="size-4" aria-hidden />
+            {g.play}
+          </button>
+        )}
         <ul className="mt-4 divide-y">
           {EGGS.map((e) => {
             const x = g.list[e];

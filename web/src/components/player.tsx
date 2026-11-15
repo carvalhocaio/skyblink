@@ -5,7 +5,11 @@ import { Check, ChevronLeft, ChevronRight, Link2, Pause, Play } from "lucide-rea
 import { Button } from "@/components/ui/button";
 import { formatMonth as month, type Frame } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { Gloss } from "@/components/gloss";
 import { useEggs } from "@/lib/eggs";
+import { formatDec, formatRA, skyAt } from "@/lib/sky";
+import Crosshair from "@/components/Crosshair";
+import Counter from "@/components/Counter";
 
 const SPEEDS = [1200, 600, 250];
 // SPHEREx pixels are 6.15″ wide, so one arcminute is about 9.8 pixels of the original image.
@@ -14,9 +18,14 @@ const PX_PER_ARCMIN = 60 / 6.15;
 const label = (f: Frame, locale: string) =>
   `${month(f.mid_date, locale)} · ${f.detector} · ${f.wavelength_um[0].toFixed(2)}–${f.wavelength_um[1].toFixed(2)} µm`;
 
-type Props = { frames: Frame[]; waiting: boolean; object?: { name: string; index: number } };
+type Props = {
+  frames: Frame[];
+  waiting: boolean;
+  object?: { name: string; index: number };
+  center?: { ra: number; dec: number };
+};
 
-export function Player({ frames, waiting, object }: Props) {
+export function Player({ frames, waiting, object, center }: Props) {
   const { t } = useT();
   const p = t.player;
   const ready = frames.filter((f) => f.status === "ready" && f.image_url);
@@ -30,6 +39,13 @@ export function Player({ frames, waiting, object }: Props) {
   const [uncertain, setUncertain] = useState(false);
   const [width, setWidth] = useState(0);
   const root = useRef<HTMLDivElement>(null);
+  const view = useRef<HTMLDivElement>(null);
+  // Pointer → the RA/Dec under it, the two numbers astronomers use to find anything.
+  const coords = (x: number, y: number, w: number, h: number): [string, string] => {
+    if (!center || !width) return ["", ""];
+    const at = skyAt(center, width / PX_PER_ARCMIN, x / w, y / h);
+    return [`RA ${formatRA(at.ra)}`, `Dec ${formatDec(at.dec)}`];
+  };
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     try {
@@ -75,11 +91,12 @@ export function Player({ frames, waiting, object }: Props) {
   return (
     <div ref={root} className="space-y-3">
       <div
+        ref={view}
         tabIndex={0}
         role="group"
         aria-label={p.imageAlt}
         aria-describedby="player-keys"
-        className="relative mx-auto aspect-square w-full max-w-[472px] overflow-hidden rounded-xl border bg-black shadow-[0_0_80px_-30px_oklch(0.85_0.13_205/0.5)] outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+        className="relative mx-auto aspect-square w-full max-w-[472px] cursor-crosshair overflow-hidden rounded-xl border bg-black shadow-[0_0_80px_-30px_oklch(0.85_0.13_205/0.5)] outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
         onClick={poke}
       >
         {ready.map((f, i) => (
@@ -94,9 +111,13 @@ export function Player({ frames, waiting, object }: Props) {
           />
         ))}
         <Reticle uncertain={uncertain} />
-        <div className="absolute top-2 left-2 rounded bg-black/70 px-2 py-1 font-mono text-sm text-white">
-          {label(ready[current], t.locale)}
+        <div className="absolute top-2 left-2 flex items-center gap-1 rounded bg-black/70 px-2 py-1 font-mono text-sm text-white">
+          {/* The year rolls over like an odometer as the flipbook crosses into a new year. */}
+          {new Date(ready[current].mid_date).toLocaleDateString(t.locale, { month: "short", timeZone: "UTC" })}
+          <Counter value={new Date(ready[current].mid_date).getUTCFullYear()} format={{ useGrouping: false }} intro={false} fontSize="0.875rem" duration={0.5} />
+          <span>· {ready[current].detector} · {ready[current].wavelength_um[0].toFixed(2)}–{ready[current].wavelength_um[1].toFixed(2)} µm</span>
         </div>
+        {center && width > 0 && <Crosshair containerRef={view} color="#22d3ee" lineStyle="dashed" gap={10} opacity={0.75} targetEffect="none" formatCoordinates={coords} />}
         <div aria-label={p.compass} role="img" className="absolute right-2 bottom-2 rounded bg-black/70 px-2 py-1 font-mono text-xs text-white">
           N ↑ E ←
         </div>
@@ -170,13 +191,14 @@ export function Player({ frames, waiting, object }: Props) {
         {object ? (
           <dl className="mt-2 space-y-2">
             <dt className="font-medium text-primary">{p.whatIs}</dt>
-            <dd>{p.objects[object.index].what}</dd>
+            <dd><Gloss text={p.objects[object.index].what} /></dd>
             <dt className="font-medium text-primary">{p.whatChanges}</dt>
-            <dd>{p.objects[object.index].change}</dd>
+            <dd><Gloss text={p.objects[object.index].change} /></dd>
           </dl>
         ) : (
-          <p className="mt-1">{p.whatText}</p>
+          <p className="mt-1"><Gloss text={p.whatText} /></p>
         )}
+        {center && <p className="mt-2 text-xs"><Gloss text={p.coords} /></p>}
         <p id="player-keys" className="mt-2 text-xs">{p.keys}</p>
       </div>
     </div>
