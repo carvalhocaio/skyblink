@@ -54,7 +54,10 @@ const en = {
     emptyHint: "Not sure? Try Barnard’s Star, the fastest star in our sky.",
     starting: "Getting started…",
     networkError: "We couldn’t reach the SkyBlink server. Check your connection and try again.",
-    failed: "Something went wrong while preparing the pictures of this spot.",
+    failed: "NASA’s archive didn’t deliver the pictures this time. It’s often busy; trying again usually works.",
+    serverError: "The SkyBlink server is busy right now. Wait a minute and try again.",
+    slow: "This is taking much longer than usual. Try again in a minute.",
+    badLink: "This link has coordinates we can’t use: RA 0–360°, Dec −90–90°, field width 1–15′. Pick a star or enter your own spot.",
     retry: "Try again",
   },
   status: {
@@ -505,7 +508,10 @@ const pt: typeof en = {
     emptyHint: "Na dúvida? Experimente a Estrela de Barnard, a estrela mais rápida do nosso céu.",
     starting: "Começando…",
     networkError: "Não conseguimos falar com o servidor do SkyBlink. Verifique sua conexão e tente de novo.",
-    failed: "Algo deu errado ao preparar as imagens deste ponto.",
+    failed: "O arquivo da NASA não entregou as imagens desta vez. Ele costuma ficar ocupado; tentar de novo geralmente resolve.",
+    serverError: "O servidor do SkyBlink está ocupado agora. Espere um minuto e tente de novo.",
+    slow: "Está demorando muito mais que o normal. Tente de novo daqui a um minuto.",
+    badLink: "Este link tem coordenadas que não dá para usar: RA 0–360°, Dec −90–90°, largura 1–15′. Escolha uma estrela ou digite um ponto.",
     retry: "Tentar de novo",
   },
   status: {

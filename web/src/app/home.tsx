@@ -59,10 +59,17 @@ function Home() {
 
   const ra = num(params.get("ra"));
   const dec = num(params.get("dec"));
-  const target: Target | null = ra !== null && dec !== null ? { ra, dec, fov: num(params.get("fov")) ?? 6 } : null;
+  const fov = params.has("fov") ? num(params.get("fov")) : 6;
+  // Same limits as the custom-spot form: a hand-edited or truncated link shows a message instead of a blank panel.
+  const valid = ra !== null && dec !== null && fov !== null && ra >= 0 && ra < 360 && Math.abs(dec) <= 90 && fov >= 1 && fov <= 15;
+  const target: Target | null = valid ? { ra, dec, fov } : null;
+  const badLink = !valid && (params.has("ra") || params.has("dec"));
   const targetKey = target ? `${target.ra},${target.dec},${target.fov}` : "";
   const { job, error, inputError } = useJob(target, run);
   const frames = job?.frames.filter((f) => f.detector === DETECTOR) ?? [];
+  // Nothing to show or measure: the alert says why, so skip the "couldn't measure the motion" card.
+  const noCoverage = job?.status === "done" && (frames.length === 0 || job.alerts.some((a) => a.code === "NO_COVERAGE"));
+  const allFailed = job?.status === "done" && frames.length > 0 && frames.every((f) => f.status === "failed");
   const featured = findTarget(target?.ra, target?.dec);
   const name = featured && t.pick.names[TARGETS.indexOf(featured)];
 
@@ -71,7 +78,7 @@ function Home() {
   }, [lang]);
 
   // Opened with ?ra=&dec= on a phone: the player sits far below the hero, so bring it into view.
-  const openedWithTarget = useRef(target !== null);
+  const openedWithTarget = useRef(target !== null || badLink);
   useEffect(() => {
     if (!openedWithTarget.current || !matchMedia("(max-width: 1023px)").matches) return;
     const smooth = !matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -276,6 +283,11 @@ function Home() {
                   {t.watch.title}
                   {name && <span className="text-foreground">: {name}</span>}
                 </h3>
+                {(badLink || inputError) && (
+                  <Alert variant="destructive">
+                    <AlertDescription>{t.watch.badLink}</AlertDescription>
+                  </Alert>
+                )}
                 {!target && (
                   <div className="relative flex aspect-square flex-col items-center justify-center gap-6 overflow-hidden rounded-xl border bg-black p-8 text-center">
                     {/* eslint-disable-next-line @next/next/no-img-element -- real SPHEREx frame, upscaled pixel-exact */}
@@ -290,10 +302,10 @@ function Home() {
                     </Button>
                   </div>
                 )}
-                {(error || job?.status === "failed") && (
+                {(error || job?.status === "failed" || allFailed) && (
                   <Alert variant="destructive">
                     <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
-                      {error ? t.watch.networkError : t.watch.failed}
+                      {error === "network" ? t.watch.networkError : error === "server" ? t.watch.serverError : error === "slow" ? t.watch.slow : t.watch.failed}
                       <Button size="sm" variant="outline" onClick={() => setRun((r) => r + 1)}>
                         {t.watch.retry}
                       </Button>
@@ -301,17 +313,17 @@ function Home() {
                   </Alert>
                 )}
                 {target && !job && !error && !inputError && <p className="text-muted-foreground">{t.watch.starting}</p>}
-                {job && job.status !== "done" && job.status !== "failed" && <JobProgress job={job} />}
+                {job && !error && job.status !== "done" && job.status !== "failed" && <JobProgress job={job} />}
                 {job && (
                   <Player
                     key={`${targetKey}#${run}`}
                     frames={frames}
-                    waiting={job.status !== "done"}
+                    waiting={!error && job.status !== "done"}
                     object={featured && name ? { name, index: TARGETS.indexOf(featured) } : undefined}
                     center={target ?? undefined}
                   />
                 )}
-                {job && <MotionCard job={job} />}
+                {job && !noCoverage && !allFailed && <MotionCard job={job} />}
                 {job && <JobAlerts job={job} frames={frames} />}
               </div>
             </div>

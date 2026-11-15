@@ -28,7 +28,9 @@ type Props = {
 export function Player({ frames, waiting, object, center }: Props) {
   const { t } = useT();
   const p = t.player;
-  const ready = frames.filter((f) => f.status === "ready" && f.image_url);
+  // A PNG that fails to load is treated like a frame the server could not build.
+  const [broken, setBroken] = useState<ReadonlySet<string>>(new Set());
+  const ready = frames.filter((f) => f.status === "ready" && f.image_url && !broken.has(f.id));
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(true);
   const [speed, setSpeed] = useState(SPEEDS[1]);
@@ -108,6 +110,7 @@ export function Player({ frames, waiting, object, center }: Props) {
             src={f.image_url!}
             alt={i === current ? `${p.imageAlt}, ${label(f, t.locale)}` : ""}
             onLoad={(e) => setWidth(e.currentTarget.naturalWidth)}
+            onError={() => setBroken((b) => new Set(b).add(f.id))}
             className={`absolute inset-0 size-full ${i === current ? "" : "invisible"}`}
             style={{ imageRendering: "pixelated" }}
           />
@@ -182,7 +185,7 @@ export function Player({ frames, waiting, object, center }: Props) {
                   i === current ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted"
                 }`}
               >
-                {f.status === "failed" ? p.missing : month(f.mid_date, t.locale)}
+                {f.status === "failed" || broken.has(f.id) ? p.missing : month(f.mid_date, t.locale)}
               </button>
             </li>
           );
