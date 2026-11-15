@@ -6,6 +6,7 @@ import { useEggs } from "@/lib/eggs";
 import { useT } from "@/lib/i18n";
 import { Gloss } from "@/components/gloss";
 import { reasonKey, verdict } from "@/lib/motion";
+import { MotionPath } from "@/components/motion-path";
 
 export function MotionCard({ job }: { job: Job }) {
   const { t } = useT();
@@ -85,6 +86,7 @@ export function MotionCard({ job }: { job: Job }) {
 
       <p className={`pt-2 font-medium ${v === "agree" ? "text-emerald-300" : v === "disagree" ? "text-amber-300" : ""}`}>{m[v]}</p>
       {v === "agree" && <p className="border-l-2 border-amber-300/60 pl-3 text-sm text-muted-foreground italic">{t.eggs.galileo}</p>}
+      <MotionPath motion={job.motion} />
       <p className="text-xs text-muted-foreground">
         <Gloss text={m.scale} />
         {cat && ` ${m.source}: ${cat.name}.`}

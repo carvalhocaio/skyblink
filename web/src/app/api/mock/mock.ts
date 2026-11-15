@@ -56,12 +56,26 @@ export function buildJob(id: string, origin: string): Job {
     motion: done
       ? {
           detector: "D6",
+          reference_season_id: 0,
           // Same drift the mock PNGs draw: the central star moves ~1.5 px north per season.
           seasons: frames.map((f, i) => ({
             season_id: i,
             frame_id: f.id,
             mid_date: f.mid_date,
-            offset: { dx_px: 0, dy_px: 1.5 * i, east_arcsec: 0, north_arcsec: 1.5 * i * 6.15, total_arcsec: 1.5 * i * 6.15 },
+            offset: {
+              dx_px: 0,
+              dy_px: 1.5 * i,
+              east_arcsec: 0,
+              north_arcsec: 1.5 * i * 6.15,
+              total_arcsec: 1.5 * i * 6.15,
+              total_err_arcsec: i ? 0.35 : 0,
+              east_err_arcsec: i ? 0.3 : 0,
+              north_err_arcsec: i ? 0.35 : 0,
+            },
+            predicted_offset: { east_arcsec: 0.4 * i, north_arcsec: 9.4 * i, total_arcsec: Math.hypot(0.4 * i, 9.4 * i) },
+            residual_sigma: i ? -0.5 : null,
+            peak_snr: 120,
+            drift_corrected: true,
           })),
           rate_arcsec_yr: { value: 10.47, error: 0.34 },
           catalog: { name: "SIMBAD", object: "NAME Barnard's star", predicted_rate_arcsec_yr: 10.65, rate_residual_sigma: -0.53 },

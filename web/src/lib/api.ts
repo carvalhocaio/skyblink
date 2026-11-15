@@ -20,18 +20,45 @@ export type Frame = {
 };
 
 /** Where the star sat in one season, measured from the images, relative to the reference season. */
+type XY = { east_arcsec: number; north_arcsec: number };
+
+// Mirrors SeasonMotionView in api/src/skyblink/api/schemas.py. Fields the mock omits are optional.
 export type SeasonMotion = {
   season_id: number;
   frame_id: string;
   mid_date: string;
-  offset: { dx_px: number; dy_px: number; east_arcsec: number; north_arcsec: number; total_arcsec: number };
+  epoch_date?: string;
+  peak_snr?: number;
+  drift_corrected?: boolean;
+  offset: XY & {
+    dx_px: number;
+    dy_px: number;
+    total_arcsec: number;
+    total_err_arcsec: number;
+    east_err_arcsec?: number;
+    north_err_arcsec?: number;
+    error_components?: { statistical: XY; alignment: XY };
+  };
+  predicted_offset?: (XY & { total_arcsec: number }) | null;
+  residual_sigma?: number | null;
 };
 
 export type Motion = {
   detector: string;
+  reference_season_id?: number;
   seasons?: SeasonMotion[];
   rate_arcsec_yr: { value: number; error: number };
-  catalog: { name: string; object: string; predicted_rate_arcsec_yr: number; rate_residual_sigma: number } | null;
+  catalog: {
+    name: string;
+    object: string;
+    coordinates_source?: string;
+    pmra_mas_yr?: number;
+    pmdec_mas_yr?: number;
+    parallax_mas?: number | null;
+    radial_velocity_km_s?: number | null;
+    predicted_rate_arcsec_yr: number;
+    rate_residual_sigma: number;
+  } | null;
   catalog_reason: string | null;
 };
 

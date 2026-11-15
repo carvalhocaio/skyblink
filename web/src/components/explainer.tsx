@@ -190,7 +190,8 @@ export function Explainer() {
 
   return (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] lg:items-start">
-      <div className="overflow-hidden rounded-xl border bg-black shadow-[0_0_80px_-30px_oklch(0.85_0.13_205/0.5)]">
+      <div className="relative overflow-hidden rounded-xl border bg-black shadow-[0_0_80px_-30px_oklch(0.85_0.13_205/0.5)]">
+        <span className="absolute top-2 right-2 z-10 rounded-full border border-white/15 bg-black/70 px-2.5 py-1 font-mono text-[10px] tracking-widest text-white/70 uppercase">{h.illustration}</span>
         <svg key={scene} viewBox="0 0 320 200" className="ex-scene block w-full" role="img" aria-label={`${h.scenes[scene].title}. ${h.scenes[scene].text}`}>
           <Scene i={scene} />
         </svg>

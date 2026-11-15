@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, ChevronLeft, ChevronRight, Pause, Play, Share2, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, GitCompareArrows, Pause, Play, Share2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { formatMonth as month, type Frame } from "@/lib/api";
+import { formatMonth as month, type Frame, type Motion } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { Gloss } from "@/components/gloss";
 import { useEggs } from "@/lib/eggs";
@@ -26,9 +26,10 @@ type Props = {
   waiting: boolean;
   object?: { name: string; index: number };
   center?: { ra: number; dec: number };
+  motion?: Motion | null;
 };
 
-export function Player({ frames, waiting, object, center }: Props) {
+export function Player({ frames, waiting, object, center, motion }: Props) {
   const { t } = useT();
   const p = t.player;
   // A PNG that fails to load is treated like a frame the server could not build.
@@ -41,6 +42,10 @@ export function Player({ frames, waiting, object, center }: Props) {
   const n = ready.length;
   const current = Math.min(index, n - 1);
   const animating = playing && n > 1;
+  // First ↔ last: blinking only the two ends makes a sub-pixel drift easier to see than the full loop.
+  const [compare, setCompare] = useState(false);
+  const seq = compare && n > 2 ? [0, n - 1] : Array.from({ length: n }, (_, i) => i);
+  const advance = (i: number, d: number) => seq[(seq.indexOf(Math.min(i, n - 1)) + d + seq.length) % seq.length];
   const { unlock } = useEggs();
   const [uncertain, setUncertain] = useState(false);
   const [width, setWidth] = useState(0);
@@ -70,13 +75,14 @@ export function Player({ frames, waiting, object, center }: Props) {
 
   useEffect(() => {
     if (!animating) return;
-    const id = setInterval(() => setIndex((i) => (Math.min(i, n - 1) + 1) % n), speed);
+    const id = setInterval(() => setIndex((i) => advance(i, 1)), speed);
     return () => clearInterval(id);
-  }, [animating, speed, n]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- advance depends only on n and compare
+  }, [animating, speed, n, compare]);
 
   const step = (d: number) => {
     setPlaying(false);
-    setIndex((i) => (Math.min(i, n - 1) + d + n) % n);
+    setIndex((i) => advance(i, d));
   };
 
   useEffect(() => {
@@ -95,6 +101,13 @@ export function Player({ frames, waiting, object, center }: Props) {
   });
 
   if (n === 0) return null;
+
+  const frame = ready[current];
+  const fmt = (x: number) => x.toLocaleString(t.locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  // The measured shift of this picture from the reference season, straight from the API (null when not measured).
+  const ref = motion?.seasons?.find((s) => s.season_id === motion.reference_season_id);
+  const here = motion?.seasons?.find((s) => s.frame_id === frame.id);
+  const shift = !here || !ref ? null : here === ref ? p.reference : p.moved(fmt(here.offset.total_arcsec), fmt(here.offset.total_err_arcsec), month(ref.mid_date, t.locale));
 
   return (
     <div ref={root} className="space-y-3">
@@ -120,11 +133,15 @@ export function Player({ frames, waiting, object, center }: Props) {
           />
         ))}
         <Reticle uncertain={uncertain} />
+        <span className="absolute top-2 right-2 flex items-center gap-1.5 rounded bg-black/70 px-2 py-1 font-mono text-[10px] tracking-widest text-white uppercase">
+          <span aria-hidden className="size-1.5 rounded-full bg-primary" />
+          {p.real}
+        </span>
         <div className="absolute top-2 left-2 flex items-center gap-1 rounded bg-black/70 px-2 py-1 font-mono text-sm text-white">
           {/* The year rolls over like an odometer as the flipbook crosses into a new year. */}
-          {new Date(ready[current].mid_date).toLocaleDateString(t.locale, { month: "short", timeZone: "UTC" })}
-          <Counter value={new Date(ready[current].mid_date).getUTCFullYear()} format={{ useGrouping: false }} intro={false} fontSize="0.875rem" duration={0.5} />
-          <span>· {ready[current].detector} · {um(ready[current].wavelength_um, t.locale)}</span>
+          {new Date(frame.mid_date).toLocaleDateString(t.locale, { month: "short", timeZone: "UTC" })}
+          <Counter value={new Date(frame.mid_date).getUTCFullYear()} format={{ useGrouping: false }} intro={false} fontSize="0.875rem" duration={0.5} />
+          <span>· {frame.detector} · {um(frame.wavelength_um, t.locale)}</span>
         </div>
         {center && width > 0 && <Crosshair containerRef={view} color="#22d3ee" lineStyle="dashed" gap={10} opacity={0.75} targetEffect="none" formatCoordinates={coords} />}
         <div aria-label={p.compass} role="img" className="absolute right-2 bottom-2 rounded bg-black/70 px-2 py-1 font-mono text-xs text-white">
@@ -166,6 +183,21 @@ export function Player({ frames, waiting, object, center }: Props) {
             </Button>
           ))}
         </div>
+        <Button
+          variant={compare ? "secondary" : "outline"}
+          size="sm"
+          aria-pressed={compare}
+          disabled={n < 3}
+          title={p.compareHint}
+          onClick={() => {
+            setCompare((c) => !c);
+            setIndex(0);
+          }}
+          className="ml-2"
+        >
+          <GitCompareArrows aria-hidden />
+          {p.compare}
+        </Button>
         <span role="status" className="sr-only">
           {copied === "copied" ? p.copied : copied === "failed" ? p.copyFailed : ""}
         </span>
@@ -184,6 +216,7 @@ export function Player({ frames, waiting, object, center }: Props) {
                 type="button"
                 disabled={i < 0}
                 aria-current={i === current ? "true" : undefined}
+                title={f.status === "ready" ? p.exposures(f.n_exposures_used, f.n_exposures_available) : undefined}
                 onClick={() => {
                   setPlaying(false);
                   setIndex(i);
@@ -198,6 +231,16 @@ export function Player({ frames, waiting, object, center }: Props) {
           );
         })}
       </ol>
+      <p className="text-center text-sm text-muted-foreground">
+        <Gloss text={`${frame.detector} · ${um(frame.wavelength_um, t.locale)} · ${p.exposures(frame.n_exposures_used, frame.n_exposures_available)}`} />
+        {shift && (
+          <>
+            {" · "}
+            <span className="text-foreground tabular-nums">{shift}</span>
+          </>
+        )}
+      </p>
+      {compare && <p className="text-center text-xs text-muted-foreground">{p.compareHint}</p>}
       <div className="rounded-xl border bg-card/70 backdrop-blur-sm p-5 text-sm text-muted-foreground">
         <p className="font-medium text-foreground">{object ? object.name : p.whatTitle}</p>
         {object ? (
@@ -217,7 +260,7 @@ export function Player({ frames, waiting, object, center }: Props) {
   );
 }
 
-function Reticle({ uncertain }: { uncertain: boolean }) {
+export function Reticle({ uncertain }: { uncertain: boolean }) {
   return (
     <svg viewBox="0 0 100 100" className={`pointer-events-none absolute inset-0 size-full ${uncertain ? "uncertain" : ""}`} aria-hidden>
       <g stroke="#22d3ee" strokeWidth="0.6" opacity="0.85">
