@@ -123,6 +123,14 @@ development).
 SPHEREx data from the NASA/IPAC Infrared Science Archive (IRSA). Catalog astrometry from SIMBAD (CDS, Strasbourg),
 which for these targets comes from Gaia (ESA). Licensed under the [MIT License](LICENSE).
 
+## Third-party code
+
+- The five components `ClickSpark`, `Counter`, `Crosshair`, `FlipCard` and `StarBorder` in
+  [`web/src/components`](web/src/components) come from [React Bits](https://reactbits.dev), licensed MIT + Commons
+  Clause. They are not covered by this repository's MIT license.
+- The interface also uses [Motion](https://motion.dev) for animation and [three.js](https://threejs.org) for the 3D
+  SPHEREx model, as npm dependencies under their own licenses.
+
 ## Use of Super Intelligence (SI)
 
 The backend in `api/` (code, tests, Dockerfile, Fly.io configuration and deploy), this README and the demo images in
