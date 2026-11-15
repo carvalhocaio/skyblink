@@ -64,10 +64,10 @@ function Home() {
   const { job, error, inputError } = useJob(target, run);
   const frames = job?.frames.filter((f) => f.detector === DETECTOR) ?? [];
   const featured = findTarget(target?.ra, target?.dec);
-  const name = featured?.name;
+  const name = featured && t.pick.names[TARGETS.indexOf(featured)];
 
   useEffect(() => {
-    document.documentElement.lang = lang;
+    document.documentElement.lang = lang === "pt" ? "pt-BR" : "en";
   }, [lang]);
 
   // Opened with ?ra=&dec= on a phone: the player sits far below the hero, so bring it into view.
@@ -161,7 +161,6 @@ function Home() {
                   type="button"
                   lang={code}
                   aria-pressed={lang === code}
-                  aria-label={LANGS[code]}
                   title={LANGS[code]}
                   onClick={() => lang !== code && go({ lang: code })}
                   className={`min-h-9 min-w-11 rounded-full px-3 text-xs font-semibold tracking-wider transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50 ${
@@ -169,6 +168,7 @@ function Home() {
                   }`}
                 >
                   {code.toUpperCase()}
+                  <span className="sr-only"> {LANGS[code]}</span>
                 </button>
               ))}
             </div>
@@ -201,7 +201,7 @@ function Home() {
           <div className={`${WRAP} py-8`}>
             <Button
               size="lg"
-              className="h-12 w-full rounded-full text-[15px]"
+              className="h-auto min-h-12 py-2 whitespace-normal text-balance w-full rounded-full text-[15px]"
               onClick={() => {
                 setMenu(false);
                 showBarnard();
@@ -227,7 +227,7 @@ function Home() {
             <p className="fade-up mt-7 max-w-xl text-lg leading-relaxed text-muted-foreground" style={{ animationDelay: "0.3s" }}>
               {t.hero.text}
             </p>
-            <div className="fade-up mt-9 flex flex-wrap items-center gap-3" style={{ animationDelay: "0.45s" }}>
+            <div className="fade-up mt-9 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center" style={{ animationDelay: "0.45s" }}>
               {/* A star laps the main button: the one action that shows the whole idea. */}
               <StarBorder
                 onClick={showBarnard}
@@ -237,11 +237,11 @@ function Home() {
                 backgroundColor="var(--primary)"
                 textColor="var(--primary-foreground)"
                 borderColor="transparent"
-                className="h-12 px-6 text-[15px] transition-transform hover:-translate-y-0.5 active:translate-y-0"
+                className="min-h-12 w-full px-6 text-[15px] text-balance whitespace-normal transition-transform hover:-translate-y-0.5 active:translate-y-0 sm:w-auto"
               >
                 {t.hero.cta}
               </StarBorder>
-              <a href="#how" className="inline-flex min-h-12 items-center gap-2 rounded-full border px-5 text-[15px] transition-colors hover:border-white/30 hover:bg-white/5">
+              <a href="#how" className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full border px-5 text-[15px] transition-colors hover:border-white/30 hover:bg-white/5 sm:w-auto">
                 {t.hero.secondary} <ArrowRight className="size-4" aria-hidden />
               </a>
             </div>
@@ -285,7 +285,7 @@ function Home() {
                       <p className="text-lg font-medium">{t.watch.empty}</p>
                       <p className="max-w-sm text-sm text-muted-foreground">{t.watch.emptyHint}</p>
                     </div>
-                    <Button size="lg" className="relative h-12 rounded-full px-6 text-[15px] transition-transform hover:-translate-y-0.5 active:translate-y-0" onClick={showBarnard}>
+                    <Button size="lg" className="relative h-auto min-h-12 py-2 whitespace-normal text-balance rounded-full px-6 text-[15px] transition-transform hover:-translate-y-0.5 active:translate-y-0" onClick={showBarnard}>
                       {t.hero.cta}
                     </Button>
                   </div>
@@ -307,7 +307,7 @@ function Home() {
                     key={`${targetKey}#${run}`}
                     frames={frames}
                     waiting={job.status !== "done"}
-                    object={featured && { name: featured.name, index: TARGETS.indexOf(featured) }}
+                    object={featured && name ? { name, index: TARGETS.indexOf(featured) } : undefined}
                     center={target ?? undefined}
                   />
                 )}
@@ -340,7 +340,7 @@ function Home() {
               SkyBlink
             </p>
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">{t.hero.tagline}</p>
-            <Button size="lg" variant="outline" className="mt-6 h-12 rounded-full px-6 text-[15px] transition hover:-translate-y-0.5 hover:border-primary/60 active:translate-y-0" onClick={showBarnard}>
+            <Button size="lg" variant="outline" className="mt-6 h-auto min-h-12 py-2 whitespace-normal text-balance rounded-full px-6 text-[15px] transition hover:-translate-y-0.5 hover:border-primary/60 active:translate-y-0" onClick={showBarnard}>
               {t.hero.cta}
             </Button>
           </div>

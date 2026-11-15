@@ -32,9 +32,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`dark ${mona.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-background text-foreground">{children}</body>
+      <head>
+        {/* The page shell is static, so ?lang=pt is applied before first paint: browsers, screen readers and
+            Chrome's translate prompt then see Portuguese. home.tsx keeps it in sync on language switches. */}
+        <script dangerouslySetInnerHTML={{ __html: `if(new URLSearchParams(location.search).get("lang")==="pt")document.documentElement.lang="pt-BR"` }} />
+      </head>
+      <body className="min-h-full flex flex-col overflow-x-clip bg-background text-foreground">{children}</body>
     </html>
   );
 }

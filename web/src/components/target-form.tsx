@@ -60,7 +60,7 @@ export function TargetForm({ initial, error, onSubmit }: Props) {
                 />
                 <span className="min-w-0 flex-1">
                   <span className="flex items-start justify-between gap-3">
-                    <span className="text-2xl font-medium tracking-tight md:text-[1.75rem]">{x.name}</span>
+                    <span className="text-2xl font-medium tracking-tight md:text-[1.75rem]">{p.names[i]}</span>
                     <ArrowUpRight
                       className={`mt-1 size-6 shrink-0 transition-all ${active ? "opacity-100" : "-translate-x-1 opacity-0 group-hover:translate-x-0 group-hover:opacity-60"}`}
                       strokeWidth={1}
@@ -87,7 +87,7 @@ export function TargetForm({ initial, error, onSubmit }: Props) {
           onSubmit={(e) => {
             e.preventDefault();
             const f = new FormData(e.currentTarget);
-            const x = { ra: parseAngle(String(f.get("ra")), true), dec: parseAngle(String(f.get("dec")), false), fov: Number(f.get("fov")) };
+            const x = { ra: parseAngle(String(f.get("ra")), true), dec: parseAngle(String(f.get("dec")), false), fov: Number(String(f.get("fov")).replace(",", ".")) };
             const ok = x.ra >= 0 && x.ra < 360 && Math.abs(x.dec) <= 90 && x.fov >= 1 && x.fov <= 15;
             setBad(!ok);
             if (ok) onSubmit(x);

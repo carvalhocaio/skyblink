@@ -23,6 +23,7 @@ const en = {
   },
   pick: {
     title: "1. Pick something to look at",
+    names: ["Barnard’s Star", "Epsilon Indi B", "WISE 0855", "RW Aurigae", "R Draconis"],
     move: "Watch it move",
     brightness: "Varies in brightness · not measured yet",
     stories: [
@@ -34,13 +35,13 @@ const en = {
     ],
     custom: "I want to choose my own spot in the sky",
     customHelp:
-      "Astronomers locate things with two numbers, like longitude and latitude on Earth: RA and Dec. You can paste them straight from Wikipedia. Wikipedia lists positions for the year 2000. Nearby fast stars have moved since then (Barnard's Star by about 4.5′), so use the featured buttons for them, or zoom out to 15. RA works in hours (17h 57m 48s) or degrees (269.45); Dec works like +4° 41′ 36″ or 4.69.",
+      "Astronomers locate things with two numbers, like longitude and latitude on Earth: RA and Dec. You can paste them straight from Wikipedia. Wikipedia lists positions for the year 2000. Nearby fast stars have moved since then (Barnard's Star by about 4.5′), so use the featured buttons for them, or widen the field to 15′. RA works in hours (17h 57m 48s) or degrees (269.45); Dec works like +4° 41′ 36″ or 4.69.",
     ra: "RA",
     dec: "Dec",
-    fov: "Zoom (arcmin)",
-    fovHelp: "Zoom is the width of the picture, from 1 to 15 arcmin. The full Moon is about 30 arcmin wide; 6 is a good start.",
+    fov: "Field width (′)",
+    fovHelp: "How much sky the picture shows, from 1′ to 15′ (arcminutes). The full Moon is about 30′ wide; 6 is a good start.",
     submit: "Show me this spot",
-    inputError: "Check the values: RA 0–360° or 0–24h, Dec −90–90°, zoom 1–15 arcmin.",
+    inputError: "Check the values: RA 0–360° or 0–24h, Dec −90–90°, field width 1–15′.",
     speedNote: "Featured stars open instantly; a new spot takes about a minute.",
   },
   explore: {
@@ -49,7 +50,7 @@ const en = {
   },
   watch: {
     title: "2. Watch the sky blink",
-    empty: "Pick a star on the left to start.",
+    empty: "Pick a star to start.",
     emptyHint: "Not sure? Try Barnard’s Star, the fastest star in our sky.",
     starting: "Getting started…",
     networkError: "We couldn’t reach the SkyBlink server. Check your connection and try again.",
@@ -473,6 +474,7 @@ const pt: typeof en = {
   },
   pick: {
     title: "1. Escolha o que observar",
+    names: ["Estrela de Barnard", "Epsilon Indi B", "WISE 0855", "RW Aurigae", "R Draconis"],
     move: "Veja ela se mover",
     brightness: "Brilho variável · ainda não medido",
     stories: [
@@ -484,13 +486,13 @@ const pt: typeof en = {
     ],
     custom: "Quero escolher meu próprio ponto no céu",
     customHelp:
-      "Astrônomos localizam objetos com dois números, como longitude e latitude na Terra: RA e Dec. Dá para colar direto da Wikipédia. A Wikipédia mostra as posições do ano 2000. Estrelas próximas e rápidas já se moveram desde então (a Estrela de Barnard, cerca de 4,5′), então use os botões prontos para elas ou aumente o zoom para 15. RA aceita horas (17h 57m 48s) ou graus (269.45); Dec aceita +4° 41′ 36″ ou 4.69.",
+      "Astrônomos localizam objetos com dois números, como longitude e latitude na Terra: RA e Dec. Dá para colar direto da Wikipédia. A Wikipédia mostra as posições do ano 2000. Estrelas próximas e rápidas já se moveram desde então (a Estrela de Barnard, cerca de 4,5′), então use os botões prontos para elas ou aumente a largura para 15′. RA aceita horas (17h 57m 48s) ou graus (269,45); Dec aceita +4° 41′ 36″ ou 4,69.",
     ra: "RA",
     dec: "Dec",
-    fov: "Zoom (arcmin)",
-    fovHelp: "Zoom é a largura da imagem, de 1 a 15 arcmin. A Lua cheia mede cerca de 30 arcmin; 6 é um bom começo.",
+    fov: "Largura do campo (′)",
+    fovHelp: "Quanto céu a imagem mostra, de 1′ a 15′ (minutos de arco). A Lua cheia mede cerca de 30′; 6 é um bom começo.",
     submit: "Mostrar este ponto",
-    inputError: "Confira os valores: RA 0–360° ou 0–24h, Dec −90–90°, zoom 1–15 arcmin.",
+    inputError: "Confira os valores: RA 0–360° ou 0–24h, Dec −90–90°, largura 1–15′.",
     speedNote: "As estrelas em destaque abrem na hora; um ponto novo leva cerca de um minuto.",
   },
   explore: {
@@ -499,7 +501,7 @@ const pt: typeof en = {
   },
   watch: {
     title: "2. Veja o céu piscar",
-    empty: "Escolha uma estrela ao lado para começar.",
+    empty: "Escolha uma estrela para começar.",
     emptyHint: "Na dúvida? Experimente a Estrela de Barnard, a estrela mais rápida do nosso céu.",
     starting: "Começando…",
     networkError: "Não conseguimos falar com o servidor do SkyBlink. Verifique sua conexão e tente de novo.",
