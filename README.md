@@ -137,3 +137,6 @@ The backend in `api/` (code, tests, Dockerfile, Fly.io configuration and deploy)
 `docs/demo/` were produced with AI assistance (Claude Code, Anthropic), under the direction and review of the team.
 Data-format decisions were checked against real IRSA responses and FITS headers before being coded, and the
 scientific results were compared with SIMBAD/Gaia predictions at the same epochs.
+
+Frontend: the web interface was also built with Claude Code, from the team's specifications and under the team's
+review.
