@@ -328,6 +328,13 @@ function Home() {
                 )}
                 {target && !job && !error && !inputError && <p className="text-muted-foreground">{t.watch.starting}</p>}
                 {job && !error && job.status !== "done" && job.status !== "failed" && <JobProgress job={job} />}
+                {/* Holds the player's place (picture + controls) until the first picture arrives: otherwise the page,
+                    already scrolled to the player, jumps when it appears. */}
+                {target && !error && !inputError && job?.status !== "failed" && !noCoverage && !allFailed && readyCount === 0 && (
+                  <div aria-hidden className="min-h-[calc(100svh-6rem)] lg:min-h-0">
+                    <div className="mx-auto aspect-square w-full max-w-[472px] animate-pulse rounded-xl border bg-black" />
+                  </div>
+                )}
                 {job && (
                   <Player
                     key={`${targetKey}#${run}`}
