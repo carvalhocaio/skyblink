@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Check, ChevronLeft, ChevronRight, Crosshair as Target, GitCompareArrows, Pause, Play, Share2, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Check, ChevronLeft, ChevronRight, Crosshair as Target, Diff, GitCompareArrows, Pause, Play, Share2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatMonth as month, type Frame, type Motion } from "@/lib/api";
 import { useT } from "@/lib/i18n";
@@ -10,6 +10,7 @@ import { useEggs } from "@/lib/eggs";
 import { formatDec, formatRA, skyAt } from "@/lib/sky";
 import Crosshair from "@/components/Crosshair";
 import Counter from "@/components/Counter";
+import { DIFF_BEFORE, DIFF_NOW, DiffImage } from "@/components/diff-image";
 
 const SPEEDS = [1200, 600, 250];
 // Same identities as the "Where did it go?" chart (cyan measured, amber predicted), lighter to stand out on the black sky.
@@ -48,6 +49,9 @@ export function Player({ frames, waiting, object, center, motion }: Props) {
   // First ↔ last: blinking only the two ends makes a sub-pixel drift easier to see than the full loop.
   const [compare, setCompare] = useState(false);
   const [markers, setMarkers] = useState(true);
+  const [diff, setDiff] = useState(false);
+  const [diffError, setDiffError] = useState(false);
+  const failDiff = useCallback(() => setDiffError(true), []);
   const seq = compare && n > 2 ? [0, n - 1] : Array.from({ length: n }, (_, i) => i);
   const advance = (i: number, d: number) => seq[(seq.indexOf(Math.min(i, n - 1)) + d + seq.length) % seq.length];
   const { unlock } = useEggs();
@@ -119,6 +123,7 @@ export function Player({ frames, waiting, object, center, motion }: Props) {
   const po = here?.predicted_offset;
   const predictedAt = ref?.position_px && po?.dx_px !== undefined && po.dy_px !== undefined ? [ref.position_px[0] + po.dx_px, ref.position_px[1] + po.dy_px] : null;
   const toSvg = ([x, y]: number[]) => [x + 0.5, width - 0.5 - y];
+  const showDiff = diff && !diffError;
 
   return (
     <div ref={root} className="space-y-3">
@@ -143,6 +148,7 @@ export function Player({ frames, waiting, object, center, motion }: Props) {
             style={{ imageRendering: "pixelated" }}
           />
         ))}
+        {showDiff && current > 0 && <DiffImage first={ready[0].image_url!} current={frame.image_url!} onError={failDiff} />}
         {markers && width > 0 && (measuredAt || predictedAt) && (
           <svg viewBox={`0 0 ${width} ${width}`} className="pointer-events-none absolute inset-0 size-full" aria-hidden>
             {predictedAt && (() => {
@@ -155,10 +161,15 @@ export function Player({ frames, waiting, object, center, motion }: Props) {
             })()}
           </svg>
         )}
+        {showDiff && current === 0 && (
+          <div className="absolute inset-x-6 bottom-12 text-center text-sm text-white">
+            <span className="rounded bg-black/80 px-2 py-1">{p.diffFirst}</span>
+          </div>
+        )}
         <Reticle uncertain={uncertain} />
         <span className="absolute top-2 right-2 flex items-center gap-1.5 rounded bg-black/70 px-2 py-1 font-mono text-[10px] tracking-widest text-white uppercase">
           <span aria-hidden className="size-1.5 rounded-full bg-primary" />
-          {p.real}
+          {showDiff ? p.diffBadge : p.real}
         </span>
         <div className="absolute top-2 left-2 flex items-center gap-1 rounded bg-black/70 px-2 py-1 font-mono text-sm text-white">
           {/* The year rolls over like an odometer as the flipbook crosses into a new year. */}
@@ -221,6 +232,18 @@ export function Player({ frames, waiting, object, center, motion }: Props) {
           <GitCompareArrows aria-hidden />
           {p.compare}
         </Button>
+        <Button
+          variant={showDiff ? "secondary" : "outline"}
+          size="sm"
+          aria-pressed={showDiff}
+          disabled={n < 2 || diffError}
+          title={diffError ? p.diffError : p.differenceHint}
+          onClick={() => setDiff((x) => !x)}
+          className="ml-2"
+        >
+          <Diff aria-hidden />
+          {p.difference}
+        </Button>
         {canMark && (
           <Button variant={markers ? "secondary" : "outline"} size="sm" aria-pressed={markers} title={p.markersHint} onClick={() => setMarkers((m) => !m)} className="ml-2">
             <Target aria-hidden />
@@ -270,6 +293,22 @@ export function Player({ frames, waiting, object, center, motion }: Props) {
         )}
       </p>
       {compare && <p className="text-center text-xs text-muted-foreground">{p.compareHint}</p>}
+      {showDiff && (
+        <div className="space-y-1 text-center text-xs text-muted-foreground">
+          <p className="flex flex-wrap justify-center gap-x-4 gap-y-1">
+            <span className="flex items-center gap-1.5">
+              <span aria-hidden className="size-2.5 rounded-sm" style={{ background: `rgb(${DIFF_NOW})` }} />
+              {p.diffNow}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span aria-hidden className="size-2.5 rounded-sm" style={{ background: `rgb(${DIFF_BEFORE})` }} />
+              {p.diffBefore}
+            </span>
+          </p>
+          <p>{p.diffNote}</p>
+        </div>
+      )}
+      {diffError && <p className="text-center text-xs text-muted-foreground">{p.diffError}</p>}
       {markers && (measuredAt || predictedAt) && (
         <p className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
           {measuredAt && (

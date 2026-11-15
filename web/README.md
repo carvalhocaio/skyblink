@@ -36,6 +36,7 @@ targets, a custom RA/Dec, `?lang=pt`, a 375 px wide window, keyboard only, and r
   How-it-works scenes, the life-of-stars scrubber and the Blink Hunter game are marked as illustration or simulation.
 - **Every number shown comes from the API.** The per-picture shift reads `motion.seasons[].offset`; the
   Investigate panel reads the job's `alerts` and `motion`. Nothing is computed from pixels in the browser.
+- The difference view subtracts the displayed 8-bit PNGs (asinh-stretched, clipped), so it is labelled a visual aid.
 - The hero frames in `public/demo/` are the real D6 frames of Barnard's Star saved from the production API.
 
 ## Where things are
@@ -47,6 +48,7 @@ targets, a custom RA/Dec, `?lang=pt`, a 375 px wide window, keyboard only, and r
 | `src/lib/use-job.ts` | Creates a job and polls it, with retries and stall detection |
 | `src/components/player.tsx` | The time-lapse player: timeline, speeds, First ↔ last, shift readout, crosshair |
 | `src/components/motion-card.tsx` | Measured motion vs the catalog prediction |
+| `src/components/diff-image.tsx` | "Difference": current − first picture drawn in the browser (visual aid, not a measurement) |
 | `src/components/motion-path.tsx` | "Where did it go?": measured path per season vs the catalog prediction (SVG) |
 | `src/components/data-drawer.tsx` | "Show the data": every API field as tables, plus JSON and CSV downloads |
 | `src/components/investigate.tsx` | "Can we trust what we see?": three questions answered from the job |
