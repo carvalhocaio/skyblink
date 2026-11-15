@@ -59,19 +59,36 @@ function Home() {
 
   const ra = num(params.get("ra"));
   const dec = num(params.get("dec"));
-  const target: Target | null = ra !== null && dec !== null ? { ra, dec, fov: num(params.get("fov")) ?? 6 } : null;
+  const fov = params.has("fov") ? num(params.get("fov")) : 6;
+  // Same limits as the custom-spot form: a hand-edited or truncated link shows a message instead of a blank panel.
+  const valid = ra !== null && dec !== null && fov !== null && ra >= 0 && ra < 360 && Math.abs(dec) <= 90 && fov >= 1 && fov <= 15;
+  const target: Target | null = valid ? { ra, dec, fov } : null;
+  const badLink = !valid && (params.has("ra") || params.has("dec"));
   const targetKey = target ? `${target.ra},${target.dec},${target.fov}` : "";
   const { job, error, inputError } = useJob(target, run);
   const frames = job?.frames.filter((f) => f.detector === DETECTOR) ?? [];
+  // Nothing to show or measure: the alert says why, so skip the "couldn't measure the motion" card.
+  const noCoverage = job?.status === "done" && (frames.length === 0 || job.alerts.some((a) => a.code === "NO_COVERAGE"));
+  const allFailed = job?.status === "done" && frames.length > 0 && frames.every((f) => f.status === "failed");
+  // One live region that is always on the page, so screen readers hear each step, including the end.
+  const readyCount = frames.filter((f) => f.status === "ready").length;
+  const liveStatus =
+    !target || error || inputError || job?.status === "failed"
+      ? ""
+      : !job
+        ? t.watch.starting
+        : job.status === "done"
+          ? `${t.status.done}. ${t.status.ready(readyCount, frames.length)}`
+          : `${t.status[job.status]} ${job.progress.frames_total ? t.status.ready(job.progress.frames_done, job.progress.frames_total) : ""}`;
   const featured = findTarget(target?.ra, target?.dec);
-  const name = featured?.name;
+  const name = featured && t.pick.names[TARGETS.indexOf(featured)];
 
   useEffect(() => {
-    document.documentElement.lang = lang;
+    document.documentElement.lang = lang === "pt" ? "pt-BR" : "en";
   }, [lang]);
 
   // Opened with ?ra=&dec= on a phone: the player sits far below the hero, so bring it into view.
-  const openedWithTarget = useRef(target !== null);
+  const openedWithTarget = useRef(target !== null || badLink);
   useEffect(() => {
     if (!openedWithTarget.current || !matchMedia("(max-width: 1023px)").matches) return;
     const smooth = !matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -147,7 +164,7 @@ function Home() {
             <span aria-hidden className="logo-dot" />
             SkyBlink
           </button>
-          <nav aria-label="Sections" className="flex items-center gap-1 text-sm text-muted-foreground">
+          <nav aria-label={t.foot.sections} className="flex items-center gap-1 text-sm text-muted-foreground">
             {navLinks.map(([href, label]) => (
               <a key={href} href={href} className="hidden rounded-full px-3 py-2 transition-colors hover:bg-white/5 hover:text-foreground lg:block">
                 {label}
@@ -161,7 +178,6 @@ function Home() {
                   type="button"
                   lang={code}
                   aria-pressed={lang === code}
-                  aria-label={LANGS[code]}
                   title={LANGS[code]}
                   onClick={() => lang !== code && go({ lang: code })}
                   className={`min-h-9 min-w-11 rounded-full px-3 text-xs font-semibold tracking-wider transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50 ${
@@ -169,6 +185,7 @@ function Home() {
                   }`}
                 >
                   {code.toUpperCase()}
+                  <span className="sr-only"> {LANGS[code]}</span>
                 </button>
               ))}
             </div>
@@ -176,7 +193,7 @@ function Home() {
               type="button"
               onClick={() => setMenu((m) => !m)}
               aria-expanded={menu}
-              aria-controls="mobile-menu"
+              aria-controls={menu ? "mobile-menu" : undefined}
               aria-label={menu ? t.nav.close : t.nav.menu}
               className="flex size-11 items-center justify-center rounded-full border bg-card/60 text-foreground transition-colors hover:border-white/30 active:scale-95 lg:hidden"
             >
@@ -201,7 +218,7 @@ function Home() {
           <div className={`${WRAP} py-8`}>
             <Button
               size="lg"
-              className="h-12 w-full rounded-full text-[15px]"
+              className="h-auto min-h-12 py-2 whitespace-normal text-balance w-full rounded-full text-[15px]"
               onClick={() => {
                 setMenu(false);
                 showBarnard();
@@ -213,7 +230,8 @@ function Home() {
         </nav>
       )}
 
-      <header ref={heroRef} className="relative overflow-hidden bg-black">
+      {/* While the full-screen menu is open, the page behind it is out of reach for focus and screen readers. */}
+      <header ref={heroRef} inert={menu} className="relative overflow-hidden bg-black">
         <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-24 bg-gradient-to-b from-transparent to-background" />
         <div className={`${WRAP} grid items-center gap-10 py-12 lg:min-h-[calc(100svh-4rem)] lg:grid-cols-[1.1fr_1fr] lg:py-16`}>
           <div className="relative z-10">
@@ -227,7 +245,7 @@ function Home() {
             <p className="fade-up mt-7 max-w-xl text-lg leading-relaxed text-muted-foreground" style={{ animationDelay: "0.3s" }}>
               {t.hero.text}
             </p>
-            <div className="fade-up mt-9 flex flex-wrap items-center gap-3" style={{ animationDelay: "0.45s" }}>
+            <div className="fade-up mt-9 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center" style={{ animationDelay: "0.45s" }}>
               {/* A star laps the main button: the one action that shows the whole idea. */}
               <StarBorder
                 onClick={showBarnard}
@@ -237,11 +255,11 @@ function Home() {
                 backgroundColor="var(--primary)"
                 textColor="var(--primary-foreground)"
                 borderColor="transparent"
-                className="h-12 px-6 text-[15px] transition-transform hover:-translate-y-0.5 active:translate-y-0"
+                className="min-h-12 w-full px-6 text-[15px] text-balance whitespace-normal transition-transform hover:-translate-y-0.5 active:translate-y-0 sm:w-auto"
               >
                 {t.hero.cta}
               </StarBorder>
-              <a href="#how" className="inline-flex min-h-12 items-center gap-2 rounded-full border px-5 text-[15px] transition-colors hover:border-white/30 hover:bg-white/5">
+              <a href="#how" className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full border px-5 text-[15px] transition-colors hover:border-white/30 hover:bg-white/5 sm:w-auto">
                 {t.hero.secondary} <ArrowRight className="size-4" aria-hidden />
               </a>
             </div>
@@ -253,7 +271,7 @@ function Home() {
         </div>
       </header>
 
-      <main id="main" tabIndex={-1} className="outline-none">
+      <main id="main" tabIndex={-1} inert={menu} className="outline-none">
         <section id="how" className={`${WRAP} space-y-10 ${PAD}`}>
           <SectionLabel n={1}>{t.nav.how}</SectionLabel>
           <h2 className="max-w-3xl text-3xl leading-[1.1] font-medium tracking-tight md:text-5xl">{t.how.title}</h2>
@@ -271,11 +289,19 @@ function Home() {
                 <TargetForm key={targetKey} initial={target} error={!!inputError} onSubmit={submit} />
               </ClickSpark>
 
-              <div id="watch" className="min-w-0 scroll-mt-20 space-y-4 lg:sticky lg:top-24 lg:self-start" aria-labelledby="watch-title">
+              <div id="watch" role="region" className="min-w-0 scroll-mt-20 space-y-4 lg:sticky lg:top-24 lg:self-start" aria-labelledby="watch-title">
                 <h3 id="watch-title" className={`text-muted-foreground ${MONO}`}>
                   {t.watch.title}
                   {name && <span className="text-foreground">: {name}</span>}
                 </h3>
+                <p role="status" className="sr-only">
+                  {liveStatus}
+                </p>
+                {(badLink || inputError) && (
+                  <Alert variant="destructive">
+                    <AlertDescription>{t.watch.badLink}</AlertDescription>
+                  </Alert>
+                )}
                 {!target && (
                   <div className="relative flex aspect-square flex-col items-center justify-center gap-6 overflow-hidden rounded-xl border bg-black p-8 text-center">
                     {/* eslint-disable-next-line @next/next/no-img-element -- real SPHEREx frame, upscaled pixel-exact */}
@@ -285,15 +311,15 @@ function Home() {
                       <p className="text-lg font-medium">{t.watch.empty}</p>
                       <p className="max-w-sm text-sm text-muted-foreground">{t.watch.emptyHint}</p>
                     </div>
-                    <Button size="lg" className="relative h-12 rounded-full px-6 text-[15px] transition-transform hover:-translate-y-0.5 active:translate-y-0" onClick={showBarnard}>
+                    <Button size="lg" className="relative h-auto min-h-12 py-2 whitespace-normal text-balance rounded-full px-6 text-[15px] transition-transform hover:-translate-y-0.5 active:translate-y-0" onClick={showBarnard}>
                       {t.hero.cta}
                     </Button>
                   </div>
                 )}
-                {(error || job?.status === "failed") && (
+                {(error || job?.status === "failed" || allFailed) && (
                   <Alert variant="destructive">
                     <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
-                      {error ? t.watch.networkError : t.watch.failed}
+                      {error === "network" ? t.watch.networkError : error === "server" ? t.watch.serverError : error === "slow" ? t.watch.slow : t.watch.failed}
                       <Button size="sm" variant="outline" onClick={() => setRun((r) => r + 1)}>
                         {t.watch.retry}
                       </Button>
@@ -301,17 +327,17 @@ function Home() {
                   </Alert>
                 )}
                 {target && !job && !error && !inputError && <p className="text-muted-foreground">{t.watch.starting}</p>}
-                {job && job.status !== "done" && job.status !== "failed" && <JobProgress job={job} />}
+                {job && !error && job.status !== "done" && job.status !== "failed" && <JobProgress job={job} />}
                 {job && (
                   <Player
                     key={`${targetKey}#${run}`}
                     frames={frames}
-                    waiting={job.status !== "done"}
-                    object={featured && { name: featured.name, index: TARGETS.indexOf(featured) }}
+                    waiting={!error && job.status !== "done"}
+                    object={featured && name ? { name, index: TARGETS.indexOf(featured) } : undefined}
                     center={target ?? undefined}
                   />
                 )}
-                {job && <MotionCard job={job} />}
+                {job && !noCoverage && !allFailed && <MotionCard job={job} />}
                 {job && <JobAlerts job={job} frames={frames} />}
               </div>
             </div>
@@ -332,7 +358,7 @@ function Home() {
         </section>
       </main>
 
-      <footer className="border-t bg-black/50">
+      <footer inert={menu} className="border-t bg-black/50">
         <div className={`${WRAP} grid gap-12 py-16 md:grid-cols-[1.4fr_1fr_1fr]`}>
           <div>
             <p className="flex items-center gap-2.5 text-2xl font-semibold tracking-tight">
@@ -340,7 +366,7 @@ function Home() {
               SkyBlink
             </p>
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">{t.hero.tagline}</p>
-            <Button size="lg" variant="outline" className="mt-6 h-12 rounded-full px-6 text-[15px] transition hover:-translate-y-0.5 hover:border-primary/60 active:translate-y-0" onClick={showBarnard}>
+            <Button size="lg" variant="outline" className="mt-6 h-auto min-h-12 py-2 whitespace-normal text-balance rounded-full px-6 text-[15px] transition hover:-translate-y-0.5 hover:border-primary/60 active:translate-y-0" onClick={showBarnard}>
               {t.hero.cta}
             </Button>
           </div>
@@ -363,6 +389,7 @@ function Home() {
                 <li key={l.href}>
                   <a href={l.href} target="_blank" rel="noopener noreferrer" className="group inline-flex min-h-10 items-center gap-1.5 text-sm transition-colors hover:text-primary">
                     {l.label}
+                    <span className="sr-only"> {t.foot.newTab}</span>
                     <ArrowUpRight className="size-3.5 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-primary" aria-hidden />
                   </a>
                 </li>

@@ -60,7 +60,7 @@ export function TargetForm({ initial, error, onSubmit }: Props) {
                 />
                 <span className="min-w-0 flex-1">
                   <span className="flex items-start justify-between gap-3">
-                    <span className="text-2xl font-medium tracking-tight md:text-[1.75rem]">{x.name}</span>
+                    <span className="text-2xl font-medium tracking-tight md:text-[1.75rem]">{p.names[i]}</span>
                     <ArrowUpRight
                       className={`mt-1 size-6 shrink-0 transition-all ${active ? "opacity-100" : "-translate-x-1 opacity-0 group-hover:translate-x-0 group-hover:opacity-60"}`}
                       strokeWidth={1}
@@ -87,17 +87,18 @@ export function TargetForm({ initial, error, onSubmit }: Props) {
           onSubmit={(e) => {
             e.preventDefault();
             const f = new FormData(e.currentTarget);
-            const x = { ra: parseAngle(String(f.get("ra")), true), dec: parseAngle(String(f.get("dec")), false), fov: Number(f.get("fov")) };
+            const x = { ra: parseAngle(String(f.get("ra")), true), dec: parseAngle(String(f.get("dec")), false), fov: Number(String(f.get("fov")).replace(",", ".")) };
             const ok = x.ra >= 0 && x.ra < 360 && Math.abs(x.dec) <= 90 && x.fov >= 1 && x.fov <= 15;
             setBad(!ok);
             if (ok) onSubmit(x);
           }}
         >
           <p id="spot-help" className="text-sm text-muted-foreground"><Gloss text={p.customHelp} /></p>
-          <div className="grid grid-cols-3 gap-3">
+          {/* Two columns on phones (field width on its own row), three from small tablets up. */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <Field name="ra" label={p.ra} value={initial?.ra} placeholder="17h 57m 48s" invalid={error || bad} />
             <Field name="dec" label={p.dec} value={initial?.dec} placeholder="+4° 41′ 36″" invalid={error || bad} />
-            <Field name="fov" label={p.fov} value={initial?.fov ?? 6} invalid={error || bad} />
+            <Field name="fov" label={p.fov} value={initial?.fov ?? 6} invalid={error || bad} className="col-span-2 sm:col-span-1" />
           </div>
           <p className="text-xs text-muted-foreground"><Gloss text={p.fovHelp} /></p>
           {(error || bad) && (
@@ -114,9 +115,9 @@ export function TargetForm({ initial, error, onSubmit }: Props) {
   );
 }
 
-function Field({ name, label, value, placeholder, invalid }: { name: string; label: string; value?: number; placeholder?: string; invalid: boolean }) {
+function Field({ name, label, value, placeholder, invalid, className = "" }: { name: string; label: string; value?: number; placeholder?: string; invalid: boolean; className?: string }) {
   return (
-    <div className="space-y-1.5">
+    <div className={`space-y-1.5 ${className}`}>
       <Label htmlFor={name}>{label}</Label>
       <Input id={name} name={name} type="text" required autoComplete="off" spellCheck={false} placeholder={placeholder} defaultValue={value} aria-invalid={invalid} aria-describedby={invalid ? "spot-error spot-help" : "spot-help"} />
     </div>

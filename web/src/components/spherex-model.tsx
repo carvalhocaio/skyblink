@@ -13,11 +13,14 @@ export function SpherexModel({ selected, onSelect, label }: Props) {
   const sel = useRef(selected);
   const pick = useRef(onSelect);
   const highlight = useRef<(i: number) => void>(() => {});
+  // The model turns on its own until the visitor takes over (drag or a part button), then it stays put.
+  const stopSpin = useRef<() => void>(() => {});
 
   useEffect(() => {
     pick.current = onSelect;
   }, [onSelect]);
   useEffect(() => {
+    if (sel.current !== selected) stopSpin.current();
     sel.current = selected;
     highlight.current(selected);
   }, [selected]);
@@ -118,7 +121,11 @@ export function SpherexModel({ selected, onSelect, label }: Props) {
       controls.autoRotate = !still;
       controls.autoRotateSpeed = 1.2;
       controls.target.set(0, 0, 0);
-      controls.addEventListener("start", () => (renderer.domElement.style.cursor = "grabbing"));
+      stopSpin.current = () => (controls.autoRotate = false);
+      controls.addEventListener("start", () => {
+        controls.autoRotate = false;
+        renderer.domElement.style.cursor = "grabbing";
+      });
       controls.addEventListener("end", () => (renderer.domElement.style.cursor = "grab"));
 
       highlight.current = (part: number) =>

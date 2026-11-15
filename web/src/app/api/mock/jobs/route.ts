@@ -1,6 +1,8 @@
-import { encodeId } from "../mock";
+import { encodeId, mockDisabled } from "../mock";
 
 export async function POST(req: Request) {
+  const disabled = mockDisabled();
+  if (disabled) return disabled;
   const { ra, dec, fov_arcmin = 6 } = await req.json().catch(() => ({}));
   const ok =
     typeof ra === "number" && ra >= 0 && ra <= 360 &&

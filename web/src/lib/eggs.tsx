@@ -117,7 +117,15 @@ export function EggsProvider({ children }: { children: ReactNode }) {
       {children}
       <EggTray toast={toast} />
       {show === "finale" && <Finale onPlay={() => setShow("game")} onClose={() => setShow((s) => (s === "finale" ? null : s))} />}
-      {show === "game" && <BlinkGame onClose={() => setShow(null)} />}
+      {show === "game" && (
+        <BlinkGame
+          onClose={() => {
+            setShow(null);
+            // The finale that opened the game is gone, so send focus back to the tray instead of the page top.
+            requestAnimationFrame(() => document.querySelector<HTMLElement>('[popovertarget="egg-panel"]')?.focus());
+          }}
+        />
+      )}
     </EggCtx.Provider>
   );
 }
@@ -148,7 +156,7 @@ function EggTray({ toast }: { toast: Egg | null }) {
       <button
         type="button"
         popoverTarget="egg-panel"
-        className={`fixed right-4 bottom-4 z-50 flex min-h-11 items-center gap-2 rounded-full border bg-card/80 px-4 font-mono text-xs backdrop-blur transition hover:-translate-y-0.5 ${
+        className={`fixed right-4 bottom-4 z-50 flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-full border bg-card/80 font-mono text-xs backdrop-blur transition hover:-translate-y-0.5 sm:px-4 ${
           found.size === EGGS.length ? "border-amber-200/50 hover:border-amber-200" : "hover:border-primary/50"
         }`}
         aria-label={`${g.tray}: ${found.size}/${EGGS.length}`}
@@ -158,7 +166,8 @@ function EggTray({ toast }: { toast: Egg | null }) {
         ) : (
           <Atom className={`size-4 text-primary ${found.size ? "" : "atom-idle"}`} aria-hidden />
         )}
-        <span className="tabular-nums">
+        {/* Phones: icon only, so the floating button covers less of the text under it (the label keeps the count). */}
+        <span className="hidden tabular-nums sm:inline">
           {found.size}/{EGGS.length}
         </span>
       </button>
@@ -166,6 +175,8 @@ function EggTray({ toast }: { toast: Egg | null }) {
       <div
         id="egg-panel"
         popover="auto"
+        role="dialog"
+        aria-label={g.tray}
         className="egg-panel fixed inset-auto right-4 bottom-18 m-0 max-h-[70vh] w-[min(24rem,calc(100vw-2rem))] overflow-y-auto rounded-xl border bg-card p-5 text-foreground shadow-2xl"
       >
         <p className="font-medium">{g.tray}</p>

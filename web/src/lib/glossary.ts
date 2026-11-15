@@ -14,7 +14,7 @@ export const GLOSSARY: Record<Lang, Entry[]> = {
     { re: /\blight-years?\b/i, title: "Light-year", text: "The distance light travels in a year, about 9.5 trillion km. Sunlight reaches us in just 8 minutes." },
     { re: /\bbrown dwarfs?\b/i, title: "Brown dwarf", text: "Too big to be a planet, too small to be a star: it never lights up like the Sun and slowly cools down." },
     { re: /\bred dwarfs?\b/i, title: "Red dwarf", text: "A small, cool star, the most common kind in our galaxy. They can shine for trillions of years." },
-    { re: /\bpixels?\b/i, title: "Pixel", text: "One square of a digital picture. Each SPHEREx pixel covers 6.2″ of sky, which is why stars look blocky." },
+    { re: /\bpixels?\b/i, title: "Pixel", text: "One square of a digital picture. Each SPHEREx pixel covers about 6″ of sky (6.15″), which is why stars look blocky." },
   ],
   pt: [
     { re: /\bRA\b/, title: "RA (ascensão reta)", text: "A longitude do céu. É contada em horas porque o céu dá uma volta por dia: 1 h = 15°." },
@@ -26,7 +26,7 @@ export const GLOSSARY: Record<Lang, Entry[]> = {
     { re: /\banos?-luz\b/i, title: "Ano-luz", text: "A distância que a luz percorre em um ano, uns 9,5 trilhões de km. A luz do Sol chega aqui em só 8 minutos." },
     { re: /\banãs? marro(?:m|ns)\b/i, title: "Anã marrom", text: "Grande demais para ser planeta, pequena demais para ser estrela: nunca acende como o Sol e vai esfriando devagar." },
     { re: /\banãs? vermelhas?\b/i, title: "Anã vermelha", text: "Uma estrela pequena e fria, o tipo mais comum na nossa galáxia. Pode brilhar por trilhões de anos." },
-    { re: /\bpixe(?:l|ls|is)\b/i, title: "Pixel", text: "Um quadradinho de uma imagem digital. Cada pixel do SPHEREx cobre 6,2″ de céu, por isso as estrelas parecem quadriculadas." },
+    { re: /\bpixe(?:l|ls|is)\b/i, title: "Pixel", text: "Um quadradinho de uma imagem digital. Cada pixel do SPHEREx cobre cerca de 6″ de céu (6,15″), por isso as estrelas parecem quadriculadas." },
   ],
 };
 

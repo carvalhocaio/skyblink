@@ -15,8 +15,11 @@ const SPEEDS = [1200, 600, 250];
 // SPHEREx pixels are 6.15″ wide, so one arcminute is about 9.8 pixels of the original image.
 const PX_PER_ARCMIN = 60 / 6.15;
 
-const label = (f: Frame, locale: string) =>
-  `${month(f.mid_date, locale)} · ${f.detector} · ${f.wavelength_um[0].toFixed(2)}–${f.wavelength_um[1].toFixed(2)} µm`;
+// Wavelengths in the visitor's language: 4.41 in English, 4,41 in Portuguese.
+const um = ([lo, hi]: [number, number], locale: string) =>
+  `${lo.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}–${hi.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} µm`;
+
+const label = (f: Frame, locale: string) => `${month(f.mid_date, locale)} · ${f.detector} · ${um(f.wavelength_um, locale)}`;
 
 type Props = {
   frames: Frame[];
@@ -28,9 +31,12 @@ type Props = {
 export function Player({ frames, waiting, object, center }: Props) {
   const { t } = useT();
   const p = t.player;
-  const ready = frames.filter((f) => f.status === "ready" && f.image_url);
+  // A PNG that fails to load is treated like a frame the server could not build.
+  const [broken, setBroken] = useState<ReadonlySet<string>>(new Set());
+  const ready = frames.filter((f) => f.status === "ready" && f.image_url && !broken.has(f.id));
   const [index, setIndex] = useState(0);
-  const [playing, setPlaying] = useState(true);
+  // Plays on its own unless the visitor asked for less motion; then Play starts it.
+  const [playing, setPlaying] = useState(() => typeof window === "undefined" || !matchMedia("(prefers-reduced-motion: reduce)").matches);
   const [speed, setSpeed] = useState(SPEEDS[1]);
   const n = ready.length;
   const current = Math.min(index, n - 1);
@@ -108,6 +114,7 @@ export function Player({ frames, waiting, object, center }: Props) {
             src={f.image_url!}
             alt={i === current ? `${p.imageAlt}, ${label(f, t.locale)}` : ""}
             onLoad={(e) => setWidth(e.currentTarget.naturalWidth)}
+            onError={() => setBroken((b) => new Set(b).add(f.id))}
             className={`absolute inset-0 size-full ${i === current ? "" : "invisible"}`}
             style={{ imageRendering: "pixelated" }}
           />
@@ -117,11 +124,11 @@ export function Player({ frames, waiting, object, center }: Props) {
           {/* The year rolls over like an odometer as the flipbook crosses into a new year. */}
           {new Date(ready[current].mid_date).toLocaleDateString(t.locale, { month: "short", timeZone: "UTC" })}
           <Counter value={new Date(ready[current].mid_date).getUTCFullYear()} format={{ useGrouping: false }} intro={false} fontSize="0.875rem" duration={0.5} />
-          <span>· {ready[current].detector} · {ready[current].wavelength_um[0].toFixed(2)}–{ready[current].wavelength_um[1].toFixed(2)} µm</span>
+          <span>· {ready[current].detector} · {um(ready[current].wavelength_um, t.locale)}</span>
         </div>
         {center && width > 0 && <Crosshair containerRef={view} color="#22d3ee" lineStyle="dashed" gap={10} opacity={0.75} targetEffect="none" formatCoordinates={coords} />}
         <div aria-label={p.compass} role="img" className="absolute right-2 bottom-2 rounded bg-black/70 px-2 py-1 font-mono text-xs text-white">
-          N ↑ E ←
+          {p.compassShort}
         </div>
         {width > 0 && (
           <div aria-label={p.scale} role="img" className="absolute bottom-3 left-3 font-mono text-xs text-white [text-shadow:0_0_4px_black]" style={{ width: `${(PX_PER_ARCMIN / width) * 100}%` }}>
@@ -159,7 +166,10 @@ export function Player({ frames, waiting, object, center }: Props) {
             </Button>
           ))}
         </div>
-        <Button variant="outline" size="sm" onClick={copy} className="ml-2" aria-live="polite">
+        <span role="status" className="sr-only">
+          {copied === "copied" ? p.copied : copied === "failed" ? p.copyFailed : ""}
+        </span>
+        <Button variant="outline" size="sm" onClick={copy} className="ml-2">
           {copied === "copied" ? <Check aria-hidden /> : copied === "failed" ? <X aria-hidden /> : <Share2 aria-hidden />}
           {copied === "copied" ? p.copied : copied === "failed" ? p.copyFailed : p.copy}
         </Button>
@@ -182,7 +192,7 @@ export function Player({ frames, waiting, object, center }: Props) {
                   i === current ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted"
                 }`}
               >
-                {f.status === "failed" ? p.missing : month(f.mid_date, t.locale)}
+                {f.status === "failed" || broken.has(f.id) ? p.missing : month(f.mid_date, t.locale)}
               </button>
             </li>
           );

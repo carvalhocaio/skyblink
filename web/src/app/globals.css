@@ -256,9 +256,19 @@
   transition: color 0.8s, text-shadow 0.8s;
 }
 
+/* Keyboard focus and in-page links never land under the sticky 64 px top bar. */
+html { scroll-padding-top: 5rem; }
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+/* Without the flipbook animation, show the three season frames at once as a fading trail, with the last label. */
+@media (prefers-reduced-motion: reduce) {
+  .ex-frame { opacity: 0.35; }
+  .ex-frame-2 { opacity: 1; }
+  .ex-frame:not(.ex-frame-2) text { display: none; }
 }
 
 /* Detector tour */

@@ -164,6 +164,19 @@ export function StarLife({ section, onPick }: Props) {
 
     let x = START / LAST, stage = START, omega = 14, rot = 0, evo = 0, starX = 0, lastInput = -1e9, hover = -1;
     let dragX: number | null = null;
+    // Auto-advance plays one lap, and waits while the pointer or keyboard focus is on the star, its caption
+    // (whose button would otherwise vanish under the cursor or the focus) or the track.
+    const stageBox = ball.parentElement ?? host;
+    let held = false, autoSteps = 0;
+    const hold = () => (held = true);
+    const release = () => (held = false);
+    const focusOut = (e: FocusEvent) => {
+      if (!stageBox.contains(e.relatedTarget as Node | null)) held = false;
+    };
+    stageBox.addEventListener("pointerenter", hold);
+    stageBox.addEventListener("pointerleave", release);
+    stageBox.addEventListener("focusin", hold);
+    stageBox.addEventListener("focusout", focusOut);
     const cur: Look = JSON.parse(JSON.stringify(LOOK[START]));
     const tickH = new Array(N).fill(0);
     const moveTo = (nx: number) => {
@@ -218,7 +231,8 @@ export function StarLife({ section, onPick }: Props) {
       const f = (r: number) => 1 - Math.exp(-dt * r);
       const time = (now - t0) / 1000;
 
-      if (!reduced && now - lastInput > 5000 && now > nextAuto) {
+      if (!reduced && !held && autoSteps <= LAST && now - lastInput > 5000 && now > nextAuto) {
+        autoSteps++;
         x = ((Math.round(x * LAST) + 1) % (LAST + 1)) / LAST;
         omega += 9;
         nextAuto = now + 2600;
@@ -239,7 +253,7 @@ export function StarLife({ section, onPick }: Props) {
       omega *= Math.exp(-dt * 3.6);
       const blur = Math.min(1.4, Math.abs(omega) * 0.1);
       rot += (reduced ? 0 : 0.22 + omega) * dt;
-      evo += dt * cur.boil * (1 + Math.abs(omega) * 0.1);
+      if (!reduced) evo += dt * cur.boil * (1 + Math.abs(omega) * 0.1);
       starX += omega * dt * 0.012;
 
       for (const n of ["freq", "warp", "cells", "gas", "shell", "gI"] as const) gl.uniform1f(U[n], cur[n]);
@@ -249,7 +263,7 @@ export function StarLife({ section, onPick }: Props) {
       gl.uniform1f(U.rot, rot);
       gl.uniform1f(U.blur, blur);
       gl.uniform1f(U.starX, starX);
-      gl.uniform1f(U.flick, 1 + 0.1 * Math.sin(time * 2.1) + 0.06 * Math.sin(time * 5.3));
+      gl.uniform1f(U.flick, reduced ? 1 : 1 + 0.1 * Math.sin(time * 2.1) + 0.06 * Math.sin(time * 5.3));
       gl.uniform1f(U.fade, Math.min(1, (now - t0) / 500));
       gl.drawArrays(gl.TRIANGLES, 0, 3);
 
@@ -272,6 +286,10 @@ export function StarLife({ section, onPick }: Props) {
       track.removeEventListener("pointermove", onHover);
       track.removeEventListener("pointerleave", onLeave);
       host.removeEventListener("pointerdown", onDown);
+      stageBox.removeEventListener("pointerenter", hold);
+      stageBox.removeEventListener("pointerleave", release);
+      stageBox.removeEventListener("focusin", hold);
+      stageBox.removeEventListener("focusout", focusOut);
       removeEventListener("pointermove", onMove);
       removeEventListener("pointerup", onUp);
       removeEventListener("pointercancel", onUp);
@@ -291,7 +309,7 @@ export function StarLife({ section, onPick }: Props) {
     const s = L.stages[i];
     const target = TARGET_OF[i];
     return (
-      <div key={`${i}-${out ? "out" : cap.n}`} className={`absolute inset-0 text-center ${out ? "line-out" : "line-in"}`} aria-hidden={out}>
+      <div key={`${i}-${out ? "out" : cap.n}`} className={`text-center ${out ? "line-out absolute inset-0" : "line-in relative"}`} aria-hidden={out}>
         <p className="text-[clamp(16px,2.05vh,21px)] leading-tight font-semibold tracking-[-0.012em]">{s.t}</p>
         <p className="mt-1.5 text-[clamp(12.5px,1.55vh,15px)] text-white/65">
           <b className="mr-1.5 font-medium text-white">{s.b}</b>
@@ -321,7 +339,7 @@ export function StarLife({ section, onPick }: Props) {
         >
           <span className="absolute right-0 bottom-2 font-mono text-[10px] tracking-[0.2em] text-white/55 uppercase">{L.illustration}</span>
         </div>
-        <div className="relative mt-1 h-[100px] w-full max-w-md">
+        <div className="relative mt-1 min-h-[100px] w-full max-w-md">
           {cap.prev !== null && line(cap.prev, true)}
           {line(cap.cur, false)}
         </div>

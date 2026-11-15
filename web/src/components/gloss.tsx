@@ -23,6 +23,15 @@ function Term({ word, entry }: { word: string; entry: Entry }) {
   const tip = useRef<HTMLSpanElement>(null);
   const id = useId();
   const pinned = useRef(false); // opened by click/tap: stays until dismissed
+  // A short grace period lets the mouse travel from the word to its tooltip without it closing.
+  const leaving = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const stay = () => clearTimeout(leaving.current);
+  const leaveSoon = (e: React.PointerEvent) => {
+    if (e.pointerType !== "mouse" || pinned.current) return;
+    stay();
+    leaving.current = setTimeout(() => setAt(null), 200);
+  };
+  useEffect(() => stay, []);
 
   const open = () => {
     const r = btn.current!.getBoundingClientRect();
@@ -60,8 +69,11 @@ function Term({ word, entry }: { word: string; entry: Entry }) {
           pinned.current = true;
           open();
         }}
-        onPointerEnter={(e) => e.pointerType === "mouse" && !at && open()}
-        onPointerLeave={(e) => e.pointerType === "mouse" && !pinned.current && setAt(null)}
+        onPointerEnter={(e) => {
+          stay();
+          if (e.pointerType === "mouse" && !at) open();
+        }}
+        onPointerLeave={leaveSoon}
         className="cursor-help text-inherit underline decoration-primary/70 decoration-dotted decoration-2 underline-offset-4 transition-colors hover:text-primary"
       >
         {word}
@@ -72,6 +84,8 @@ function Term({ word, entry }: { word: string; entry: Entry }) {
           ref={tip}
           id={id}
           role="tooltip"
+          onPointerEnter={stay}
+          onPointerLeave={leaveSoon}
           className="egg-toast fixed z-[70] block rounded-xl border bg-popover p-4 text-left text-sm leading-relaxed text-popover-foreground shadow-2xl"
           style={{ left: at.x, top: at.y, width: W, maxWidth: "calc(100vw - 16px)", transform: at.up ? "translateY(-100%)" : undefined, animationDuration: "0.2s" }}
         >

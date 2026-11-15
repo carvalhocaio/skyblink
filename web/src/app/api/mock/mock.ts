@@ -116,3 +116,6 @@ export function framePng(season: number): Buffer {
     chunk("IEND", Buffer.alloc(0)),
   ]);
 }
+
+/** The mock answers 404 in production, so its made-up results can never pass for real ones. */
+export const mockDisabled = () => (process.env.VERCEL_ENV === "production" ? new Response(null, { status: 404 }) : null);

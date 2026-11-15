@@ -1,4 +1,7 @@
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api/mock";
+// Without NEXT_PUBLIC_API_URL, local runs and previews use the built-in mock API. Production never does: its
+// made-up motion would look like a real measurement, so a missing setting shows the "server busy" error instead.
+export const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || (process.env.NEXT_PUBLIC_VERCEL_ENV === "production" ? "/api/unconfigured" : "/api/mock");
 
 export type Severity = "error" | "warning" | "info";
 export type JobAlert = { code: string; severity: Severity };
@@ -47,6 +50,8 @@ export type Job = {
 
 export class InputError extends Error {}
 export class NotFoundError extends Error {}
+/** The API answered with a 5xx: busy or restarting, worth retrying. */
+export class ServerError extends Error {}
 
 export async function createJob(ra: number, dec: number, fov: number, targetName?: string): Promise<string> {
   const res = await fetch(`${API_URL}/jobs`, {
@@ -57,14 +62,14 @@ export async function createJob(ra: number, dec: number, fov: number, targetName
   if (res.status === 422) {
     throw new InputError("Check the values: RA 0–360°, Dec −90–90°, field of view 1–15 arcmin.");
   }
-  if (!res.ok) throw new Error(`API error ${res.status}`);
+  if (!res.ok) throw new ServerError(`API error ${res.status}`);
   return (await res.json()).job_id;
 }
 
 export async function getJob(id: string): Promise<Job> {
   const res = await fetch(`${API_URL}/jobs/${id}`, { cache: "no-store" });
   if (res.status === 404) throw new NotFoundError(id);
-  if (!res.ok) throw new Error(`API error ${res.status}`);
+  if (!res.ok) throw new ServerError(`API error ${res.status}`);
   return res.json();
 }
 

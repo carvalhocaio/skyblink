@@ -87,7 +87,7 @@ export function MotionCard({ job }: { job: Job }) {
       {v === "agree" && <p className="border-l-2 border-amber-300/60 pl-3 text-sm text-muted-foreground italic">{t.eggs.galileo}</p>}
       <p className="text-xs text-muted-foreground">
         <Gloss text={m.scale} />
-        {cat && ` ${m.source}: ${cat.name} (${cat.object}).`}
+        {cat && ` ${m.source}: ${cat.name}.`}
       </p>
     </section>
   );
