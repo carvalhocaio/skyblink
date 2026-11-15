@@ -46,6 +46,19 @@ NASA Space Apps Challenge 2026 · *Planet X and SPHEREx*
    and alignment error bars, and, when a target name is given, compare with the SIMBAD (Gaia) prediction at the same
    epochs, including annual parallax.
 
+## The interface
+
+- **Pick or type a spot.** Five featured targets, or any RA/Dec (hours or degrees, pasted as written) with a field
+  width of 1–15′. Every view is a link (`?ra=…&dec=…&fov=…`) that the *Share* button copies.
+- **English and Portuguese.** `?lang=pt` switches the whole page, including the share card and the page language.
+- **A player built for comparison.** Play, pause and step through the seasons, three speeds, keyboard control (Space,
+  ← →), a fixed crosshair with the RA/Dec under the pointer, a 1′ scale bar and a compass.
+- **Honest states.** Progress and a time estimate while a new spot is built (1–3 minutes); brief archive or server
+  hiccups are retried before any error is shown; no-coverage spots, failed seasons and bad links each get a plain
+  message. Production never falls back to the built-in mock data.
+- **Accessible.** Lighthouse accessibility and best practices at 100 on mobile (production), reduced-motion respected,
+  progress announced to screen readers, no layout shift while the pictures load.
+
 ## Validation
 
 Detector D6, pipeline version 5, the five targets of the challenge. Motion is the apparent rate measured across the
@@ -100,7 +113,7 @@ Per-season offsets, error components and residuals are in [`api/README.md`](api/
 | Path | What it is |
 |---|---|
 | [`api/`](api/README.md) | Python 3.12 FastAPI backend (uv): pipeline, API, tests, Dockerfile and Fly.io config |
-| `web/` | Next.js interface (maintained by the frontend team) |
+| `web/` | Next.js 16 interface (React 19, Tailwind 4, three.js), deployed on Vercel |
 | [`docs/demo/`](docs/demo) | Demo images, generated from saved results by `api/scripts/make_demo_assets.py` |
 
 ## Run locally
@@ -115,8 +128,18 @@ env SKYBLINK_CORS_ORIGINS=http://localhost:3000 uv run uvicorn skyblink.api.app:
 ```
 
 Then `curl -s -X POST http://localhost:8000/jobs -H 'content-type: application/json' -d '{"ra": 269.4462, "dec": 4.7682, "fov_arcmin": 6, "detectors": ["D6"]}'`
-and poll `GET /jobs/{job_id}`. The interface reads the API from `NEXT_PUBLIC_API_URL` (`http://localhost:8000` in
-development).
+and poll `GET /jobs/{job_id}`.
+
+Interface (requires [pnpm](https://pnpm.io/)), in a second terminal:
+
+```fish
+cd web
+pnpm install
+env NEXT_PUBLIC_API_URL=http://localhost:8000 pnpm dev
+```
+
+Open <http://localhost:3000>. Without `NEXT_PUBLIC_API_URL` the interface uses a built-in mock API with made-up
+results, for working on the layout offline; production never does.
 
 ## Data and credits
 
