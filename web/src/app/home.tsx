@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useRef, useState, type ReactNode } from "react";
-import { ArrowRight, ArrowUpRight, Box, Cat, Menu, X } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Box, Cat, Languages, Menu, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -141,20 +141,25 @@ function Home() {
                 {label}
               </a>
             ))}
-            <label className="ml-2">
-              <span className="sr-only">{t.nav.language}</span>
-              <select
-                value={lang}
-                onChange={(e) => go({ lang: e.target.value as Lang })}
-                className="min-h-11 rounded-full border bg-card/60 px-3 text-sm text-foreground outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-              >
-                {Object.entries(LANGS).map(([code, label]) => (
-                  <option key={code} value={code}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <div role="group" aria-label={t.nav.language} className="ml-2 flex items-center gap-0.5 rounded-full border bg-card/60 p-1">
+              <Languages className="mx-1.5 size-4 text-muted-foreground" aria-hidden />
+              {(Object.keys(LANGS) as Lang[]).map((code) => (
+                <button
+                  key={code}
+                  type="button"
+                  lang={code}
+                  aria-pressed={lang === code}
+                  aria-label={LANGS[code]}
+                  title={LANGS[code]}
+                  onClick={() => lang !== code && go({ lang: code })}
+                  className={`min-h-9 min-w-11 rounded-full px-3 text-xs font-semibold tracking-wider transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50 ${
+                    lang === code ? "bg-white/10 text-foreground" : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                  }`}
+                >
+                  {code.toUpperCase()}
+                </button>
+              ))}
+            </div>
             <button
               type="button"
               onClick={() => setMenu((m) => !m)}
