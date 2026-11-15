@@ -103,6 +103,7 @@ export function StarLife({ section, onPick }: Props) {
   const api = useRef<{ moveTo: (nx: number) => void; x: () => number }>(null);
   const scale = useRef(timeScale);
   const [cap, setCap] = useState<{ cur: number; prev: number | null; n: number }>({ cur: START, prev: null, n: 0 });
+  const [noGL, setNoGL] = useState(false);
 
   useEffect(() => {
     scale.current = timeScale;
@@ -117,6 +118,7 @@ export function StarLife({ section, onPick }: Props) {
   useEffect(() => {
     const canvas = canvasRef.current, host = section.current, ball = ballRef.current, track = trackRef.current;
     const gl = canvas?.getContext("webgl", { antialias: false, alpha: false });
+    if (!gl) setNoGL(true);
     if (!canvas || !host || !ball || !track || !gl) return;
     const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -130,7 +132,10 @@ export function StarLife({ section, onPick }: Props) {
     gl.attachShader(prog, sh(gl.VERTEX_SHADER, VS));
     gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS));
     gl.linkProgram(prog);
-    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return;
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+      setNoGL(true); // the GPU refused the shader: show the still star instead
+      return;
+    }
     gl.useProgram(prog);
     gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
@@ -296,7 +301,7 @@ export function StarLife({ section, onPick }: Props) {
           <button
             type="button"
             onClick={() => onPick(target)}
-            className="pointer-events-auto mt-3 inline-flex min-h-9 items-center gap-1.5 rounded-full border border-white/15 px-3.5 text-xs text-white/80 transition hover:-translate-y-0.5 hover:border-primary/60 hover:text-white"
+            className="pointer-events-auto mt-2 inline-flex min-h-11 items-center gap-1.5 rounded-full border border-white/15 px-3.5 text-xs text-white/80 transition hover:-translate-y-0.5 hover:border-primary/60 hover:text-white"
           >
             {L.watch} <ArrowRight className="size-3.5" aria-hidden />
           </button>
@@ -309,10 +314,14 @@ export function StarLife({ section, onPick }: Props) {
     <>
       <canvas ref={canvasRef} aria-hidden className="absolute inset-0 size-full cursor-grab touch-pan-y active:cursor-grabbing" />
       <div className="relative flex flex-col items-center">
-        <div ref={ballRef} className="pointer-events-none relative aspect-square w-[min(100%,26rem)]">
+        <div
+          ref={ballRef}
+          className="pointer-events-none relative aspect-square w-[min(100%,26rem)] rounded-full"
+          style={noGL ? { background: "radial-gradient(circle at 40% 35%, #fff4d6, #fbbf24 30%, #c2410c 62%, transparent 71%)" } : undefined}
+        >
           <span className="absolute right-0 bottom-2 font-mono text-[10px] tracking-[0.2em] text-white/55 uppercase">{L.illustration}</span>
         </div>
-        <div className="relative mt-1 h-[92px] w-full max-w-md">
+        <div className="relative mt-1 h-[100px] w-full max-w-md">
           {cap.prev !== null && line(cap.prev, true)}
           {line(cap.cur, false)}
         </div>

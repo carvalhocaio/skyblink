@@ -16,8 +16,17 @@ export type Frame = {
   alerts: JobAlert[];
 };
 
+/** Where the star sat in one season, measured from the images, relative to the reference season. */
+export type SeasonMotion = {
+  season_id: number;
+  frame_id: string;
+  mid_date: string;
+  offset: { dx_px: number; dy_px: number; east_arcsec: number; north_arcsec: number; total_arcsec: number };
+};
+
 export type Motion = {
   detector: string;
+  seasons?: SeasonMotion[];
   rate_arcsec_yr: { value: number; error: number };
   catalog: { name: string; object: string; predicted_rate_arcsec_yr: number; rate_residual_sigma: number } | null;
   catalog_reason: string | null;

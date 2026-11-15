@@ -7,9 +7,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-mona);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-geist-sans);
+  --font-heading: var(--font-mona);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -84,18 +84,18 @@
 }
 
 .dark {
-  --background: oklch(0.12 0.02 265);
-  --foreground: oklch(0.97 0.005 265);
-  --card: oklch(0.17 0.025 265);
-  --card-foreground: oklch(0.97 0 0);
-  --popover: oklch(0.17 0.025 265);
+  --background: #05070d;
+  --foreground: #eef2f7;
+  --card: #0c111b;
+  --card-foreground: #eef2f7;
+  --popover: #0c111b;
   --popover-foreground: oklch(0.97 0 0);
   --primary: oklch(0.85 0.13 205);
   --primary-foreground: oklch(0.18 0.04 250);
   --secondary: oklch(0.25 0 0);
   --secondary-foreground: oklch(0.97 0 0);
-  --muted: oklch(0.22 0.02 265);
-  --muted-foreground: oklch(0.74 0.02 265);
+  --muted: #111827;
+  --muted-foreground: #94a3b8;
   --accent: oklch(0.25 0 0);
   --accent-foreground: oklch(0.97 0 0);
   --destructive: oklch(0.704 0.191 22.216);
@@ -123,6 +123,13 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  h1, h2, h3, h4 {
+    font-stretch: 112%;
+    text-wrap: balance;
+  }
+  p, li, dd {
+    text-wrap: pretty;
   }
   html {
     @apply font-sans;
@@ -240,6 +247,7 @@
 .egg-toast { animation: fade-up 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
 .atom-idle { animation: spin 12s linear infinite; }
 .egg-panel:popover-open { animation: fade-up 0.25s ease-out; }
+.finale-card { animation: fade-up 0.6s 2.9s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
 .radium h1,
 .radium h2,
 .radium h3 {
@@ -270,3 +278,6 @@
 @keyframes ex-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
 .ex-bob { animation: ex-bob 2.2s ease-in-out infinite alternate; }
 @keyframes ex-bob { to { transform: translateY(-4px) rotate(8deg); } }
+
+/* One visible focus ring everywhere, solid cyan, outside the box (beats outline-none utilities). */
+:focus-visible { outline: 2px solid var(--ring) !important; outline-offset: 3px; }
