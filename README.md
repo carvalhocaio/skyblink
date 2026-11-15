@@ -14,7 +14,7 @@ NASA Space Apps Challenge 2026 · *Planet X and SPHEREx*
 - **Live tool:** <https://skyblink-swart.vercel.app> — or jump straight to
   [Barnard's Star](https://skyblink-swart.vercel.app/?ra=269.4462&dec=4.7682&fov=6)
 - **API:** <https://skyblink-api.fly.dev> (try [`/health`](https://skyblink-api.fly.dev/health))
-- **Demo deck:** [link — to be added]
+- **Demo video (28 s):** <https://youtu.be/n8w96ek4wSw>
 - **Technical reference:** [`api/README.md`](api/README.md)
 
 | Barnard's Star, D6 (4.41–5.01 µm), three seasons | First vs last season, measured displacement |
