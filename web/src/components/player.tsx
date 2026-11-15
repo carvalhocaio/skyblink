@@ -15,8 +15,11 @@ const SPEEDS = [1200, 600, 250];
 // SPHEREx pixels are 6.15″ wide, so one arcminute is about 9.8 pixels of the original image.
 const PX_PER_ARCMIN = 60 / 6.15;
 
-const label = (f: Frame, locale: string) =>
-  `${month(f.mid_date, locale)} · ${f.detector} · ${f.wavelength_um[0].toFixed(2)}–${f.wavelength_um[1].toFixed(2)} µm`;
+// Wavelengths in the visitor's language: 4.41 in English, 4,41 in Portuguese.
+const um = ([lo, hi]: [number, number], locale: string) =>
+  `${lo.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}–${hi.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} µm`;
+
+const label = (f: Frame, locale: string) => `${month(f.mid_date, locale)} · ${f.detector} · ${um(f.wavelength_um, locale)}`;
 
 type Props = {
   frames: Frame[];
@@ -121,11 +124,11 @@ export function Player({ frames, waiting, object, center }: Props) {
           {/* The year rolls over like an odometer as the flipbook crosses into a new year. */}
           {new Date(ready[current].mid_date).toLocaleDateString(t.locale, { month: "short", timeZone: "UTC" })}
           <Counter value={new Date(ready[current].mid_date).getUTCFullYear()} format={{ useGrouping: false }} intro={false} fontSize="0.875rem" duration={0.5} />
-          <span>· {ready[current].detector} · {ready[current].wavelength_um[0].toFixed(2)}–{ready[current].wavelength_um[1].toFixed(2)} µm</span>
+          <span>· {ready[current].detector} · {um(ready[current].wavelength_um, t.locale)}</span>
         </div>
         {center && width > 0 && <Crosshair containerRef={view} color="#22d3ee" lineStyle="dashed" gap={10} opacity={0.75} targetEffect="none" formatCoordinates={coords} />}
         <div aria-label={p.compass} role="img" className="absolute right-2 bottom-2 rounded bg-black/70 px-2 py-1 font-mono text-xs text-white">
-          N ↑ E ←
+          {p.compassShort}
         </div>
         {width > 0 && (
           <div aria-label={p.scale} role="img" className="absolute bottom-3 left-3 font-mono text-xs text-white [text-shadow:0_0_4px_black]" style={{ width: `${(PX_PER_ARCMIN / width) * 100}%` }}>

@@ -309,7 +309,7 @@ export function StarLife({ section, onPick }: Props) {
     const s = L.stages[i];
     const target = TARGET_OF[i];
     return (
-      <div key={`${i}-${out ? "out" : cap.n}`} className={`absolute inset-0 text-center ${out ? "line-out" : "line-in"}`} aria-hidden={out}>
+      <div key={`${i}-${out ? "out" : cap.n}`} className={`text-center ${out ? "line-out absolute inset-0" : "line-in relative"}`} aria-hidden={out}>
         <p className="text-[clamp(16px,2.05vh,21px)] leading-tight font-semibold tracking-[-0.012em]">{s.t}</p>
         <p className="mt-1.5 text-[clamp(12.5px,1.55vh,15px)] text-white/65">
           <b className="mr-1.5 font-medium text-white">{s.b}</b>
@@ -339,7 +339,7 @@ export function StarLife({ section, onPick }: Props) {
         >
           <span className="absolute right-0 bottom-2 font-mono text-[10px] tracking-[0.2em] text-white/55 uppercase">{L.illustration}</span>
         </div>
-        <div className="relative mt-1 h-[100px] w-full max-w-md">
+        <div className="relative mt-1 min-h-[100px] w-full max-w-md">
           {cap.prev !== null && line(cap.prev, true)}
           {line(cap.cur, false)}
         </div>

@@ -156,7 +156,7 @@ function EggTray({ toast }: { toast: Egg | null }) {
       <button
         type="button"
         popoverTarget="egg-panel"
-        className={`fixed right-4 bottom-4 z-50 flex min-h-11 items-center gap-2 rounded-full border bg-card/80 px-4 font-mono text-xs backdrop-blur transition hover:-translate-y-0.5 ${
+        className={`fixed right-4 bottom-4 z-50 flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-full border bg-card/80 font-mono text-xs backdrop-blur transition hover:-translate-y-0.5 sm:px-4 ${
           found.size === EGGS.length ? "border-amber-200/50 hover:border-amber-200" : "hover:border-primary/50"
         }`}
         aria-label={`${g.tray}: ${found.size}/${EGGS.length}`}
@@ -166,7 +166,8 @@ function EggTray({ toast }: { toast: Egg | null }) {
         ) : (
           <Atom className={`size-4 text-primary ${found.size ? "" : "atom-idle"}`} aria-hidden />
         )}
-        <span className="tabular-nums">
+        {/* Phones: icon only, so the floating button covers less of the text under it (the label keeps the count). */}
+        <span className="hidden tabular-nums sm:inline">
           {found.size}/{EGGS.length}
         </span>
       </button>

@@ -164,7 +164,7 @@ function Home() {
             <span aria-hidden className="logo-dot" />
             SkyBlink
           </button>
-          <nav aria-label="Sections" className="flex items-center gap-1 text-sm text-muted-foreground">
+          <nav aria-label={t.foot.sections} className="flex items-center gap-1 text-sm text-muted-foreground">
             {navLinks.map(([href, label]) => (
               <a key={href} href={href} className="hidden rounded-full px-3 py-2 transition-colors hover:bg-white/5 hover:text-foreground lg:block">
                 {label}

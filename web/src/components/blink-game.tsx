@@ -202,7 +202,7 @@ export default function BlinkGame({ onClose }: { onClose: () => void }) {
               <Button className="h-11 rounded-full px-5" onClick={restart} autoFocus>
                 {G.again}
               </Button>
-              <a href="#explore" onClick={() => dlg.current?.close()} className={buttonVariants({ variant: "outline", className: "h-11 rounded-full px-5" })}>
+              <a href="#explore" onClick={() => dlg.current?.close()} className={buttonVariants({ variant: "outline", className: "h-auto min-h-11 rounded-full px-5 py-2 text-center whitespace-normal" })}>
                 {G.real}
               </a>
             </div>

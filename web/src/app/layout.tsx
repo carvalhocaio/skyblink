@@ -22,7 +22,9 @@ export const metadata: Metadata = {
   metadataBase: process.env.NEXT_PUBLIC_SITE_URL ? new URL(process.env.NEXT_PUBLIC_SITE_URL) : undefined,
   title: "SkyBlink: watch stars move in NASA SPHEREx images",
   description,
-  openGraph: { title: "SkyBlink: stars move. Here’s the proof.", description, siteName: "SkyBlink", type: "website" },
+  // The same page in two languages: search engines link each version to the other.
+  alternates: { canonical: "/", languages: { en: "/", "pt-BR": "/?lang=pt", "x-default": "/" } },
+  openGraph: { title: "SkyBlink: stars move. Here’s the proof.", description, siteName: "SkyBlink", type: "website", locale: "en_US", alternateLocale: ["pt_BR"] },
   twitter: { card: "summary_large_image", title: "SkyBlink: stars move. Here’s the proof.", description },
 };
 

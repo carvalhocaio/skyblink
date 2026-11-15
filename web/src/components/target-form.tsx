@@ -94,10 +94,11 @@ export function TargetForm({ initial, error, onSubmit }: Props) {
           }}
         >
           <p id="spot-help" className="text-sm text-muted-foreground"><Gloss text={p.customHelp} /></p>
-          <div className="grid grid-cols-3 gap-3">
+          {/* Two columns on phones (field width on its own row), three from small tablets up. */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <Field name="ra" label={p.ra} value={initial?.ra} placeholder="17h 57m 48s" invalid={error || bad} />
             <Field name="dec" label={p.dec} value={initial?.dec} placeholder="+4° 41′ 36″" invalid={error || bad} />
-            <Field name="fov" label={p.fov} value={initial?.fov ?? 6} invalid={error || bad} />
+            <Field name="fov" label={p.fov} value={initial?.fov ?? 6} invalid={error || bad} className="col-span-2 sm:col-span-1" />
           </div>
           <p className="text-xs text-muted-foreground"><Gloss text={p.fovHelp} /></p>
           {(error || bad) && (
@@ -114,9 +115,9 @@ export function TargetForm({ initial, error, onSubmit }: Props) {
   );
 }
 
-function Field({ name, label, value, placeholder, invalid }: { name: string; label: string; value?: number; placeholder?: string; invalid: boolean }) {
+function Field({ name, label, value, placeholder, invalid, className = "" }: { name: string; label: string; value?: number; placeholder?: string; invalid: boolean; className?: string }) {
   return (
-    <div className="space-y-1.5">
+    <div className={`space-y-1.5 ${className}`}>
       <Label htmlFor={name}>{label}</Label>
       <Input id={name} name={name} type="text" required autoComplete="off" spellCheck={false} placeholder={placeholder} defaultValue={value} aria-invalid={invalid} aria-describedby={invalid ? "spot-error spot-help" : "spot-help"} />
     </div>

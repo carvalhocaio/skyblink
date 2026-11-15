@@ -12,7 +12,8 @@ export async function generateMetadata({ searchParams }: PageProps<"/">): Promis
   return {
     title: "SkyBlink: veja estrelas se movendo em imagens do SPHEREx, da NASA",
     description,
-    openGraph: { title, description, images, locale: "pt_BR", siteName: "SkyBlink", type: "website" },
+    alternates: { canonical: "/?lang=pt", languages: { en: "/", "pt-BR": "/?lang=pt", "x-default": "/" } },
+    openGraph: { title, description, images, locale: "pt_BR", alternateLocale: ["en_US"], siteName: "SkyBlink", type: "website" },
     twitter: { card: "summary_large_image", title, description, images },
   };
 }
