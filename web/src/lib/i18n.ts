@@ -34,7 +34,7 @@ const en = {
     ],
     custom: "I want to choose my own spot in the sky",
     customHelp:
-      "Astronomers locate things with two numbers, like longitude and latitude on Earth: RA and Dec. You can paste them straight from Wikipedia. RA works in hours (17h 57m 48s) or degrees (269.45); Dec works like +4° 41′ 36″ or 4.69.",
+      "Astronomers locate things with two numbers, like longitude and latitude on Earth: RA and Dec. You can paste them straight from Wikipedia. Wikipedia lists positions for the year 2000. Nearby fast stars have moved since then (Barnard's Star by about 4.5′), so use the featured buttons for them, or zoom out to 15. RA works in hours (17h 57m 48s) or degrees (269.45); Dec works like +4° 41′ 36″ or 4.69.",
     ra: "RA",
     dec: "Dec",
     fov: "Zoom (arcmin)",
@@ -483,7 +483,7 @@ const pt: typeof en = {
     ],
     custom: "Quero escolher meu próprio ponto no céu",
     customHelp:
-      "Astrônomos localizam objetos com dois números, como longitude e latitude na Terra: RA e Dec. Dá para colar direto da Wikipédia. RA aceita horas (17h 57m 48s) ou graus (269.45); Dec aceita +4° 41′ 36″ ou 4.69.",
+      "Astrônomos localizam objetos com dois números, como longitude e latitude na Terra: RA e Dec. Dá para colar direto da Wikipédia. A Wikipédia mostra as posições do ano 2000. Estrelas próximas e rápidas já se moveram desde então (a Estrela de Barnard, cerca de 4,5′), então use os botões prontos para elas ou aumente o zoom para 15. RA aceita horas (17h 57m 48s) ou graus (269.45); Dec aceita +4° 41′ 36″ ou 4.69.",
     ra: "RA",
     dec: "Dec",
     fov: "Zoom (arcmin)",
