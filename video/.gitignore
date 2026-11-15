@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+# Generated files: only the final video and the stills for the slides are kept.
+out/*
+!out/skyblink-demo.mp4
+!out/stills/

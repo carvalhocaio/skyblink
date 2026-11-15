@@ -1,0 +1,42 @@
+/* Title and end cards in the site's dark palette (web/src/app/globals.css). Text only. */
+:root {
+  --background: #05070d;
+  --foreground: #eef2f7;
+  --primary: oklch(0.85 0.13 205);
+  --muted: #94a3b8;
+}
+* { margin: 0; box-sizing: border-box; }
+html, body { width: 1920px; height: 1080px; overflow: hidden; }
+body {
+  background: radial-gradient(ellipse 60% 50% at 50% 45%, rgb(34 211 238 / 7%), transparent 70%), var(--background);
+  color: var(--foreground);
+  font-family: "Mona Sans", system-ui, sans-serif;
+  display: grid;
+  place-items: center;
+}
+/* A faint fixed starfield, like the site's background canvas. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image:
+    radial-gradient(1.5px 1.5px at 12% 18%, #fff8, transparent),
+    radial-gradient(1px 1px at 27% 72%, #fff6, transparent),
+    radial-gradient(1.5px 1.5px at 41% 9%, #fff5, transparent),
+    radial-gradient(1px 1px at 63% 83%, #fff7, transparent),
+    radial-gradient(1.5px 1.5px at 78% 24%, #fff6, transparent),
+    radial-gradient(1px 1px at 88% 61%, #fff8, transparent),
+    radial-gradient(1px 1px at 6% 52%, #fff5, transparent),
+    radial-gradient(1.5px 1.5px at 53% 38%, #fff3, transparent),
+    radial-gradient(1px 1px at 33% 44%, #fff4, transparent),
+    radial-gradient(1px 1px at 94% 90%, #fff6, transparent);
+}
+main { text-align: center; position: relative; }
+.mono { font-family: "Geist Mono", ui-monospace, monospace; letter-spacing: 0.04em; }
+/* The recorder adds .go to <body> at the scene's first frame, so the entrance is never cut. */
+.in { opacity: 0; transform: translateY(14px); }
+.go .in { animation: in 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) forwards; }
+.go .d1 { animation-delay: 0.25s; }
+.go .d2 { animation-delay: 0.5s; }
+.go .d3 { animation-delay: 0.75s; }
+@keyframes in { to { opacity: 1; transform: none; } }
