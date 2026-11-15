@@ -71,6 +71,10 @@ export function TargetForm({ initial, error, onSubmit }: Props) {
                     {x.moves ? p.move : p.brightness}
                   </span>
                   <span className="mt-2 block text-sm text-muted-foreground">{p.stories[i]}</span>
+                  <span className="mt-2 block text-xs text-muted-foreground">
+                    <span className={`mr-1.5 font-mono text-[10px] tracking-widest uppercase ${active ? "text-primary" : "text-foreground/80"}`}>{p.lookForLabel}</span>
+                    {p.lookFor[i]}
+                  </span>
                 </span>
               </button>
             </li>

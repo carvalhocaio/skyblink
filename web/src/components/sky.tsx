@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { useEggs } from "@/lib/eggs";
 
 // Fixed starfield behind the page: three depth layers drift slowly and follow the pointer.
-// A few "nearby" stars hop now and then, the way Barnard's Star does between SPHEREx seasons.
+// Decoration only: nothing here moves like a real star, so it never competes with the real data in the player.
 export function Sky() {
   const ref = useRef<HTMLCanvasElement>(null);
   const { timeScale } = useEggs();
@@ -20,7 +20,7 @@ export function Sky() {
     const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const dpr = Math.min(devicePixelRatio, 2);
     let w = 0, h = 0;
-    type Star = { x: number; y: number; z: number; r: number; hue: number; hop: boolean };
+    type Star = { x: number; y: number; z: number; r: number; hue: number };
     let stars: Star[] = [];
     const seed = () => {
       w = innerWidth;
@@ -30,7 +30,7 @@ export function Sky() {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       stars = Array.from({ length: Math.round((w * h) / 5200) }, () => {
         const z = Math.random() ** 2;
-        return { x: Math.random() * w, y: Math.random() * h, z, r: 0.4 + z * 1.4, hue: Math.random(), hop: Math.random() < 0.02 };
+        return { x: Math.random() * w, y: Math.random() * h, z, r: 0.4 + z * 1.4, hue: Math.random() };
       });
     };
     seed();
@@ -40,7 +40,7 @@ export function Sky() {
       ptr.tx = e.clientX / w - 0.5;
       ptr.ty = e.clientY / h - 0.5;
     };
-    let raf = 0, last = performance.now(), clock = 0, hopTick = 0;
+    let raf = 0, last = performance.now(), clock = 0;
     const draw = (now: number) => {
       const dt = Math.min(64, Math.max(0, now - last)) * scale.current;
       last = now;
@@ -48,12 +48,9 @@ export function Sky() {
       ptr.x += (ptr.tx - ptr.x) * 0.04;
       ptr.y += (ptr.ty - ptr.y) * 0.04;
       ctx.clearRect(0, 0, w, h);
-      const hop = Math.floor(clock / 1400) !== hopTick;
-      if (hop) hopTick = Math.floor(clock / 1400);
       for (const s of stars) {
         s.x -= dt * 0.004 * (0.2 + s.z);
         if (s.x < -4) s.x += w + 8;
-        if (s.hop && hop) s.x += 3;
         const x = s.x - ptr.x * 30 * s.z;
         const y = s.y - ptr.y * 30 * s.z - scrollY * 0.05 * s.z;
         const yy = ((y % h) + h) % h;

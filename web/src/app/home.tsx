@@ -11,11 +11,15 @@ import { JobAlerts, JobProgress } from "@/components/job-status";
 import { MotionCard } from "@/components/motion-card";
 import { AboutSpherex, Faq } from "@/components/learn";
 import { Explainer } from "@/components/explainer";
+import { Investigate } from "@/components/investigate";
+import { DataDrawer } from "@/components/data-drawer";
+import { HeroBlink } from "@/components/hero-blink";
 import { LANGS, useT, type Lang } from "@/lib/i18n";
 import { findTarget, TARGETS } from "@/lib/targets";
 import { useJob, type Target } from "@/lib/use-job";
 import { EggsProvider, useEggs, useNewton } from "@/lib/eggs";
 import { Sky } from "@/components/sky";
+import { Gloss } from "@/components/gloss";
 import { StarLife } from "@/components/star-life";
 import StarBorder from "@/components/StarBorder";
 import ClickSpark from "@/components/ClickSpark";
@@ -55,7 +59,7 @@ function Home() {
   const router = useRouter();
   const { lang, t } = useT();
   const [run, setRun] = useState(0);
-  const heroRef = useRef<HTMLElement>(null);
+  const lifeRef = useRef<HTMLElement>(null);
 
   const ra = num(params.get("ra"));
   const dec = num(params.get("dec"));
@@ -231,7 +235,7 @@ function Home() {
       )}
 
       {/* While the full-screen menu is open, the page behind it is out of reach for focus and screen readers. */}
-      <header ref={heroRef} inert={menu} className="relative overflow-hidden bg-black">
+      <header inert={menu} className="relative overflow-hidden bg-black">
         <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-24 bg-gradient-to-b from-transparent to-background" />
         <div className={`${WRAP} grid items-center gap-10 py-12 lg:min-h-[calc(100svh-4rem)] lg:grid-cols-[1.1fr_1fr] lg:py-16`}>
           <div className="relative z-10">
@@ -245,6 +249,14 @@ function Home() {
             <p className="fade-up mt-7 max-w-xl text-lg leading-relaxed text-muted-foreground" style={{ animationDelay: "0.3s" }}>
               {t.hero.text}
             </p>
+            <ul className="fade-up mt-6 max-w-xl space-y-2 text-sm text-muted-foreground" style={{ animationDelay: "0.38s" }}>
+              {t.hero.points.map((x) => (
+                <li key={x} className="flex gap-3">
+                  <span aria-hidden className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" />
+                  <span><Gloss text={x} /></span>
+                </li>
+              ))}
+            </ul>
             <div className="fade-up mt-9 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center" style={{ animationDelay: "0.45s" }}>
               {/* A star laps the main button: the one action that shows the whole idea. */}
               <StarBorder
@@ -265,8 +277,8 @@ function Home() {
             </div>
           </div>
 
-          <div>
-            <StarLife section={heroRef} onPick={(i) => submit({ ra: TARGETS[i].ra, dec: TARGETS[i].dec, fov: 6 })} />
+          <div className="relative z-10">
+            <HeroBlink onOpen={showBarnard} />
           </div>
         </div>
       </header>
@@ -342,15 +354,32 @@ function Home() {
                     waiting={!error && job.status !== "done"}
                     object={featured && name ? { name, index: TARGETS.indexOf(featured) } : undefined}
                     center={target ?? undefined}
+                    motion={job.motion}
                   />
                 )}
                 {job && !noCoverage && !allFailed && <MotionCard job={job} />}
+                {job && !noCoverage && !allFailed && <Investigate job={job} frames={frames} />}
                 {job && <JobAlerts job={job} frames={frames} />}
+                {job && !noCoverage && <DataDrawer job={job} frames={frames} name={featured?.thumb} />}
               </div>
             </div>
           </div>
         </section>
 
+        {/* The life-of-stars scrubber draws on its section's black background, so it keeps a full-bleed block. */}
+        <section ref={lifeRef} aria-labelledby="life-title" className="relative overflow-hidden bg-black">
+          <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-24 bg-gradient-to-t from-transparent to-background" />
+          <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-24 bg-gradient-to-b from-transparent to-background" />
+          <div className={`${WRAP} grid items-center gap-10 py-24 lg:grid-cols-[1fr_1.1fr] lg:py-32`}>
+            <div className="pointer-events-none relative z-10 space-y-6">
+              <h2 id="life-title" className="max-w-xl text-3xl leading-[1.1] font-medium tracking-tight md:text-5xl">{t.life.title}</h2>
+              <p className="max-w-lg text-lg leading-relaxed text-muted-foreground">{t.life.intro}</p>
+            </div>
+            <div>
+              <StarLife section={lifeRef} onPick={(i) => submit({ ra: TARGETS[i].ra, dec: TARGETS[i].dec, fov: 6 })} />
+            </div>
+          </div>
+        </section>
 
         <section id="spherex" className={`${WRAP} space-y-10 ${PAD}`}>
           <SectionLabel n={3}>{t.nav.spherex}</SectionLabel>

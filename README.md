@@ -52,7 +52,11 @@ NASA Space Apps Challenge 2026 · *Planet X and SPHEREx*
   width of 1–15′. Every view is a link (`?ra=…&dec=…&fov=…`) that the *Share* button copies.
 - **English and Portuguese.** `?lang=pt` switches the whole page, including the share card and the page language.
 - **A player built for comparison.** Play, pause and step through the seasons, three speeds, keyboard control (Space,
-  ← →), a fixed crosshair with the RA/Dec under the pointer, a 1′ scale bar and a compass.
+  ← →), a fixed crosshair with the RA/Dec under the pointer, a 1′ scale bar and a compass. A *First ↔ last* mode
+  blinks only the two ends, and each picture shows its measured shift from the reference season with its error.
+- **Investigate before you believe.** A short panel answers, from the job's own alerts and measurement, whether the
+  background stayed aligned, what could fool the eye (saturation, thin data, the infrared colour mix) and why a change
+  is a clue, not a discovery. Real data and illustrations are labelled as such.
 - **Honest states.** Progress and a time estimate while a new spot is built (1–3 minutes); brief archive or server
   hiccups are retried before any error is shown; no-coverage spots, failed seasons and bad links each get a plain
   message. Production never falls back to the built-in mock data.
