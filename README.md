@@ -163,3 +163,4 @@ scientific results were compared with SIMBAD/Gaia predictions at the same epochs
 
 Frontend: the web interface was also built with Claude Code, from the team's specifications and under the team's
 review.
+- Team banner image (project page only): AI-generated, marked with a visible "AI-generated image" watermark. It is not used in the tool or in the demo video.
